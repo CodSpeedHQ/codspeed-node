@@ -1,0 +1,37 @@
+{
+  "name": "@codspeed/benchmark.js",
+  "version": "0.0.0",
+  "description": "",
+  "keywords": [],
+  "main": "dist/index.umd.js",
+  "module": "dist/index.es5.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "author": "--username-- <--usermail-->",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "license": "MIT",
+  "jest": {
+    "transform": {
+      ".(ts|tsx)": "ts-jest"
+    },
+    "testEnvironment": "node",
+    "testRegex": "(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js"
+    ]
+  },
+  "devDependencies": {
+    "@types/benchmark": "^2.1.2"
+  },
+  "dependencies": {
+    "@codspeed/core": "workspace:*",
+    "benchmark": "^2.1.4"
+  }
+}

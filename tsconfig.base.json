@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "moduleResolution": "node",
+    "target": "es6",
+    "module": "es2015",
+    "lib": ["esnext"],
+    "types": ["node"],
+    "strict": true,
+    "sourceMap": true,
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "incremental": true
+  }
+}

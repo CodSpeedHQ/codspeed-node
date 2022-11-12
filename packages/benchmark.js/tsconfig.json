@@ -1,0 +1,27 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "declaration": true,
+    "outDir": "dist/types",
+    "rootDir": "src",
+    "paths": {
+      "@codspeed/core": [
+        "../core/src/index.ts"
+      ],
+      "@codspeed/core/*": [
+        "../core/src/*"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "dist"
+  ],
+  "references": [
+    {
+      "path": "../core"
+    }
+  ]
+}

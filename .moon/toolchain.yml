@@ -1,0 +1,29 @@
+# https://moonrepo.dev/docs/config/toolchain
+$schema: 'https://moonrepo.dev/schemas/toolchain.json'
+
+node:
+  version: 16.17.0
+  syncVersionManagerConfig: 'nvm'
+  addEnginesConstraint: true
+
+  packageManager: 'pnpm'
+  pnpm:
+    version: '7.18.2'
+
+  aliasPackageNames: 'name-only'
+
+  dedupeOnLockfileChange: false
+  dependencyVersionFormat: 'workspace'
+
+  inferTasksFromScripts: true
+
+  syncProjectWorkspaceDependencies: true
+
+typescript:
+  createMissingConfig: false
+  rootConfigFileName: 'tsconfig.json'
+  rootOptionsConfigFileName: 'tsconfig.base.json'
+
+  routeOutDirToCache: false
+  syncProjectReferences: true
+  syncProjectReferencesToPaths: true

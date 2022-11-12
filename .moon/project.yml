@@ -1,0 +1,63 @@
+# https://moonrepo.dev/docs/config/global-project
+$schema: "https://moonrepo.dev/schemas/global-project.json"
+
+fileGroups:
+  configs:
+    - "*.config.{js,cjs,mjs,ts}"
+    - "*.json"
+  sources:
+    - "src/**/*"
+    - "types/**/*"
+  tests:
+    - "tests/**/*.test.*"
+    - "**/__tests__/**/*"
+  dist:
+    - "dist/**/*"
+
+tasks:
+  format:
+    command: "prettier --config @in(0) --ignore-path @in(1) --check ."
+    inputs:
+      - "/.prettierrc.js"
+      - "/.prettierignore"
+      - "@globs(sources)"
+      - "@globs(tests)"
+      - "@globs(configs)"
+  lint:
+    command: "eslint ."
+    inputs:
+      - "@globs(sources)"
+      - "@globs(tests)"
+      - ".eslintignore"
+      - ".eslintrc.js"
+      - "/.eslintrc.js"
+      - "tsconfig.json"
+      - "tsconfig.*.json"
+
+  typecheck:
+    command: "tsc --noEmit --pretty"
+    inputs:
+      - "@globs(sources)"
+      - "@globs(tests)"
+      - "tsconfig.json"
+      - "/tsconfig.json"
+      - "/tsconfig.base.json"
+
+  build:
+    command: "rollup -c rollup.config.ts --configPlugin typescript"
+    inputs:
+      - "@globs(sources)"
+      - "rollup.config.ts"
+    outputs:
+      - "dist/"
+    deps:
+      - "clean"
+      - "typecheck"
+
+  clean:
+    command: "rm -rf"
+    args:
+      - dist
+    options:
+      cache: false
+    platform: system

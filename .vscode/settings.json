@@ -1,0 +1,10 @@
+{
+  "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools",
+  "makefile.makeDirectory": "${workspaceRoot}/packages/core/build/",
+  "files.exclude": {},
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": false // Import sorting is handled by prettier
+  }
+}

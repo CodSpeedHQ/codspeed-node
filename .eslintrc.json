@@ -1,0 +1,29 @@
+{
+  "root": true,
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:import/recommended",
+    "plugin:import/typescript"
+  ],
+  "ignorePatterns": ["**/dist/**", "**/node_modules/**", "**/rollup.config.ts"],
+  "settings": {
+    "import/parsers": {
+      "@typescript-eslint/parser": [".ts", ".tsx"]
+    },
+    "import/resolver": {
+      "typescript": {
+        "alwaysTryTypes": true,
+        "project": [
+          "tsconfig.json",
+          "packages/*/tsconfig.json",
+          "packages/*/tsconfig.*.json"
+        ]
+      }
+    }
+  },
+  "rules": {
+    "import/no-named-as-default": "off",
+    "import/no-named-as-default-member": "off"
+  }
+}
