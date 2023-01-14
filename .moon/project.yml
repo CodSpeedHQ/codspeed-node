@@ -4,7 +4,9 @@ $schema: "https://moonrepo.dev/schemas/global-project.json"
 fileGroups:
   configs:
     - "*.config.{js,cjs,mjs,ts}"
-    - "*.json"
+    - ".eslintrc.js"
+    - "tsconfig.*.json"
+
   sources:
     - "src/**/*"
     - "types/**/*"
@@ -53,6 +55,8 @@ tasks:
     deps:
       - "clean"
       - "typecheck"
+    env:
+      NODE_NO_WARNINGS: "1"
 
   clean:
     command: "rm -rf"
