@@ -130,4 +130,4 @@ packages/core/build
 # moon
 .moon/cache
 .moon/docker
-.rollup.cache
+.rollup.cache/

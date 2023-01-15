@@ -44,6 +44,8 @@ tasks:
       - "tsconfig.json"
       - "/tsconfig.json"
       - "/tsconfig.base.json"
+    deps:
+      - "^:build"
 
   build:
     command: "rollup -c rollup.config.ts --configPlugin typescript"
@@ -55,6 +57,7 @@ tasks:
     deps:
       - "clean"
       - "typecheck"
+      - "^:build"
     env:
       NODE_NO_WARNINGS: "1"
 

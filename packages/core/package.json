@@ -6,7 +6,7 @@
   "gypfile": true,
   "main": "dist/index.cjs.js",
   "module": "dist/index.es5.js",
-  "typings": "dist/types/index.d.ts",
+  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
