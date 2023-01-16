@@ -55,11 +55,22 @@ tasks:
     outputs:
       - "dist/"
     deps:
-      - "clean"
       - "typecheck"
       - "^:build"
     env:
       NODE_NO_WARNINGS: "1"
+
+  test:
+    command: "jest --passWithNoTests"
+    inputs:
+      - "@globs(sources)"
+      - "@globs(tests)"
+      - "@globs(configs)"
+      - "tsconfig.json"
+      - "/tsconfig.json"
+      - "/tsconfig.base.json"
+    deps:
+      - "build"
 
   clean:
     command: "rm -rf"

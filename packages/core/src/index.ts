@@ -5,4 +5,6 @@ export interface Measurement {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-export const measurement = require("bindings")("measurement") as Measurement;
+const measurement = require("bindings")("measurement.node") as Measurement;
+
+export default measurement;

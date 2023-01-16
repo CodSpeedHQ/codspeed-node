@@ -15,7 +15,6 @@ export default defineConfig([
       },
     ],
     plugins: declarationsPlugin,
-    external: ["@codspeed/core"],
   },
   {
     input: entrypoint,
