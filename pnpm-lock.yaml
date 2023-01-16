@@ -94,6 +94,25 @@ importers:
       '@types/bindings': 1.5.1
       rollup-plugin-natives: 0.7.6
 
+  packages/tinybench:
+    specifiers:
+      '@codspeed/core': workspace:*
+      '@types/find-up': ^4.0.0
+      '@types/stack-trace': ^0.0.30
+      find-up: ^6.3.0
+      jest-mock-extended: ^3.0.1
+      stack-trace: 1.0.0-pre1
+      tinybench: ^2.3.1
+    dependencies:
+      '@codspeed/core': link:../core
+      find-up: 6.3.0
+      stack-trace: 1.0.0-pre1
+      tinybench: 2.3.1
+    devDependencies:
+      '@types/find-up': 4.0.0
+      '@types/stack-trace': 0.0.30
+      jest-mock-extended: 3.0.1
+
 packages:
 
   /@ampproject/remapping/2.2.0:
@@ -4721,6 +4740,10 @@ packages:
       globalyzer: 0.1.0
       globrex: 0.1.2
     dev: true
+
+  /tinybench/2.3.1:
+    resolution: {integrity: sha512-hGYWYBMPr7p4g5IarQE7XhlyWveh1EKhy4wUBS1LrHXCKYgvz+4/jCqgmJqZxxldesn05vccrtME2RLLZNW7iA==}
+    dev: false
 
   /tmpl/1.0.5:
     resolution: {integrity: sha512-3f0uOEAQwIqGuWW2MVzYg8fV/QNnc/IpuJNG837rLuczAaLVHslWHZQj4IGiEl5Hs3kkbhwL9Ab7Hrsmuj+Smw==}

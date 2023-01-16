@@ -1,0 +1,29 @@
+{
+  "name": "@codspeed/tinybench",
+  "version": "0.0.0",
+  "description": "",
+  "keywords": [],
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.es5.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "author": "--username-- <--usermail-->",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/find-up": "^4.0.0",
+    "@types/stack-trace": "^0.0.30",
+    "jest-mock-extended": "^3.0.1"
+  },
+  "dependencies": {
+    "@codspeed/core": "workspace:*",
+    "find-up": "^6.3.0",
+    "stack-trace": "1.0.0-pre1",
+    "tinybench": "^2.3.1"
+  }
+}

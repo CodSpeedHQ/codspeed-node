@@ -7,4 +7,5 @@ The core Node library used to integrate with Codspeed runners
 
 For now, this crate should not be used directly. Instead, use one of the integration crates:
 
+- `@codspeed/tinybench`
 - `@codspeed/benchmark.js`
