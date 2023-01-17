@@ -1,4 +1,5 @@
 import path from "path";
+declare const __VERSION__: string;
 
 /* eslint-disable @typescript-eslint/no-empty-function */
 export interface Measurement {
@@ -27,10 +28,10 @@ try {
   };
 }
 export const measurement = m;
-
 export const initCore = () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   require("v8").setFlagsFromString("--allow-natives-syntax");
+  measurement.stopInstrumentation(`Metadata: codspeed-node ${__VERSION__}`);
 };
 
 export const optimizeFunction = async (fn: CallableFunction) => {
