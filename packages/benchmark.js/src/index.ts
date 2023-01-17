@@ -22,9 +22,9 @@ function withCodSpeedBenchmark(bench: Benchmark): Benchmark {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   bench.run = function (options?: Benchmark.Options): Benchmark {
     const uri = callingFile + "::" + (bench.name ?? "unknown");
-    measurement.startMeasurement();
+    measurement.startInstrumentation();
     (bench.fn as CallableFunction)();
-    measurement.stopMeasurement(uri);
+    measurement.stopInstrumentation(uri);
     return bench;
   };
   return bench;
@@ -46,9 +46,9 @@ function withCodSpeedSuite(suite: Benchmark.Suite): Benchmark.Suite {
     for (let i = 0; i < benches.length; i++) {
       const bench = benches[i];
       const uri = baseUri + "::" + (bench.name ?? `unknown_${i}`);
-      measurement.startMeasurement();
+      measurement.startInstrumentation();
       (bench.fn as CallableFunction)();
-      measurement.stopMeasurement(uri);
+      measurement.stopInstrumentation(uri);
     }
     return suite;
   };
