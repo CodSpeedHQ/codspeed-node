@@ -12,6 +12,6 @@ git diff --exit-code
 
 pnpm lerna version $1 -y
 pnpm moon run :build
-pnpm lerna publish from-package -y
+pnpm publish -r --access=public
 NEW_VERSION=$(pnpm lerna list --json | jq -r '.[] | select(.name == "@codspeed/core") | .version')
 gh release create v$NEW_VERSION --title "v$NEW_VERSION" --generate-notes -d
