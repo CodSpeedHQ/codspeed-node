@@ -21,7 +21,10 @@ describe("Benchmark", () => {
     );
     const onComplete = jest.fn();
     bench.on("complete", onComplete);
-    bench.run({ maxTime: 0.1, initCount: 1 });
+    bench.run({
+      initCount: 0,
+      maxTime: -Infinity,
+    });
     expect(onComplete).toHaveBeenCalled();
     expect(mockCore.startMeasurement).not.toHaveBeenCalled();
     expect(mockCore.stopMeasurement).not.toHaveBeenCalled();
@@ -36,7 +39,7 @@ describe("Benchmark", () => {
     ).run();
     expect(mockCore.startMeasurement).toHaveBeenCalled();
     expect(mockCore.stopMeasurement).toHaveBeenCalledWith(
-      "packages/benchmark.js/test/library.test.ts::RegExpSingle"
+      "packages/benchmark.js/tests/unit.test.ts::RegExpSingle"
     );
   });
 });
@@ -64,7 +67,7 @@ describe("Benchmark.Suite", () => {
       .run();
     expect(mockCore.startMeasurement).toHaveBeenCalled();
     expect(mockCore.stopMeasurement).toHaveBeenCalledWith(
-      "packages/benchmark.js/test/library.test.ts::RegExp"
+      "packages/benchmark.js/tests/unit.test.ts::RegExp"
     );
   });
   it("check suite name is in the uri", () => {
@@ -78,10 +81,10 @@ describe("Benchmark.Suite", () => {
       })
       .run();
     expect(mockCore.stopMeasurement).toHaveBeenCalledWith(
-      "packages/benchmark.js/test/library.test.ts::thesuite::RegExp"
+      "packages/benchmark.js/tests/unit.test.ts::thesuite::RegExp"
     );
     expect(mockCore.stopMeasurement).toHaveBeenCalledWith(
-      "packages/benchmark.js/test/library.test.ts::thesuite::unknown_1"
+      "packages/benchmark.js/tests/unit.test.ts::thesuite::unknown_1"
     );
   });
 });

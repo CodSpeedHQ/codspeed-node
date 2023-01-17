@@ -3,5 +3,5 @@
   "compilerOptions": {
     "types": ["jest", "node"]
   },
-  "include": ["test/**/*.ts", "benches/**/*.ts", "jest.config.ts"]
+  "include": ["tests/**/*.ts", "benches/**/*.ts", "jest.config.ts"]
 }
