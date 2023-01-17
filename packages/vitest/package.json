@@ -1,0 +1,34 @@
+{
+  "name": "@codspeed/vitest",
+  "version": "0.0.0",
+  "description": "Vitest compatibility layer for CodSpeed",
+  "keywords": [
+    "codspeed",
+    "benchmark",
+    "vitest",
+    "vitest-plugin",
+    "performance"
+  ],
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.es5.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "author": "Arthur Pastel <arthur@codspeed.io>",
+  "repository": "https://github.com/CodSpeedHQ/codspeed-node/tree/main/packages/vitest",
+  "homepage": "https://codspeed.io",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/find-up": "^4.0.0",
+    "@types/stack-trace": "^0.0.30",
+    "jest-mock-extended": "^3.0.1",
+    "vitest": "^0.27.2"
+  },
+  "dependencies": {
+    "@codspeed/core": "workspace:*",
+    "find-up": "^6.3.0",
+    "stack-trace": "1.0.0-pre1",
+    "tinybench": "^2.3.1"
+  }
+}
