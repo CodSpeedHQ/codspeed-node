@@ -1,19 +1,22 @@
 {
   "name": "@codspeed/tinybench",
   "version": "0.0.0",
-  "description": "",
-  "keywords": [],
+  "description": "tinybench compatibility layer for CodSpeed",
+  "keywords": [
+    "codspeed",
+    "benchmark",
+    "tinybench",
+    "performance"
+  ],
   "main": "dist/index.cjs.js",
   "module": "dist/index.es5.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
-  "author": "--username-- <--usermail-->",
-  "repository": {
-    "type": "git",
-    "url": ""
-  },
+  "author": "Arthur Pastel <arthur@codspeed.io>",
+  "repository": "https://github.com/CodSpeedHQ/codspeed-node/tree/main/packages/tinybench",
+  "homepage": "https://codspeed.io",
   "license": "MIT",
   "devDependencies": {
     "@types/find-up": "^4.0.0",

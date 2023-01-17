@@ -1,8 +1,12 @@
 {
   "name": "@codspeed/core",
   "version": "0.0.0",
-  "description": "",
-  "keywords": [],
+  "description": "The core Node library used to integrate with Codspeed runners",
+  "keywords": [
+    "codspeed",
+    "benchmark",
+    "performance"
+  ],
   "gypfile": true,
   "main": "dist/index.cjs.js",
   "module": "dist/index.es5.js",
@@ -11,10 +15,8 @@
     "dist"
   ],
   "author": "Arthur Pastel <arthur@codspeed.io>",
-  "repository": {
-    "type": "git",
-    "url": ""
-  },
+  "repository": "https://github.com/CodSpeedHQ/codspeed-node/tree/main/packages/core",
+  "homepage": "https://codspeed.io",
   "license": "MIT",
   "devDependencies": {
     "@types/bindings": "^1.5.1",
