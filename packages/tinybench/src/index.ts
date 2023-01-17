@@ -4,20 +4,32 @@ import path, { dirname } from "path";
 import { findUpSync, Options } from "find-up";
 import { Bench } from "tinybench";
 
+declare const __VERSION__: string;
+
 export function withCodSpeed(bench: Bench): Bench {
   if (!measurement.isInstrumented()) {
+    const rawRun = bench.run;
+    bench.run = async () => {
+      console.warn(
+        `[CodSpeed] ${bench.tasks.length} benches detected but no instrumentation found, falling back to tinybench`
+      );
+      return await rawRun.bind(bench)();
+    };
     return bench;
   }
   initCore();
   const callingFile = getCallingFile();
   bench.run = async () => {
+    console.log(`[CodSpeed] running with @codspeed/tinybench v${__VERSION__}`);
     for (const task of bench.tasks) {
       const uri = callingFile + "::" + task.name;
       await optimizeFunction(task.fn);
       measurement.startInstrumentation();
       await task.fn();
       measurement.stopInstrumentation(uri);
+      console.log(`    ✔ Measured ${uri}`);
     }
+    console.log(`[CodSpeed] Done running ${bench.tasks.length} benches.`);
     return bench.tasks;
   };
   return bench;

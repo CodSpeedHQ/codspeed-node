@@ -6,4 +6,13 @@ import dts from "rollup-plugin-dts";
 
 export const declarationsPlugin = [dts()];
 
-export const jsPlugins = [json(), esbuild(), commonjs(), resolve()];
+export const jsPlugins = (version) => [
+  json(),
+  esbuild({
+    define: {
+      __VERSION__: '"' + version + '"',
+    },
+  }),
+  commonjs(),
+  resolve(),
+];

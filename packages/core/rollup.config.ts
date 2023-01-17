@@ -3,7 +3,7 @@ import json from "@rollup/plugin-json";
 import commonjs from "@rollup/plugin-commonjs";
 import esbuild from "rollup-plugin-esbuild";
 import { defineConfig } from "rollup";
-import { declarationsPlugin } from "../../rollup.options";
+import { declarationsPlugin, jsPlugins } from "../../rollup.options";
 
 import pkg from "./package.json" assert { type: "json" };
 const entrypoint = "src/index.ts";
@@ -30,15 +30,6 @@ export default defineConfig([
       },
       { file: pkg.module, format: "es", sourcemap: true },
     ],
-    plugins: [
-      json(),
-      esbuild({
-        define: {
-          __VERSION__: '"' + pkg.version + '"',
-        },
-      }),
-      commonjs(),
-      resolve(),
-    ],
+    plugins: jsPlugins(pkg.version),
   },
 ]);

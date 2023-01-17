@@ -4,6 +4,8 @@ import { get as getStackTrace } from "stack-trace";
 import path, { dirname } from "path";
 import { findUpSync, Options } from "find-up";
 
+declare const __VERSION__: string;
+
 export function withCodSpeed(suite: Benchmark): Benchmark;
 export function withCodSpeed(suite: Benchmark.Suite): Benchmark.Suite;
 export function withCodSpeed(item: unknown): unknown {
@@ -16,18 +18,30 @@ export function withCodSpeed(item: unknown): unknown {
 
 function withCodSpeedBenchmark(bench: Benchmark): Benchmark {
   if (!measurement.isInstrumented()) {
+    const rawRun = bench.run;
+    bench.run = (options?: Benchmark.Options) => {
+      console.warn(
+        `[CodSpeed] bench detected but no instrumentation found, falling back to benchmark.js`
+      );
+      return rawRun.bind(bench)(options);
+    };
     return bench;
   }
   initCore();
   const callingFile = getCallingFile();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   bench.run = function (options?: Benchmark.Options): Benchmark {
+    console.log(
+      `[CodSpeed] running with @codspeed/benchmark.js v${__VERSION__}`
+    );
     const uri = callingFile + "::" + (bench.name ?? "unknown");
     const fn = bench.fn as CallableFunction;
     optimizeFunctionSync(fn);
     measurement.startInstrumentation();
     fn();
     measurement.stopInstrumentation(uri);
+    console.log(`    ✔ Measured ${uri}`);
+    console.log("[CodSpeed] Done running 1 bench.");
     return bench;
   };
   return bench;
@@ -35,11 +49,21 @@ function withCodSpeedBenchmark(bench: Benchmark): Benchmark {
 
 function withCodSpeedSuite(suite: Benchmark.Suite): Benchmark.Suite {
   if (!measurement.isInstrumented()) {
+    const rawRun = suite.run;
+    suite.run = (options?: Benchmark.Options) => {
+      console.warn(
+        `[CodSpeed] ${suite.length} benches detected but no instrumentation found, falling back to benchmark.js`
+      );
+      return rawRun.bind(suite)(options);
+    };
     return suite;
   }
   const callingFile = getCallingFile();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   suite.run = function (options?: Benchmark.Options): Benchmark.Suite {
+    console.log(
+      `[CodSpeed] running with @codspeed/benchmark.js v${__VERSION__}`
+    );
     const suiteName = suite.name;
     const benches = this as unknown as Benchmark[];
     let baseUri = callingFile;
@@ -52,7 +76,9 @@ function withCodSpeedSuite(suite: Benchmark.Suite): Benchmark.Suite {
       measurement.startInstrumentation();
       (bench.fn as CallableFunction)();
       measurement.stopInstrumentation(uri);
+      console.log(`    ✔ Measured ${uri}`);
     }
+    console.log(`[CodSpeed] Done running ${suite.length} benches.`);
     return suite;
   };
   return suite;

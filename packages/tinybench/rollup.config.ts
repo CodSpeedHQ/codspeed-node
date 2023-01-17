@@ -26,7 +26,7 @@ export default defineConfig([
       },
       { file: pkg.module, format: "es", sourcemap: true },
     ],
-    plugins: [...jsPlugins],
+    plugins: jsPlugins(pkg.version),
     external: ["@codspeed/core"],
   },
 ]);
