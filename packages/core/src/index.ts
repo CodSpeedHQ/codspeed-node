@@ -3,8 +3,8 @@ import path from "path";
 /* eslint-disable @typescript-eslint/no-empty-function */
 export interface Measurement {
   isInstrumented(): boolean;
-  startMeasurement(): void;
-  stopMeasurement(at: string): void;
+  startInstrumentation(): void;
+  stopInstrumentation(at: string): void;
   isBound: boolean;
 }
 
@@ -20,9 +20,9 @@ try {
   console.warn("@codspeed/core binding not available on this architecture");
   m = {
     isInstrumented: () => false,
-    startMeasurement: () => {},
+    startInstrumentation: () => {},
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    stopMeasurement: (at) => {},
+    stopInstrumentation: (at) => {},
     isBound: false,
   };
 }

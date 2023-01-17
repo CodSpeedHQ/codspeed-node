@@ -26,8 +26,8 @@ describe("Benchmark", () => {
       maxTime: -Infinity,
     });
     expect(onComplete).toHaveBeenCalled();
-    expect(mockCore.startMeasurement).not.toHaveBeenCalled();
-    expect(mockCore.stopMeasurement).not.toHaveBeenCalled();
+    expect(mockCore.startInstrumentation).not.toHaveBeenCalled();
+    expect(mockCore.stopInstrumentation).not.toHaveBeenCalled();
   });
   it("check core methods are called", () => {
     mockCore.isInstrumented.mockReturnValue(true);
@@ -37,8 +37,8 @@ describe("Benchmark", () => {
         /o/.test("Hello World!");
       })
     ).run();
-    expect(mockCore.startMeasurement).toHaveBeenCalled();
-    expect(mockCore.stopMeasurement).toHaveBeenCalledWith(
+    expect(mockCore.startInstrumentation).toHaveBeenCalled();
+    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
       "packages/benchmark.js/tests/unit.test.ts::RegExpSingle"
     );
   });
@@ -55,8 +55,8 @@ describe("Benchmark.Suite", () => {
     suite.on("complete", onComplete);
     suite.run({ maxTime: 0.1, initCount: 1 });
     expect(onComplete).toHaveBeenCalled();
-    expect(mockCore.startMeasurement).not.toHaveBeenCalled();
-    expect(mockCore.stopMeasurement).not.toHaveBeenCalled();
+    expect(mockCore.startInstrumentation).not.toHaveBeenCalled();
+    expect(mockCore.stopInstrumentation).not.toHaveBeenCalled();
   });
   it("check core methods are called", () => {
     mockCore.isInstrumented.mockReturnValue(true);
@@ -65,8 +65,8 @@ describe("Benchmark.Suite", () => {
         /o/.test("Hello World!");
       })
       .run();
-    expect(mockCore.startMeasurement).toHaveBeenCalled();
-    expect(mockCore.stopMeasurement).toHaveBeenCalledWith(
+    expect(mockCore.startInstrumentation).toHaveBeenCalled();
+    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
       "packages/benchmark.js/tests/unit.test.ts::RegExp"
     );
   });
@@ -80,10 +80,10 @@ describe("Benchmark.Suite", () => {
         /o/.test("Hello World!");
       })
       .run();
-    expect(mockCore.stopMeasurement).toHaveBeenCalledWith(
+    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
       "packages/benchmark.js/tests/unit.test.ts::thesuite::RegExp"
     );
-    expect(mockCore.stopMeasurement).toHaveBeenCalledWith(
+    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
       "packages/benchmark.js/tests/unit.test.ts::thesuite::unknown_1"
     );
   });
