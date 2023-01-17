@@ -7,7 +7,7 @@ beforeEach(() => {
 
 describe("with bindings", () => {
   it("should be bound", () => {
-    const measurement = require("..") as Measurement;
+    const measurement = require("..").measurement as Measurement;
     expect(measurement.isBound).toBe(true);
   });
 });
@@ -21,7 +21,7 @@ describe("without bindings", () => {
     process.env = initialEnv;
   });
   it("should not be bound", () => {
-    const measurement = require("..") as Measurement;
+    const measurement = require("..").measurement as Measurement;
     expect(measurement.isBound).toBe(false);
   });
 });

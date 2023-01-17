@@ -5,7 +5,10 @@ import Benchmark from "benchmark";
 import { withCodSpeed } from "..";
 import type { Measurement } from "@codspeed/core";
 
-jest.mock("@codspeed/core", () => mockCore);
+jest.mock("@codspeed/core", () => ({
+  ...jest.requireActual("@codspeed/core"),
+  measurement: mockCore,
+}));
 
 beforeEach(() => {
   mockReset(mockCore);
