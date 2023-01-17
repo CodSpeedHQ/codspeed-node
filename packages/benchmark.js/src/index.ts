@@ -58,6 +58,7 @@ function withCodSpeedSuite(suite: Benchmark.Suite): Benchmark.Suite {
     };
     return suite;
   }
+  initCore();
   const callingFile = getCallingFile();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   suite.run = function (options?: Benchmark.Options): Benchmark.Suite {
@@ -73,6 +74,8 @@ function withCodSpeedSuite(suite: Benchmark.Suite): Benchmark.Suite {
     for (let i = 0; i < benches.length; i++) {
       const bench = benches[i];
       const uri = baseUri + "::" + (bench.name ?? `unknown_${i}`);
+      const fn = bench.fn as CallableFunction;
+      optimizeFunctionSync(fn);
       measurement.startInstrumentation();
       (bench.fn as CallableFunction)();
       measurement.stopInstrumentation(uri);
