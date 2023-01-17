@@ -4,6 +4,7 @@
 Node.js libraries to create CodSpeed benchmarks
 
 [![CI](https://github.com/CodSpeedHQ/codspeed-node/actions/workflows/ci.yml/badge.svg)](https://github.com/CodSpeedHQ/codspeed-node/actions/workflows/ci.yml)
+[![npm (scoped)](https://img.shields.io/npm/v/@codspeed/core)](https://www.npmjs.com/org/codspeed)
 
 </div>
 
