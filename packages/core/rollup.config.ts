@@ -1,7 +1,3 @@
-import resolve from "@rollup/plugin-node-resolve";
-import json from "@rollup/plugin-json";
-import commonjs from "@rollup/plugin-commonjs";
-import esbuild from "rollup-plugin-esbuild";
 import { defineConfig } from "rollup";
 import { declarationsPlugin, jsPlugins } from "../../rollup.options";
 

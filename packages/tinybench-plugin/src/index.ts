@@ -1,7 +1,7 @@
 import { initCore, measurement, optimizeFunction } from "@codspeed/core";
-import { get as getStackTrace } from "stack-trace";
-import path, { dirname } from "path";
 import { findUpSync, Options } from "find-up";
+import path, { dirname } from "path";
+import { get as getStackTrace } from "stack-trace";
 import { Bench } from "tinybench";
 
 declare const __VERSION__: string;

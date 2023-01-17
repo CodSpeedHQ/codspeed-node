@@ -1,5 +1,5 @@
-import { withCodSpeed } from "..";
 import { Bench } from "tinybench";
+import { withCodSpeed } from "..";
 
 const bench = withCodSpeed(new Bench({ time: 100 }));
 

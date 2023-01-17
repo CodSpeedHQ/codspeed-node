@@ -1,8 +1,8 @@
-import Benchmark from "benchmark";
 import { initCore, measurement, optimizeFunctionSync } from "@codspeed/core";
-import { get as getStackTrace } from "stack-trace";
-import path, { dirname } from "path";
+import Benchmark from "benchmark";
 import { findUpSync, Options } from "find-up";
+import path, { dirname } from "path";
+import { get as getStackTrace } from "stack-trace";
 
 declare const __VERSION__: string;
 

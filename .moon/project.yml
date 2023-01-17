@@ -20,7 +20,7 @@ tasks:
   format:
     command: "prettier --config @in(0) --ignore-path @in(1) --check ."
     inputs:
-      - "/.prettierrc.js"
+      - "/.prettierrc.json"
       - "/.prettierignore"
       - "@globs(sources)"
       - "@globs(tests)"

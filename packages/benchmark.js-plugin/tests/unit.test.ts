@@ -1,9 +1,9 @@
 import { mockDeep, mockReset } from "jest-mock-extended";
 const mockCore = mockDeep<Measurement>();
 
+import type { Measurement } from "@codspeed/core";
 import Benchmark from "benchmark";
 import { withCodSpeed } from "..";
-import type { Measurement } from "@codspeed/core";
 
 jest.mock("@codspeed/core", () => ({
   ...jest.requireActual("@codspeed/core"),
