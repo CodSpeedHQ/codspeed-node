@@ -1,5 +1,4 @@
 import { defineConfig } from "rollup";
-import nativePlugin from "rollup-plugin-natives";
 import { declarationsPlugin, jsPlugins } from "../../rollup.options";
 
 import pkg from "./package.json" assert { type: "json" };
@@ -28,12 +27,6 @@ export default defineConfig([
       },
       { file: pkg.module, format: "es", sourcemap: true },
     ],
-    plugins: [
-      ...jsPlugins,
-      nativePlugin({
-        copyTo: "dist/lib",
-        destDir: "./lib",
-      }),
-    ],
+    plugins: jsPlugins,
   },
 ]);

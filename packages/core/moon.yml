@@ -7,10 +7,13 @@ tasks:
       - "build-native-addon"
 
   build-native-addon:
-    command: "node-gyp rebuild"
-    platform: "system"
+    deps:
+      - "build-native-addon-linux-x64"
+
+  build-native-addon-linux-x64:
+    command: prebuildify --napi --strip
     inputs:
       - "src/measurement.cc"
       - "binding.gyp"
     outputs:
-      - "build/"
+      - "prebuilds/linux-x64"

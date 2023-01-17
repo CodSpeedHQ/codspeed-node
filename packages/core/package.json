@@ -7,23 +7,24 @@
     "benchmark",
     "performance"
   ],
-  "gypfile": true,
+  "files": [
+    "dist",
+    "prebuilds"
+  ],
   "main": "dist/index.cjs.js",
   "module": "dist/index.es5.js",
   "types": "dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "gypfile": true,
   "author": "Arthur Pastel <arthur@codspeed.io>",
   "repository": "https://github.com/CodSpeedHQ/codspeed-node/tree/main/packages/core",
   "homepage": "https://codspeed.io",
   "license": "MIT",
   "devDependencies": {
-    "@types/bindings": "^1.5.1",
-    "rollup-plugin-natives": "^0.7.6"
+    "node-addon-api": "^5.0.0",
+    "node-gyp": "^9.3.1",
+    "prebuildify": "^5.0.1"
   },
   "dependencies": {
-    "bindings": "^1.5.0",
-    "node-addon-api": "^5.0.0"
+    "node-gyp-build": "^4.6.0"
   }
 }

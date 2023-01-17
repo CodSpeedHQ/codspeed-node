@@ -125,8 +125,7 @@ packages/app/.env
 
 .vercel
 .DS_Store
-#node-gyp builds
-packages/core/build
+
 # moon
 .moon/cache
 .moon/docker
