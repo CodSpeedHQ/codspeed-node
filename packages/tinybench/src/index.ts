@@ -1,4 +1,4 @@
-import measurement from "@codspeed/core";
+import { initCore, measurement, optimizeFunction } from "@codspeed/core";
 import { get as getStackTrace } from "stack-trace";
 import path, { dirname } from "path";
 import { findUpSync, Options } from "find-up";
@@ -8,11 +8,12 @@ export function withCodSpeed(bench: Bench): Bench {
   if (!measurement.isInstrumented()) {
     return bench;
   }
+  initCore();
   const callingFile = getCallingFile();
   bench.run = async () => {
     for (const task of bench.tasks) {
       const uri = callingFile + "::" + task.name;
-      await task.warmup();
+      await optimizeFunction(task.fn);
       measurement.startInstrumentation();
       await task.fn();
       measurement.stopInstrumentation(uri);
