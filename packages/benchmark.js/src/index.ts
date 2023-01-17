@@ -1,5 +1,5 @@
 import Benchmark from "benchmark";
-import measurement from "@codspeed/core";
+import { initCore, measurement, optimizeFunctionSync } from "@codspeed/core";
 import { get as getStackTrace } from "stack-trace";
 import path, { dirname } from "path";
 import { findUpSync, Options } from "find-up";
@@ -18,12 +18,15 @@ function withCodSpeedBenchmark(bench: Benchmark): Benchmark {
   if (!measurement.isInstrumented()) {
     return bench;
   }
+  initCore();
   const callingFile = getCallingFile();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   bench.run = function (options?: Benchmark.Options): Benchmark {
     const uri = callingFile + "::" + (bench.name ?? "unknown");
+    const fn = bench.fn as CallableFunction;
+    optimizeFunctionSync(fn);
     measurement.startInstrumentation();
-    (bench.fn as CallableFunction)();
+    fn();
     measurement.stopInstrumentation(uri);
     return bench;
   };
