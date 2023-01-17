@@ -24,7 +24,7 @@
     "jest-mock-extended": "^3.0.1"
   },
   "dependencies": {
-    "@codspeed/core": "workspace:*",
+    "@codspeed/core": "workspace:^0.0.0",
     "find-up": "^6.3.0",
     "stack-trace": "1.0.0-pre1",
     "tinybench": "^2.3.1"
