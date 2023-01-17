@@ -19,12 +19,12 @@ bench
     a = b - a;
   });
 
-await bench.run();
-
-console.table(
-  bench.tasks.map(({ name, result }) => ({
-    "Task Name": name,
-    "Average Time (ps)": result?.mean ? result.mean * 1000 : "N/A",
-    "Variance (ps)": result?.variance ? result.variance * 1000 : "N/A",
-  }))
-);
+bench.run().then(() => {
+  console.table(
+    bench.tasks.map(({ name, result }) => ({
+      "Task Name": name,
+      "Average Time (ps)": result?.mean ? result.mean * 1000 : "N/A",
+      "Variance (ps)": result?.variance ? result.variance * 1000 : "N/A",
+    }))
+  );
+});

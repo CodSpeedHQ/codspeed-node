@@ -1,0 +1,8 @@
+tasks:
+  bench:
+    command: ts-node benches/sample.ts
+    inputs:
+      - "benches/**"
+    local: true
+    options:
+      cache: false
