@@ -1,5 +1,5 @@
 {
-  "name": "@codspeed/benchmark.js",
+  "name": "@codspeed/benchmark.js-plugin",
   "version": "0.0.0",
   "description": "Benchmark.js compatibility layer for CodSpeed",
   "keywords": [

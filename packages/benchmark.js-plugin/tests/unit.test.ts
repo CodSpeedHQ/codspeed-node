@@ -42,7 +42,7 @@ describe("Benchmark", () => {
     ).run();
     expect(mockCore.startInstrumentation).toHaveBeenCalled();
     expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
-      "packages/benchmark.js/tests/unit.test.ts::RegExpSingle"
+      "packages/benchmark.js-plugin/tests/unit.test.ts::RegExpSingle"
     );
   });
 });
@@ -70,7 +70,7 @@ describe("Benchmark.Suite", () => {
       .run();
     expect(mockCore.startInstrumentation).toHaveBeenCalled();
     expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
-      "packages/benchmark.js/tests/unit.test.ts::RegExp"
+      "packages/benchmark.js-plugin/tests/unit.test.ts::RegExp"
     );
   });
   it("check suite name is in the uri", () => {
@@ -84,10 +84,10 @@ describe("Benchmark.Suite", () => {
       })
       .run();
     expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
-      "packages/benchmark.js/tests/unit.test.ts::thesuite::RegExp"
+      "packages/benchmark.js-plugin/tests/unit.test.ts::thesuite::RegExp"
     );
     expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
-      "packages/benchmark.js/tests/unit.test.ts::thesuite::unknown_1"
+      "packages/benchmark.js-plugin/tests/unit.test.ts::thesuite::unknown_1"
     );
   });
 });

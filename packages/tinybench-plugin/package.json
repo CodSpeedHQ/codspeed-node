@@ -1,5 +1,5 @@
 {
-  "name": "@codspeed/tinybench",
+  "name": "@codspeed/tinybench-plugin",
   "version": "0.0.0",
   "description": "tinybench compatibility layer for CodSpeed",
   "keywords": [

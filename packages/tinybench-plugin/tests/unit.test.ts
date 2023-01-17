@@ -38,7 +38,7 @@ describe("Benchmark.Suite", () => {
       .run();
     expect(mockCore.startInstrumentation).toHaveBeenCalled();
     expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
-      "packages/tinybench/tests/unit.test.ts::RegExp"
+      "packages/tinybench-plugin/tests/unit.test.ts::RegExp"
     );
   });
   it("check suite name is in the uri", async () => {
@@ -52,10 +52,10 @@ describe("Benchmark.Suite", () => {
       })
       .run();
     expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
-      "packages/tinybench/tests/unit.test.ts::RegExp"
+      "packages/tinybench-plugin/tests/unit.test.ts::RegExp"
     );
     expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
-      "packages/tinybench/tests/unit.test.ts::RegExp2"
+      "packages/tinybench-plugin/tests/unit.test.ts::RegExp2"
     );
   });
 });
