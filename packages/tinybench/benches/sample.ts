@@ -1,18 +1,30 @@
-import Benchmark from "benchmark";
 import { withCodSpeed } from "../";
+import { Bench } from "tinybench";
 
-const suite = withCodSpeed(new Benchmark.Suite());
+const bench = withCodSpeed(new Bench({ time: 100 }));
 
-suite
-  .add("RegExp#test", function () {
-    /o/.test("Hello World!");
+bench
+  .add("switch 1", () => {
+    let a = 1;
+    let b = 2;
+    const c = a;
+    a = b;
+    b = c;
   })
-  .add("String#indexOf", function () {
-    "Hello World!".indexOf("o") > -1;
-  })
-  // add listeners
-  .on("cycle", function (event: Benchmark.Event) {
-    console.log(String(event.target));
-  })
-  // run async
-  .run({ async: true });
+  .add("switch 2", () => {
+    let a = 1;
+    let b = 10;
+    a = b + a;
+    b = a - b;
+    a = b - a;
+  });
+
+await bench.run();
+
+console.table(
+  bench.tasks.map(({ name, result }) => ({
+    "Task Name": name,
+    "Average Time (ps)": result?.mean ? result.mean * 1000 : "N/A",
+    "Variance (ps)": result?.variance ? result.variance * 1000 : "N/A",
+  }))
+);
