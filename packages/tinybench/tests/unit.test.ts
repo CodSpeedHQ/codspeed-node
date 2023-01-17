@@ -23,8 +23,8 @@ describe("Benchmark.Suite", () => {
     await bench.run();
 
     expect(onComplete).toHaveBeenCalled();
-    expect(mockCore.startMeasurement).not.toHaveBeenCalled();
-    expect(mockCore.stopMeasurement).not.toHaveBeenCalled();
+    expect(mockCore.startInstrumentation).not.toHaveBeenCalled();
+    expect(mockCore.stopInstrumentation).not.toHaveBeenCalled();
   });
   it("check core methods are called", async () => {
     mockCore.isInstrumented.mockReturnValue(true);
@@ -33,8 +33,8 @@ describe("Benchmark.Suite", () => {
         /o/.test("Hello World!");
       })
       .run();
-    expect(mockCore.startMeasurement).toHaveBeenCalled();
-    expect(mockCore.stopMeasurement).toHaveBeenCalledWith(
+    expect(mockCore.startInstrumentation).toHaveBeenCalled();
+    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
       "packages/tinybench/tests/unit.test.ts::RegExp"
     );
   });
@@ -48,10 +48,10 @@ describe("Benchmark.Suite", () => {
         /o/.test("Hello World!");
       })
       .run();
-    expect(mockCore.stopMeasurement).toHaveBeenCalledWith(
+    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
       "packages/tinybench/tests/unit.test.ts::RegExp"
     );
-    expect(mockCore.stopMeasurement).toHaveBeenCalledWith(
+    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
       "packages/tinybench/tests/unit.test.ts::RegExp2"
     );
   });
