@@ -18,7 +18,7 @@
   "author": "Arthur Pastel <arthur@codspeed.io>",
   "repository": "https://github.com/CodSpeedHQ/codspeed-node/tree/main/packages/core",
   "homepage": "https://codspeed.io",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "devDependencies": {
     "node-addon-api": "^5.0.0",
     "node-gyp": "^9.3.1",

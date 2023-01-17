@@ -17,7 +17,7 @@
   "author": "Arthur Pastel <arthur@codspeed.io>",
   "repository": "https://github.com/CodSpeedHQ/codspeed-node/tree/main/packages/tinybench",
   "homepage": "https://codspeed.io",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@types/find-up": "^4.0.0",
     "@types/stack-trace": "^0.0.30",

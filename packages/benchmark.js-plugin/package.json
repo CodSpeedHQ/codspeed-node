@@ -17,7 +17,7 @@
   "author": "Arthur Pastel <arthur@codspeed.io>",
   "repository": "https://github.com/CodSpeedHQ/codspeed-node/tree/main/packages/benchmark.js",
   "homepage": "https://codspeed.io",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "devDependencies": {
     "@types/benchmark": "^2.1.2",
     "@types/find-up": "^4.0.0",
