@@ -1,5 +1,5 @@
 import Benchmark from "benchmark";
-import { withCodSpeed } from "../";
+import { withCodSpeed } from "..";
 
 const suite = withCodSpeed(new Benchmark.Suite());
 

@@ -76,6 +76,7 @@ tasks:
     command: "rm -rf"
     args:
       - dist
+    local: true
     options:
       cache: false
     platform: system
