@@ -16,9 +16,7 @@ try {
     ...require("node-gyp-build")(path.dirname(__dirname)),
     isBound: true,
   } as Measurement;
-  console.warn("@codspeed/core binding found");
 } catch (e) {
-  console.warn("@codspeed/core binding not available on this architecture");
   m = {
     isInstrumented: () => false,
     startInstrumentation: () => {},
