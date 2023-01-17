@@ -12,6 +12,7 @@ export function withCodSpeed(bench: Bench): Bench {
   bench.run = async () => {
     for (const task of bench.tasks) {
       const uri = callingFile + "::" + task.name;
+      await task.warmup();
       measurement.startInstrumentation();
       await task.fn();
       measurement.stopInstrumentation(uri);
