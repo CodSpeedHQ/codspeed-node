@@ -1,0 +1,32 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Benchmark.Suite check console output(instrumented=false)  1`] = `
+{
+  "log": [],
+  "warn": [
+    [
+      "[CodSpeed] 2 benches detected but no instrumentation found, falling back to tinybench",
+    ],
+  ],
+}
+`;
+
+exports[`Benchmark.Suite check console output(instrumented=true)  1`] = `
+{
+  "log": [
+    [
+      "[CodSpeed] running with @codspeed/tinybench v1.0.0",
+    ],
+    [
+      "    ✔ Measured packages/tinybench-plugin/tests/unit.test.ts::RegExp",
+    ],
+    [
+      "    ✔ Measured packages/tinybench-plugin/tests/unit.test.ts::RegExp2",
+    ],
+    [
+      "[CodSpeed] Done running 2 benches.",
+    ],
+  ],
+  "warn": [],
+}
+`;

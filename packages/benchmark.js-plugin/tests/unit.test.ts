@@ -12,6 +12,7 @@ jest.mock("@codspeed/core", () => ({
 
 beforeEach(() => {
   mockReset(mockCore);
+  jest.clearAllMocks();
 });
 
 describe("Benchmark", () => {
@@ -34,7 +35,6 @@ describe("Benchmark", () => {
   });
   it("check core methods are called", () => {
     mockCore.isInstrumented.mockReturnValue(true);
-    expect(mockCore.isInstrumented()).toBe(true);
     withCodSpeed(
       new Benchmark("RegExpSingle", function () {
         /o/.test("Hello World!");
@@ -45,6 +45,23 @@ describe("Benchmark", () => {
       "packages/benchmark.js-plugin/tests/unit.test.ts::RegExpSingle"
     );
   });
+  it.each([true, false])(
+    "check console output(instrumented=%p) ",
+    async (instrumented) => {
+      const logSpy = jest.spyOn(console, "log");
+      const warnSpy = jest.spyOn(console, "warn");
+      mockCore.isInstrumented.mockReturnValue(instrumented);
+      withCodSpeed(
+        new Benchmark("RegExpSingle", function () {
+          /o/.test("Hello World!");
+        })
+      ).run();
+      expect({
+        log: logSpy.mock.calls,
+        warn: warnSpy.mock.calls,
+      }).toMatchSnapshot();
+    }
+  );
 });
 
 describe("Benchmark.Suite", () => {
@@ -90,4 +107,24 @@ describe("Benchmark.Suite", () => {
       "packages/benchmark.js-plugin/tests/unit.test.ts::thesuite::unknown_1"
     );
   });
+  it.each([true, false])(
+    "check console output(instrumented=%p) ",
+    async (instrumented) => {
+      const logSpy = jest.spyOn(console, "log");
+      const warnSpy = jest.spyOn(console, "warn");
+      mockCore.isInstrumented.mockReturnValue(instrumented);
+      withCodSpeed(new Benchmark.Suite("thesuite"))
+        .add("RegExp", function () {
+          /o/.test("Hello World!");
+        })
+        .add(() => {
+          /o/.test("Hello World!");
+        })
+        .run();
+      expect({
+        log: logSpy.mock.calls,
+        warn: warnSpy.mock.calls,
+      }).toMatchSnapshot();
+    }
+  );
 });

@@ -12,6 +12,7 @@ jest.mock("@codspeed/core", () => ({
 
 beforeEach(() => {
   mockReset(mockCore);
+  jest.clearAllMocks();
 });
 
 describe("Benchmark.Suite", () => {
@@ -58,4 +59,24 @@ describe("Benchmark.Suite", () => {
       "packages/tinybench-plugin/tests/unit.test.ts::RegExp2"
     );
   });
+  it.each([true, false])(
+    "check console output(instrumented=%p) ",
+    async (instrumented) => {
+      const logSpy = jest.spyOn(console, "log");
+      const warnSpy = jest.spyOn(console, "warn");
+      mockCore.isInstrumented.mockReturnValue(instrumented);
+      await withCodSpeed(new Bench({ time: 100 }))
+        .add("RegExp", function () {
+          /o/.test("Hello World!");
+        })
+        .add("RegExp2", () => {
+          /o/.test("Hello World!");
+        })
+        .run();
+      expect({
+        log: logSpy.mock.calls,
+        warn: warnSpy.mock.calls,
+      }).toMatchSnapshot();
+    }
+  );
 });

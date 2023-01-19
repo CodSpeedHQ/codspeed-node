@@ -1,0 +1,60 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Benchmark check console output(instrumented=false)  1`] = `
+{
+  "log": [],
+  "warn": [
+    [
+      "[CodSpeed] bench detected but no instrumentation found, falling back to benchmark.js",
+    ],
+  ],
+}
+`;
+
+exports[`Benchmark check console output(instrumented=true)  1`] = `
+{
+  "log": [
+    [
+      "[CodSpeed] running with @codspeed/benchmark.js v1.0.0",
+    ],
+    [
+      "    ✔ Measured packages/benchmark.js-plugin/tests/unit.test.ts::RegExpSingle",
+    ],
+    [
+      "[CodSpeed] Done running 1 bench.",
+    ],
+  ],
+  "warn": [],
+}
+`;
+
+exports[`Benchmark.Suite check console output(instrumented=false)  1`] = `
+{
+  "log": [],
+  "warn": [
+    [
+      "[CodSpeed] 2 benches detected but no instrumentation found, falling back to benchmark.js",
+    ],
+  ],
+}
+`;
+
+exports[`Benchmark.Suite check console output(instrumented=true)  1`] = `
+{
+  "log": [
+    [
+      "[CodSpeed] running with @codspeed/benchmark.js v1.0.0",
+    ],
+    [
+      "    ✔ Measured packages/benchmark.js-plugin/tests/unit.test.ts::thesuite::RegExp",
+    ],
+    [
+      "    ✔ Measured packages/benchmark.js-plugin/tests/unit.test.ts::thesuite::unknown_1",
+    ],
+    [
+      "[CodSpeed] Done running 2 benches.",
+    ],
+  ],
+  "warn": [],
+}
+`;
