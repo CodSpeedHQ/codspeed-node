@@ -59,6 +59,14 @@ describe("Benchmark.Suite", () => {
       "packages/tinybench-plugin/tests/unit.test.ts::RegExp2"
     );
   });
+  it("check error handling", async () => {
+    mockCore.isInstrumented.mockReturnValue(true);
+    const bench = withCodSpeed(new Bench());
+    bench.add("throwing", async () => {
+      throw new Error("test");
+    });
+    await expect(bench.run()).rejects.toThrowError("test");
+  });
   it.each([true, false])(
     "check console output(instrumented=%p) ",
     async (instrumented) => {
