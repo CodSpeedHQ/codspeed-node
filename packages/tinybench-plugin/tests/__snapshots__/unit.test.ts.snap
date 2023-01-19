@@ -15,7 +15,7 @@ exports[`Benchmark.Suite check console output(instrumented=true)  1`] = `
 {
   "log": [
     [
-      "[CodSpeed] running with @codspeed/tinybench v1.0.0",
+      "[CodSpeed] running with @codspeed/tinybench v1.0.1",
     ],
     [
       "    ✔ Measured packages/tinybench-plugin/tests/unit.test.ts::RegExp",

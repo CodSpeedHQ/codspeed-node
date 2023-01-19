@@ -15,7 +15,7 @@ exports[`Benchmark check console output(instrumented=true)  1`] = `
 {
   "log": [
     [
-      "[CodSpeed] running with @codspeed/benchmark.js v1.0.0",
+      "[CodSpeed] running with @codspeed/benchmark.js v1.0.1",
     ],
     [
       "    ✔ Measured packages/benchmark.js-plugin/tests/unit.test.ts::RegExpSingle",
@@ -43,7 +43,7 @@ exports[`Benchmark.Suite check console output(instrumented=true)  1`] = `
 {
   "log": [
     [
-      "[CodSpeed] running with @codspeed/benchmark.js v1.0.0",
+      "[CodSpeed] running with @codspeed/benchmark.js v1.0.1",
     ],
     [
       "    ✔ Measured packages/benchmark.js-plugin/tests/unit.test.ts::thesuite::RegExp",
