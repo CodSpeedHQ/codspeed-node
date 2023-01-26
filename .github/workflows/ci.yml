@@ -9,8 +9,6 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@v3"
-        with:
-          fetch-depth: 0
       - run: sudo apt-get install -y valgrind
       - uses: pnpm/action-setup@v2.2.2
         with:
@@ -20,14 +18,12 @@ jobs:
           cache: "pnpm"
           node-version-file: ".nvmrc"
       - run: pnpm install --frozen-lockfile --prefer-offline
-      - run: pnpm moon check --all
+      - run: pnpm moon run :format :lint :typecheck :build :test
 
   codspeed:
     runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@v3"
-        with:
-          fetch-depth: 0
       - run: sudo apt-get install -y valgrind
       - uses: pnpm/action-setup@v2.2.2
         with:
