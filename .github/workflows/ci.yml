@@ -18,6 +18,9 @@ jobs:
           cache: "pnpm"
           node-version-file: ".nvmrc"
       - run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Tmate Session
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 15
       - run: pnpm moon run :format :lint :typecheck :build :test
 
   codspeed:
