@@ -21,7 +21,7 @@ exports[`Benchmark check console output(instrumented=true)  1`] = `
       "    ✔ Measured packages/benchmark.js-plugin/tests/unit.test.ts::RegExpSingle",
     ],
     [
-      "[CodSpeed] Done running 1 bench.",
+      "[CodSpeed] Done running 1 benches.",
     ],
   ],
   "warn": [],

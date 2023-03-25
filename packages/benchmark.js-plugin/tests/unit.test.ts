@@ -20,7 +20,7 @@ const benchOptions: Benchmark.Options = {
 };
 
 describe("Benchmark", () => {
-  it("simple benchmark", () => {
+  it("simple benchmark", async () => {
     mockCore.isInstrumented.mockReturnValue(false);
     const bench = withCodSpeed(
       new Benchmark(
@@ -33,14 +33,15 @@ describe("Benchmark", () => {
     );
     const onComplete = jest.fn();
     bench.on("complete", onComplete);
-    bench.run();
+    await bench.run();
     expect(onComplete).toHaveBeenCalled();
     expect(mockCore.startInstrumentation).not.toHaveBeenCalled();
     expect(mockCore.stopInstrumentation).not.toHaveBeenCalled();
   });
-  it("check core methods are called", () => {
+  it("check core methods are called", async () => {
     mockCore.isInstrumented.mockReturnValue(true);
-    withCodSpeed(
+
+    const bench = withCodSpeed(
       new Benchmark(
         "RegExpSingle",
         function () {
@@ -48,7 +49,11 @@ describe("Benchmark", () => {
         },
         benchOptions
       )
-    ).run();
+    );
+    const onComplete = jest.fn();
+    bench.on("complete", onComplete);
+    await bench.run();
+    expect(onComplete).toHaveBeenCalled();
     expect(mockCore.startInstrumentation).toHaveBeenCalled();
     expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
       "packages/benchmark.js-plugin/tests/unit.test.ts::RegExpSingle"
@@ -65,7 +70,7 @@ describe("Benchmark", () => {
         benchOptions
       )
     );
-    expect(() => bench.run()).toThrowError("test");
+    await expect(bench.run()).rejects.toThrowError("test");
   });
   it.each([true, false])(
     "check console output(instrumented=%p) ",
@@ -73,7 +78,7 @@ describe("Benchmark", () => {
       const logSpy = jest.spyOn(console, "log");
       const warnSpy = jest.spyOn(console, "warn");
       mockCore.isInstrumented.mockReturnValue(instrumented);
-      withCodSpeed(
+      await withCodSpeed(
         new Benchmark(
           "RegExpSingle",
           function () {
@@ -91,7 +96,7 @@ describe("Benchmark", () => {
 });
 
 describe("Benchmark.Suite", () => {
-  it("simple suite", () => {
+  it("simple suite", async () => {
     mockCore.isInstrumented.mockReturnValue(false);
     const suite = withCodSpeed(new Benchmark.Suite());
     suite.add(
@@ -103,30 +108,31 @@ describe("Benchmark.Suite", () => {
     );
     const onComplete = jest.fn();
     suite.on("complete", onComplete);
-    suite.run({ maxTime: 0.1, initCount: 1 });
+    await suite.run({ maxTime: 0.1, initCount: 1 });
     expect(onComplete).toHaveBeenCalled();
     expect(mockCore.startInstrumentation).not.toHaveBeenCalled();
     expect(mockCore.stopInstrumentation).not.toHaveBeenCalled();
   });
-  it("check core methods are called", () => {
+  it("check core methods are called", async () => {
     mockCore.isInstrumented.mockReturnValue(true);
-    withCodSpeed(new Benchmark.Suite())
-      .add(
-        "RegExp",
-        function () {
-          /o/.test("Hello World!");
-        },
-        benchOptions
-      )
-      .run();
+    const suite = withCodSpeed(new Benchmark.Suite()).add(
+      "RegExp",
+      function () {
+        /o/.test("Hello World!");
+      },
+      benchOptions
+    );
+    const onComplete = jest.fn();
+    suite.on("complete", onComplete);
+    await suite.run({ maxTime: 0.1, initCount: 1 });
     expect(mockCore.startInstrumentation).toHaveBeenCalled();
     expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
       "packages/benchmark.js-plugin/tests/unit.test.ts::RegExp"
     );
   });
-  it("check suite name is in the uri", () => {
+  it("check suite name is in the uri", async () => {
     mockCore.isInstrumented.mockReturnValue(true);
-    withCodSpeed(new Benchmark.Suite("thesuite"))
+    await withCodSpeed(new Benchmark.Suite("thesuite"))
       .add(
         "RegExp",
         function () {
@@ -153,7 +159,7 @@ describe("Benchmark.Suite", () => {
         throw new Error("test");
       }
     );
-    expect(() => bench.run()).toThrowError("test");
+    await expect(bench.run()).rejects.toThrowError("test");
   });
   it.each([true, false])(
     "check console output(instrumented=%p) ",
@@ -161,7 +167,7 @@ describe("Benchmark.Suite", () => {
       const logSpy = jest.spyOn(console, "log");
       const warnSpy = jest.spyOn(console, "warn");
       mockCore.isInstrumented.mockReturnValue(instrumented);
-      withCodSpeed(new Benchmark.Suite("thesuite"))
+      await withCodSpeed(new Benchmark.Suite("thesuite"))
         .add(
           "RegExp",
           function () {
