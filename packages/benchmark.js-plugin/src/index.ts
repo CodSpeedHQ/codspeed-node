@@ -162,8 +162,7 @@ async function runBenchmarks({
   for (let i = 0; i < benches.length; i++) {
     const bench = benches[i];
     const uri = baseUri + "::" + (bench.name ?? `unknown_${i}`);
-    const isAsync =
-      bench.options.async || bench.options.defer || options?.async;
+    const isAsync = bench.options.async || bench.options.defer;
     let benchPayload;
     if (bench.options.defer) {
       benchPayload = () => {
