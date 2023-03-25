@@ -1,13 +1,79 @@
-import { initCore, measurement, optimizeFunctionSync } from "@codspeed/core";
+import {
+  initCore,
+  measurement,
+  optimizeFunction,
+  optimizeFunctionSync,
+} from "@codspeed/core";
 import Benchmark from "benchmark";
-import { findUpSync, Options } from "find-up";
+import { findUpSync, Options as FindupOptions } from "find-up";
 import path, { dirname } from "path";
 import { get as getStackTrace } from "stack-trace";
 
 declare const __VERSION__: string;
 
-export function withCodSpeed(suite: Benchmark): Benchmark;
-export function withCodSpeed(suite: Benchmark.Suite): Benchmark.Suite;
+interface WithCodSpeedBenchmark
+  extends Omit<
+    Benchmark,
+    "run" | "abort" | "clone" | "compare" | "emit" | "off" | "on" | "reset"
+  > {
+  abort(): WithCodSpeedBenchmark;
+  clone(options: Benchmark.Options): WithCodSpeedBenchmark;
+  compare(benchmark: Benchmark): number;
+  off(
+    type?: string,
+    listener?: CallableFunction
+  ): Benchmark | Promise<Benchmark>;
+  off(types: string[]): WithCodSpeedBenchmark;
+  on(type?: string, listener?: CallableFunction): WithCodSpeedBenchmark;
+  on(types: string[]): WithCodSpeedBenchmark;
+  reset(): WithCodSpeedBenchmark;
+  // Makes run an async function
+  run(options?: Benchmark.Options): Benchmark | Promise<Benchmark>;
+}
+
+interface WithCodSpeedSuite
+  extends Omit<
+    Benchmark.Suite,
+    | "run"
+    | "abort"
+    | "clone"
+    | "compare"
+    | "emit"
+    | "off"
+    | "on"
+    | "reset"
+    | "add"
+    | "filter"
+    | "each"
+    | "forEach"
+  > {
+  abort(): WithCodSpeedSuite;
+  add(
+    name: string,
+    fn: CallableFunction | string,
+    options?: Benchmark.Options
+  ): WithCodSpeedSuite;
+  add(
+    fn: CallableFunction | string,
+    options?: Benchmark.Options
+  ): WithCodSpeedSuite;
+  add(name: string, options?: Benchmark.Options): WithCodSpeedSuite;
+  add(options: Benchmark.Options): WithCodSpeedSuite;
+  clone(options: Benchmark.Options): WithCodSpeedSuite;
+  filter(callback: CallableFunction | string): WithCodSpeedSuite;
+  off(type?: string, callback?: CallableFunction): WithCodSpeedSuite;
+  off(types: string[]): WithCodSpeedSuite;
+  on(type?: string, callback?: CallableFunction): WithCodSpeedSuite;
+  on(types: string[]): WithCodSpeedSuite;
+  reset(): WithCodSpeedSuite;
+  each(callback: CallableFunction): WithCodSpeedSuite;
+  forEach(callback: CallableFunction): WithCodSpeedSuite;
+
+  run(options?: Benchmark.Options): Benchmark.Suite | Promise<Benchmark.Suite>;
+}
+
+export function withCodSpeed(suite: Benchmark): WithCodSpeedBenchmark;
+export function withCodSpeed(suite: Benchmark.Suite): WithCodSpeedSuite;
 export function withCodSpeed(item: unknown): unknown {
   if ((item as { length?: number }).length === undefined) {
     return withCodSpeedBenchmark(item as Benchmark);
@@ -16,7 +82,7 @@ export function withCodSpeed(item: unknown): unknown {
   }
 }
 
-function withCodSpeedBenchmark(bench: Benchmark): Benchmark {
+function withCodSpeedBenchmark(bench: Benchmark): WithCodSpeedBenchmark {
   if (!measurement.isInstrumented()) {
     const rawRun = bench.run;
     bench.run = (options?: Benchmark.Options) => {
@@ -27,27 +93,22 @@ function withCodSpeedBenchmark(bench: Benchmark): Benchmark {
     };
     return bench;
   }
-  initCore();
   const callingFile = getCallingFile();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  bench.run = function (options?: Benchmark.Options): Benchmark {
-    console.log(
-      `[CodSpeed] running with @codspeed/benchmark.js v${__VERSION__}`
-    );
-    const uri = callingFile + "::" + (bench.name ?? "unknown");
-    const fn = bench.fn as CallableFunction;
-    optimizeFunctionSync(fn);
-    measurement.startInstrumentation();
-    fn();
-    measurement.stopInstrumentation(uri);
-    console.log(`    ✔ Measured ${uri}`);
-    console.log("[CodSpeed] Done running 1 bench.");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  bench.run = async function (options?: Benchmark.Options): Promise<Benchmark> {
+    await runBenchmarks({
+      benches: [bench as unknown as BenchmarkWithOptions],
+      baseUri: callingFile,
+      benchmarkCompletedListeners: bench.listeners("complete"),
+      options,
+    });
     return bench;
   };
   return bench;
 }
 
-function withCodSpeedSuite(suite: Benchmark.Suite): Benchmark.Suite {
+function withCodSpeedSuite(suite: Benchmark.Suite): WithCodSpeedSuite {
   if (!measurement.isInstrumented()) {
     const rawRun = suite.run;
     suite.run = (options?: Benchmark.Options) => {
@@ -56,35 +117,82 @@ function withCodSpeedSuite(suite: Benchmark.Suite): Benchmark.Suite {
       );
       return rawRun.bind(suite)(options);
     };
-    return suite;
+    return suite as WithCodSpeedSuite;
   }
-  initCore();
   const callingFile = getCallingFile();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  suite.run = function (options?: Benchmark.Options): Benchmark.Suite {
-    console.log(
-      `[CodSpeed] running with @codspeed/benchmark.js v${__VERSION__}`
-    );
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  suite.run = async function (
+    options?: Benchmark.Options
+  ): Promise<Benchmark.Suite> {
     const suiteName = suite.name;
-    const benches = this as unknown as Benchmark[];
+    const benches = this as unknown as BenchmarkWithOptions[];
     let baseUri = callingFile;
     if (suiteName !== undefined) {
       baseUri += `::${suiteName}`;
     }
-    for (let i = 0; i < benches.length; i++) {
-      const bench = benches[i];
-      const uri = baseUri + "::" + (bench.name ?? `unknown_${i}`);
-      const fn = bench.fn as CallableFunction;
-      optimizeFunctionSync(fn);
-      measurement.startInstrumentation();
-      (bench.fn as CallableFunction)();
-      measurement.stopInstrumentation(uri);
-      console.log(`    ✔ Measured ${uri}`);
-    }
-    console.log(`[CodSpeed] Done running ${suite.length} benches.`);
+    await runBenchmarks({
+      benches,
+      baseUri,
+      benchmarkCompletedListeners: suite.listeners("complete"),
+      options,
+    });
     return suite;
   };
-  return suite;
+  return suite as WithCodSpeedSuite;
+}
+
+type BenchmarkWithOptions = Benchmark & { options: Benchmark.Options };
+
+interface RunBenchmarksOptions {
+  benches: BenchmarkWithOptions[];
+  baseUri: string;
+  benchmarkCompletedListeners: CallableFunction[];
+  options?: Benchmark.Options;
+}
+
+async function runBenchmarks({
+  benches,
+  baseUri,
+  benchmarkCompletedListeners,
+  options,
+}: RunBenchmarksOptions): Promise<void> {
+  console.log(`[CodSpeed] running with @codspeed/benchmark.js v${__VERSION__}`);
+  initCore();
+  for (let i = 0; i < benches.length; i++) {
+    const bench = benches[i];
+    const uri = baseUri + "::" + (bench.name ?? `unknown_${i}`);
+    const isAsync =
+      bench.options.async || bench.options.defer || options?.async;
+    let benchPayload;
+    if (bench.options.defer) {
+      benchPayload = () => {
+        return new Promise((resolve, reject) => {
+          (bench.fn as CallableFunction)({ resolve, reject });
+        });
+      };
+    } else if (bench.options.async) {
+      benchPayload = async () => {
+        await (bench.fn as CallableFunction)();
+      };
+    } else {
+      benchPayload = bench.fn as CallableFunction;
+    }
+    if (isAsync) {
+      await optimizeFunction(benchPayload);
+      measurement.startInstrumentation();
+      await benchPayload();
+      measurement.stopInstrumentation(uri);
+    } else {
+      optimizeFunctionSync(benchPayload);
+      measurement.startInstrumentation();
+      benchPayload();
+      measurement.stopInstrumentation(uri);
+    }
+    console.log(`    ✔ Measured ${uri}`);
+    benchmarkCompletedListeners.forEach((listener) => listener());
+  }
+  console.log(`[CodSpeed] Done running ${benches.length} benches.`);
 }
 
 function getCallingFile(): string {
@@ -101,6 +209,6 @@ function getGitDir(path: string): string | undefined {
   const dotGitPath = findUpSync(".git", {
     cwd: path,
     type: "directory",
-  } as Options);
+  } as FindupOptions);
   return dotGitPath ? dirname(dotGitPath) : undefined;
 }
