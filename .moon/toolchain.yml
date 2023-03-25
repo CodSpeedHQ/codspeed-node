@@ -8,7 +8,7 @@ node:
 
   packageManager: "pnpm"
   pnpm:
-    version: "7.18.2"
+    version: "7.30.0"
 
   aliasPackageNames: "name-only"
 
