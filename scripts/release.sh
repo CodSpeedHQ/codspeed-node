@@ -10,7 +10,7 @@ fi
 # Fail if there are any unstaged changes left
 git diff --exit-code
 
-pnpm lerna version $1 -y
+pnpm lerna version $1 -y --force-publish
 pnpm moon run :build
 pnpm publish -r --access=public
 NEW_VERSION=$(pnpm lerna list --json | jq -r '.[] | select(.name == "@codspeed/core") | .version')
