@@ -87,10 +87,22 @@ describe("Benchmark", () => {
           benchOptions
         )
       ).run();
-      expect({
-        log: logSpy.mock.calls,
-        warn: warnSpy.mock.calls,
-      }).toMatchSnapshot();
+      if (instrumented) {
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining(
+            "[CodSpeed] running with @codspeed/benchmark.js v"
+          )
+        );
+        expect({
+          log: logSpy.mock.calls.slice(1),
+          warn: warnSpy.mock.calls,
+        }).toMatchSnapshot();
+      } else {
+        expect({
+          log: logSpy.mock.calls.slice(1),
+          warn: warnSpy.mock.calls,
+        }).toMatchSnapshot();
+      }
     }
   );
 });
@@ -179,10 +191,22 @@ describe("Benchmark.Suite", () => {
           /o/.test("Hello World!");
         }, benchOptions)
         .run();
-      expect({
-        log: logSpy.mock.calls,
-        warn: warnSpy.mock.calls,
-      }).toMatchSnapshot();
+      if (instrumented) {
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining(
+            "[CodSpeed] running with @codspeed/benchmark.js v"
+          )
+        );
+        expect({
+          log: logSpy.mock.calls.slice(1),
+          warn: warnSpy.mock.calls,
+        }).toMatchSnapshot();
+      } else {
+        expect({
+          log: logSpy.mock.calls.slice(1),
+          warn: warnSpy.mock.calls,
+        }).toMatchSnapshot();
+      }
     }
   );
 });
