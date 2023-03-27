@@ -81,10 +81,23 @@ describe("Benchmark.Suite", () => {
           /o/.test("Hello World!");
         })
         .run();
-      expect({
-        log: logSpy.mock.calls,
-        warn: warnSpy.mock.calls,
-      }).toMatchSnapshot();
+      // Check that the first log contains "[CodSpeed] running with @codspeed/tinybench v"
+      if (instrumented) {
+        expect(logSpy).toHaveBeenCalledWith(
+          expect.stringContaining(
+            "[CodSpeed] running with @codspeed/tinybench v"
+          )
+        );
+        expect({
+          log: logSpy.mock.calls.slice(1),
+          warn: warnSpy.mock.calls,
+        }).toMatchSnapshot();
+      } else {
+        expect({
+          log: logSpy.mock.calls,
+          warn: warnSpy.mock.calls,
+        }).toMatchSnapshot();
+      }
     }
   );
 });
