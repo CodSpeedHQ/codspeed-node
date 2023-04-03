@@ -8,6 +8,7 @@ Napi::Boolean IsInstrumented(const Napi::CallbackInfo &info) {
 }
 
 void StartInstrumentation(const Napi::CallbackInfo &info) {
+  CALLGRIND_ZERO_STATS;
   CALLGRIND_START_INSTRUMENTATION;
   return;
 }
