@@ -1,8 +1,9 @@
 tasks:
   bench:
-    command: ts-node benches/sample.ts
+    command: sh -c "node $CODSPEED_V8_FLAGS -r esbuild-register benches/sample.ts"
     inputs:
       - "benches/**"
     local: true
+    platform: "system"
     options:
       cache: false
