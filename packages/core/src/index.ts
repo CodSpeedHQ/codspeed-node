@@ -25,14 +25,20 @@ try {
     isBound: false,
   };
 }
+const skipOptimization = process.env.CODSPEED_FORCE_OPTIMIZATION !== "true";
 export const measurement = m;
 export const initCore = () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  require("v8").setFlagsFromString("--allow-natives-syntax");
+  if (!skipOptimization) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    require("v8").setFlagsFromString("--allow-natives-syntax");
+  }
   measurement.stopInstrumentation(`Metadata: codspeed-node ${__VERSION__}`);
 };
 
 export const optimizeFunction = async (fn: CallableFunction) => {
+  if (skipOptimization) {
+    return;
+  }
   // Source: https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#optimization-killers
   await fn(); //Fill type-info
   await fn(); // 2 calls are needed to go from uninitialized -> pre-monomorphic -> monomorphic
@@ -41,6 +47,9 @@ export const optimizeFunction = async (fn: CallableFunction) => {
 };
 
 export const optimizeFunctionSync = (fn: CallableFunction) => {
+  if (skipOptimization) {
+    return;
+  }
   // Source: https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#optimization-killers
   fn(); //Fill type-info
   fn(); // 2 calls are needed to go from uninitialized -> pre-monomorphic -> monomorphic
