@@ -3,6 +3,7 @@ import { findUpSync, Options } from "find-up";
 import path, { dirname } from "path";
 import { get as getStackTrace } from "stack-trace";
 import { Bench } from "tinybench";
+import { fileURLToPath } from "url";
 
 declare const __VERSION__: string;
 
@@ -37,10 +38,13 @@ export function withCodSpeed(bench: Bench): Bench {
 
 function getCallingFile(): string {
   const stack = getStackTrace();
-  const callingFile = stack[2].getFileName(); // [here, withCodSpeed, actual caller]
+  let callingFile = stack[2].getFileName(); // [here, withCodSpeed, actual caller]
   const gitDir = getGitDir(callingFile);
   if (gitDir === undefined) {
     throw new Error("Could not find a git repository");
+  }
+  if (callingFile.startsWith("file://")) {
+    callingFile = fileURLToPath(callingFile);
   }
   return path.relative(gitDir, callingFile);
 }
