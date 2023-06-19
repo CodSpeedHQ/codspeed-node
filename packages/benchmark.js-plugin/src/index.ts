@@ -177,16 +177,21 @@ async function runBenchmarks({
     } else {
       benchPayload = bench.fn as CallableFunction;
     }
+
     if (isAsync) {
       await optimizeFunction(benchPayload);
-      measurement.startInstrumentation();
-      await benchPayload();
-      measurement.stopInstrumentation(uri);
+      await (async function __codspeed_root_frame__() {
+        measurement.startInstrumentation();
+        await benchPayload();
+        measurement.stopInstrumentation(uri);
+      })();
     } else {
       optimizeFunctionSync(benchPayload);
-      measurement.startInstrumentation();
-      benchPayload();
-      measurement.stopInstrumentation(uri);
+      (function __codspeed_root_frame__() {
+        measurement.startInstrumentation();
+        benchPayload();
+        measurement.stopInstrumentation(uri);
+      })();
     }
     console.log(`    ✔ Measured ${uri}`);
     benchmarkCompletedListeners.forEach((listener) => listener());

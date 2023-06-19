@@ -25,9 +25,11 @@ export function withCodSpeed(bench: Bench): Bench {
     for (const task of bench.tasks) {
       const uri = callingFile + "::" + task.name;
       await optimizeFunction(task.fn);
-      measurement.startInstrumentation();
-      await task.fn();
-      measurement.stopInstrumentation(uri);
+      await (async function __codspeed_root_frame__() {
+        measurement.startInstrumentation();
+        await task.fn();
+        measurement.stopInstrumentation(uri);
+      })();
       console.log(`    ✔ Measured ${uri}`);
     }
     console.log(`[CodSpeed] Done running ${bench.tasks.length} benches.`);
