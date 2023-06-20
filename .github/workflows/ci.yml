@@ -39,3 +39,27 @@ jobs:
         uses: CodSpeedHQ/action@v1
         with:
           run: pnpm moon run :bench
+
+  node-versions:
+    runs-on: "ubuntu-latest"
+    name: "Node ${{ matrix.node-version }}"
+    strategy:
+      matrix:
+        node-version: ["14", "16", "18", "20"]
+      fail-fast: false
+    steps:
+      - uses: "actions/checkout@v3"
+        with:
+          fetch-depth: 0
+      - run: sudo apt-get install -y valgrind
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v3
+        with:
+          cache: pnpm
+          node-version: ${{ matrix.node-version }}
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm moon run :build
+
+      - name: Run benchmarks
+        run: |
+          valgrind --tool=callgrind pnpm moon run :bench
