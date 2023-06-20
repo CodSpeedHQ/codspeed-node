@@ -27,7 +27,7 @@
   "dependencies": {
     "@codspeed/core": "workspace:^1.1.0",
     "find-up": "^6.3.0",
-    "stack-trace": "1.0.0-pre1"
+    "stack-trace": "1.0.0-pre2"
   },
   "peerDependencies": {
     "tinybench": "^2.3.0"

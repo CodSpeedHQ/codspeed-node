@@ -97,8 +97,8 @@ importers:
         specifier: ^6.3.0
         version: 6.3.0
       stack-trace:
-        specifier: 1.0.0-pre1
-        version: 1.0.0-pre1
+        specifier: 1.0.0-pre2
+        version: 1.0.0-pre2
     devDependencies:
       "@types/benchmark":
         specifier: ^2.1.2
@@ -141,8 +141,8 @@ importers:
         specifier: ^6.3.0
         version: 6.3.0
       stack-trace:
-        specifier: 1.0.0-pre1
-        version: 1.0.0-pre1
+        specifier: 1.0.0-pre2
+        version: 1.0.0-pre2
     devDependencies:
       "@types/find-up":
         specifier: ^4.0.0
@@ -10345,12 +10345,12 @@ packages:
       minipass: 3.3.6
     dev: true
 
-  /stack-trace@1.0.0-pre1:
+  /stack-trace@1.0.0-pre2:
     resolution:
       {
-        integrity: sha512-biM7OwS3J2hcou7tfozHcsqhJZxX5pqMMqe/Zr6stw9uVn8Gh7ct3eFR9Gb66BBi/ToSeOgk4FsjKgZVrDIyew==,
+        integrity: sha512-2ztBJRek8IVofG9DBJqdy2N5kulaacX30Nz7xmkYF6ale9WBVmIy6mFBchvGX7Vx/MyjBhx+Rcxqrj+dbOnQ6A==,
       }
-    engines: { node: "16" }
+    engines: { node: ">=16" }
     dev: false
 
   /stack-utils@2.0.6:
