@@ -2,13 +2,13 @@
 $schema: "https://moonrepo.dev/schemas/toolchain.json"
 
 node:
-  version: 16.17.0
+  version: 18.16.0
   syncVersionManagerConfig: "nvm"
   addEnginesConstraint: true
 
   packageManager: "pnpm"
   pnpm:
-    version: "8.2.0"
+    version: "8.6.3"
 
   aliasPackageNames: "name-only"
 
