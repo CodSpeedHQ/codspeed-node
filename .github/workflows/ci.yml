@@ -12,13 +12,11 @@ jobs:
         with:
           fetch-depth: 0
       - run: sudo apt-get install -y valgrind
-      - uses: pnpm/action-setup@v2.2.2
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v3
         with:
-          version: 7
-      - uses: "actions/setup-node@v3"
-        with:
-          cache: "pnpm"
-          node-version-file: ".nvmrc"
+          cache: pnpm
+          node-version-file: .nvmrc
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm moon check --all
 
@@ -29,13 +27,11 @@ jobs:
         with:
           fetch-depth: 0
       - run: sudo apt-get install -y valgrind
-      - uses: pnpm/action-setup@v2.2.2
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v3
         with:
-          version: 7
-      - uses: "actions/setup-node@v3"
-        with:
-          cache: "pnpm"
-          node-version-file: ".nvmrc"
+          cache: pnpm
+          node-version-file: .nvmrc
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm moon run :build
 
