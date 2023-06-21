@@ -46,6 +46,9 @@ jobs:
     strategy:
       matrix:
         node-version: ["14", "16", "18", "20"]
+        include:
+          - node-version: "14"
+            pnpm-version: "7"
       fail-fast: false
     steps:
       - uses: "actions/checkout@v3"
@@ -53,6 +56,8 @@ jobs:
           fetch-depth: 0
       - run: sudo apt-get install -y valgrind
       - uses: pnpm/action-setup@v2
+        with:
+          version: ${{ matrix.pnpm-version || '' }}
       - uses: actions/setup-node@v3
         with:
           cache: pnpm
