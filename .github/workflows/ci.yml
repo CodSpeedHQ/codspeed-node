@@ -49,6 +49,7 @@ jobs:
         include:
           - node-version: "14"
             pnpm-version: "7"
+            skip-tinybench: true
       fail-fast: false
     steps:
       - uses: "actions/checkout@v3"
@@ -65,9 +66,16 @@ jobs:
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm moon run :build
 
-      - name: Run benchmarks
+      - name: Run benchmarks on tinybench-plugin
+        if: matrix.skip-tinybench != true
         uses: CodSpeedHQ/action@feat/node-script
         with:
-          run: pnpm moon run :bench
+          run: pnpm moon run tinybench-plugin:bench
+        env:
+          SKIP_UPLOAD: true
+      - name: Run benchmarks on benchmark.js-plugin
+        uses: CodSpeedHQ/action@feat/node-script
+        with:
+          run: pnpm moon run benchmark.js-plugin:bench
         env:
           SKIP_UPLOAD: true
