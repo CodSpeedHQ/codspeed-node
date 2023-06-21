@@ -61,5 +61,8 @@ jobs:
       - run: pnpm moon run :build
 
       - name: Run benchmarks
-        run: |
-          valgrind --tool=callgrind pnpm moon run :bench
+        uses: CodSpeedHQ/action@feat/node-script
+        with:
+          run: pnpm moon run :bench
+        env:
+          SKIP_UPLOAD: true
