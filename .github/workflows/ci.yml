@@ -40,16 +40,40 @@ jobs:
         with:
           run: pnpm moon run :bench
 
+  list-examples:
+    runs-on: "ubuntu-latest"
+    name: List examples
+    outputs:
+      examples: ${{ steps.list-examples.outputs.examples }}
+    steps:
+      - uses: "actions/checkout@v3"
+      # list the directories in ./examples and output them to a github action workflow variables as a JSON array
+      - run: |
+          examples=$(find ./examples -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "::set-output name=examples::$examples"
+        id: list-examples
+
   node-versions:
     runs-on: "ubuntu-latest"
-    name: "Node ${{ matrix.node-version }}"
+    name: "${{ matrix.example }} on Node ${{ matrix.node-version }}"
+    needs: list-examples
     strategy:
       matrix:
         node-version: ["14", "16", "18", "20"]
+        example: ${{ fromJson(needs.list-examples.outputs.examples) }}
         include:
+          # tinybench does not support node 14
           - node-version: "14"
             pnpm-version: "7"
             skip-tinybench: true
+        exclude:
+          # esbuild-register does not work well with node 14
+          - node-version: "14"
+            example: with-typescript-cjs
+          - node-version: "14"
+            example: with-typescript-esm
+          - node-version: "14"
+            example: with-typescript-simple-esm
       fail-fast: false
     steps:
       - uses: "actions/checkout@v3"
@@ -70,12 +94,12 @@ jobs:
         if: matrix.skip-tinybench != true
         uses: CodSpeedHQ/action@feat/node-script
         with:
-          run: pnpm moon run tinybench-plugin:bench
+          run: pnpm --filter ${{ matrix.example }} bench-tinybench
         env:
           CODSPEED_SKIP_UPLOAD: true
       - name: Run benchmarks with benchmark.js-plugin
         uses: CodSpeedHQ/action@feat/node-script
         with:
-          run: pnpm moon run benchmark.js-plugin:bench
+          run: pnpm --filter ${{ matrix.example }} bench-benchmark-js
         env:
           CODSPEED_SKIP_UPLOAD: true

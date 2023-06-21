@@ -1,0 +1,17 @@
+{
+  "name": "with-typescript-esm",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bench-benchmark-js": "node --loader esbuild-register/loader -r esbuild-register bench/benchmark.js/index.bench.ts",
+    "bench-tinybench": "node --loader esbuild-register/loader -r esbuild-register bench/tinybench/index.bench.ts"
+  },
+  "devDependencies": {
+    "@codspeed/benchmark.js-plugin": "workspace:^1.1.0",
+    "@codspeed/tinybench-plugin": "workspace:^1.1.0",
+    "@types/benchmark": "^2.1.2",
+    "benchmark": "^2.1.4",
+    "tinybench": "^2.5.0",
+    "typescript": "^5.1.3"
+  }
+}

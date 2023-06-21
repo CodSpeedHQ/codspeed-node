@@ -1,0 +1,14 @@
+{
+  "name": "with-javascript-cjs",
+  "private": true,
+  "scripts": {
+    "bench-benchmark-js": "node benchmark-js.js",
+    "bench-tinybench": "node tinybench.js"
+  },
+  "devDependencies": {
+    "@codspeed/benchmark.js-plugin": "workspace:^1.1.0",
+    "@codspeed/tinybench-plugin": "workspace:^1.1.0",
+    "benchmark": "^2.1.4",
+    "tinybench": "^2.5.0"
+  }
+}
