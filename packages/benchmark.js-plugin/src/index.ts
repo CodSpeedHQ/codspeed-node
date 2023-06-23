@@ -8,6 +8,7 @@ import Benchmark from "benchmark";
 import { findUpSync, Options as FindupOptions } from "find-up";
 import path, { dirname } from "path";
 import { get as getStackTrace } from "stack-trace";
+import { fileURLToPath } from "url";
 
 declare const __VERSION__: string;
 
@@ -201,10 +202,13 @@ async function runBenchmarks({
 
 function getCallingFile(): string {
   const stack = getStackTrace();
-  const callingFile = stack[3].getFileName(); // [here, withCodSpeed, withCodSpeedX, actual caller]
+  let callingFile = stack[3].getFileName(); // [here, withCodSpeed, withCodSpeedX, actual caller]
   const gitDir = getGitDir(callingFile);
   if (gitDir === undefined) {
     throw new Error("Could not find a git repository");
+  }
+  if (callingFile.startsWith("file://")) {
+    callingFile = fileURLToPath(callingFile);
   }
   return path.relative(gitDir, callingFile);
 }
