@@ -101,6 +101,9 @@ importers:
       find-up:
         specifier: ^6.3.0
         version: 6.3.0
+      lodash:
+        specifier: ^4.17.10
+        version: 4.17.21
       stack-trace:
         specifier: 1.0.0-pre2
         version: 1.0.0-pre2
@@ -114,6 +117,9 @@ importers:
       '@types/find-up':
         specifier: ^4.0.0
         version: 4.0.0
+      '@types/lodash':
+        specifier: ^4.14.195
+        version: 4.14.195
       '@types/stack-trace':
         specifier: ^0.0.30
         version: 0.0.30
@@ -3108,6 +3114,10 @@ packages:
 
   /@types/json5@0.0.29:
     resolution: {integrity: sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==}
+    dev: true
+
+  /@types/lodash@4.14.195:
+    resolution: {integrity: sha512-Hwx9EUgdwf2GLarOjQp5ZH8ZmblzcbTBC2wtQWNKARBSxM9ezRIAUpeDTgoQRAFB0+8CNWXVA9+MaSOzOF3nPg==}
     dev: true
 
   /@types/minimatch@3.0.5:
@@ -6833,7 +6843,6 @@ packages:
 
   /lodash@4.17.21:
     resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
-    dev: true
 
   /log-symbols@4.1.0:
     resolution: {integrity: sha512-8XPvpAA8uyhfteu8pIvQxpJZ7SYYdpUivZpGy6sFsBuKRY/7rQGavedeB8aK+Zkyq6upMFVL/9AW6vOYzfRyLg==}

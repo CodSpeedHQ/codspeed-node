@@ -2,10 +2,20 @@ import { initCore, measurement, optimizeFunction } from "@codspeed/core";
 import { findUpSync, Options } from "find-up";
 import path, { dirname } from "path";
 import { get as getStackTrace } from "stack-trace";
-import { Bench } from "tinybench";
+import { Bench, Task } from "tinybench";
 import { fileURLToPath } from "url";
 
 declare const __VERSION__: string;
+
+type CodSpeedBenchOptions = Task["opts"] & {
+  uri: string;
+};
+
+function isCodSpeedBenchOptions(
+  options: Task["opts"]
+): options is CodSpeedBenchOptions {
+  return "uri" in options;
+}
 
 export function withCodSpeed(bench: Bench): Bench {
   if (!measurement.isInstrumented()) {
@@ -19,11 +29,22 @@ export function withCodSpeed(bench: Bench): Bench {
     return bench;
   }
   initCore();
-  const callingFile = getCallingFile();
+
+  const rawAdd = bench.add;
+  bench.add = (name, fn, opts: CodSpeedBenchOptions) => {
+    const callingFile = getCallingFile();
+    const uri = `${callingFile}::${name}`;
+    const options = Object.assign({}, opts ?? {}, { uri });
+    return rawAdd.bind(bench)(name, fn, options);
+  };
+  const rootCallingFile = getCallingFile();
+
   bench.run = async () => {
     console.log(`[CodSpeed] running with @codspeed/tinybench v${__VERSION__}`);
     for (const task of bench.tasks) {
-      const uri = callingFile + "::" + task.name;
+      const uri = isCodSpeedBenchOptions(task.opts)
+        ? task.opts.uri
+        : `${rootCallingFile}::${task.name}`;
       await optimizeFunction(task.fn);
       await (async function __codspeed_root_frame__() {
         measurement.startInstrumentation();

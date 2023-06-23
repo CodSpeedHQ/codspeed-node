@@ -4,6 +4,8 @@ const mockCore = mockDeep<Measurement>();
 import type { Measurement } from "@codspeed/core";
 import Benchmark from "benchmark";
 import { withCodSpeed } from "..";
+import { registerBenchmarks } from "./registerBenchmarks";
+import { registerOtherBenchmarks } from "./registerOtherBenchmarks";
 
 jest.mock("@codspeed/core", () => ({
   ...jest.requireActual("@codspeed/core"),
@@ -209,4 +211,32 @@ describe("Benchmark.Suite", () => {
       }
     }
   );
+  it("check nested file path is in the uri when bench is registered in another file", async () => {
+    mockCore.isInstrumented.mockReturnValue(true);
+    const suite = withCodSpeed(new Benchmark.Suite("thesuite"));
+    registerBenchmarks(suite);
+    const onComplete = jest.fn();
+    suite.on("complete", onComplete);
+    await suite.run({ maxTime: 0.1, initCount: 1 });
+    expect(mockCore.startInstrumentation).toHaveBeenCalled();
+    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
+      "packages/benchmark.js-plugin/tests/registerBenchmarks.ts::thesuite::RegExp"
+    );
+  });
+  it("check that benchmarks with same name have different URIs when registered in different files", async () => {
+    mockCore.isInstrumented.mockReturnValue(true);
+    const suite = withCodSpeed(new Benchmark.Suite("thesuite"));
+    registerBenchmarks(suite);
+    registerOtherBenchmarks(suite);
+    const onComplete = jest.fn();
+    suite.on("complete", onComplete);
+    await suite.run({ maxTime: 0.1, initCount: 1 });
+    expect(mockCore.startInstrumentation).toHaveBeenCalled();
+    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
+      "packages/benchmark.js-plugin/tests/registerBenchmarks.ts::thesuite::RegExp"
+    );
+    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
+      "packages/benchmark.js-plugin/tests/registerOtherBenchmarks.ts::thesuite::RegExp"
+    );
+  });
 });

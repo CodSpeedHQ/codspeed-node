@@ -4,6 +4,8 @@ const mockCore = mockDeep<Measurement>();
 import type { Measurement } from "@codspeed/core";
 import { Bench } from "tinybench";
 import { withCodSpeed } from "..";
+import { registerBenchmarks } from "./registerBenchmarks";
+import { registerOtherBenchmarks } from "./registerOtherBenchmarks";
 
 jest.mock("@codspeed/core", () => ({
   ...jest.requireActual("@codspeed/core"),
@@ -98,6 +100,35 @@ describe("Benchmark.Suite", () => {
           warn: warnSpy.mock.calls,
         }).toMatchSnapshot();
       }
+    }
+  );
+  it("check nested file path is in the uri when bench is registered in another file", async () => {
+    mockCore.isInstrumented.mockReturnValue(true);
+    const bench = withCodSpeed(new Bench());
+    registerBenchmarks(bench);
+    await bench.run();
+    expect(mockCore.startInstrumentation).toHaveBeenCalled();
+    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
+      "packages/tinybench-plugin/tests/registerBenchmarks.ts::RegExp"
+    );
+  });
+  // TODO: this is not supported at the moment as tinybench does not support tasks with same name
+  // remove `.failing` when tinybench supports it
+  it.failing(
+    "check that benchmarks with same name have different URIs when registered in different files",
+    async () => {
+      mockCore.isInstrumented.mockReturnValue(true);
+      const bench = withCodSpeed(new Bench());
+      registerBenchmarks(bench);
+      registerOtherBenchmarks(bench);
+      await bench.run();
+      expect(mockCore.startInstrumentation).toHaveBeenCalled();
+      expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
+        "packages/tinybench-plugin/tests/registerBenchmarks.ts::RegExp"
+      );
+      expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
+        "packages/tinybench-plugin/tests/registerOtherBenchmarks.ts::RegExp"
+      );
     }
   );
 });

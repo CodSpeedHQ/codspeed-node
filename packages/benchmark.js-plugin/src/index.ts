@@ -5,10 +5,9 @@ import {
   optimizeFunctionSync,
 } from "@codspeed/core";
 import Benchmark from "benchmark";
-import { findUpSync, Options as FindupOptions } from "find-up";
-import path, { dirname } from "path";
-import { get as getStackTrace } from "stack-trace";
-import { fileURLToPath } from "url";
+import buildSuiteAdd from "./buildSuiteAdd";
+import getCallingFile from "./getCallingFile";
+import { CodSpeedBenchmark } from "./types";
 
 declare const __VERSION__: string;
 
@@ -32,7 +31,7 @@ interface WithCodSpeedBenchmark
   run(options?: Benchmark.Options): Benchmark | Promise<Benchmark>;
 }
 
-interface WithCodSpeedSuite
+export interface WithCodSpeedSuite
   extends Omit<
     Benchmark.Suite,
     | "run"
@@ -94,12 +93,16 @@ function withCodSpeedBenchmark(bench: Benchmark): WithCodSpeedBenchmark {
     };
     return bench;
   }
-  const callingFile = getCallingFile();
+  const callingFile = getCallingFile(2); // [here, withCodSpeed, actual caller]
+  const codspeedBench = bench as BenchmarkWithOptions;
+  if (codspeedBench.name !== undefined) {
+    codspeedBench.uri = `${callingFile}::${bench.name}`;
+  }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/ban-ts-comment
   // @ts-ignore
   bench.run = async function (options?: Benchmark.Options): Promise<Benchmark> {
     await runBenchmarks({
-      benches: [bench as unknown as BenchmarkWithOptions],
+      benches: [codspeedBench],
       baseUri: callingFile,
       benchmarkCompletedListeners: bench.listeners("complete"),
       options,
@@ -120,7 +123,8 @@ function withCodSpeedSuite(suite: Benchmark.Suite): WithCodSpeedSuite {
     };
     return suite as WithCodSpeedSuite;
   }
-  const callingFile = getCallingFile();
+  suite.add = buildSuiteAdd(suite);
+  const callingFile = getCallingFile(2); // [here, withCodSpeed, actual caller]
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/ban-ts-comment
   // @ts-ignore
   suite.run = async function (
@@ -143,7 +147,7 @@ function withCodSpeedSuite(suite: Benchmark.Suite): WithCodSpeedSuite {
   return suite as WithCodSpeedSuite;
 }
 
-type BenchmarkWithOptions = Benchmark & { options: Benchmark.Options };
+type BenchmarkWithOptions = CodSpeedBenchmark & { options: Benchmark.Options };
 
 interface RunBenchmarksOptions {
   benches: BenchmarkWithOptions[];
@@ -156,13 +160,12 @@ async function runBenchmarks({
   benches,
   baseUri,
   benchmarkCompletedListeners,
-  options,
 }: RunBenchmarksOptions): Promise<void> {
   console.log(`[CodSpeed] running with @codspeed/benchmark.js v${__VERSION__}`);
   initCore();
   for (let i = 0; i < benches.length; i++) {
     const bench = benches[i];
-    const uri = baseUri + "::" + (bench.name ?? `unknown_${i}`);
+    const uri = bench.uri ?? `${baseUri}::unknown_${i}`;
     const isAsync = bench.options.async || bench.options.defer;
     let benchPayload;
     if (bench.options.defer) {
@@ -198,25 +201,4 @@ async function runBenchmarks({
     benchmarkCompletedListeners.forEach((listener) => listener());
   }
   console.log(`[CodSpeed] Done running ${benches.length} benches.`);
-}
-
-function getCallingFile(): string {
-  const stack = getStackTrace();
-  let callingFile = stack[3].getFileName(); // [here, withCodSpeed, withCodSpeedX, actual caller]
-  const gitDir = getGitDir(callingFile);
-  if (gitDir === undefined) {
-    throw new Error("Could not find a git repository");
-  }
-  if (callingFile.startsWith("file://")) {
-    callingFile = fileURLToPath(callingFile);
-  }
-  return path.relative(gitDir, callingFile);
-}
-
-function getGitDir(path: string): string | undefined {
-  const dotGitPath = findUpSync(".git", {
-    cwd: path,
-    type: "directory",
-  } as FindupOptions);
-  return dotGitPath ? dirname(dotGitPath) : undefined;
 }
