@@ -14,7 +14,7 @@ export default defineConfig([
         sourcemap: true,
       },
     ],
-    plugins: declarationsPlugin,
+    plugins: declarationsPlugin({ compilerOptions: { composite: false } }),
   },
   {
     input: entrypoint,

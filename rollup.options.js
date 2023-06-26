@@ -1,10 +1,17 @@
-import resolve from "@rollup/plugin-node-resolve";
-import json from "@rollup/plugin-json";
 import commonjs from "@rollup/plugin-commonjs";
-import esbuild from "rollup-plugin-esbuild";
+import json from "@rollup/plugin-json";
+import resolve from "@rollup/plugin-node-resolve";
 import dts from "rollup-plugin-dts";
+import esbuild from "rollup-plugin-esbuild";
 
-export const declarationsPlugin = [dts()];
+/**
+ * @typedef {import('rollup-plugin-dts').Options} DtsOptions
+ */
+
+/**
+ * @param {DtsOptions} options
+ */
+export const declarationsPlugin = (options) => [dts(options)];
 
 export const jsPlugins = (version) => [
   json(),

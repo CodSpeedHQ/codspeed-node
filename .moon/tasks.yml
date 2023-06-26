@@ -72,6 +72,18 @@ tasks:
     deps:
       - "build"
 
+  test/integ:
+    command: "jest --passWithNoTests --silent -c jest.config.integ.js"
+    inputs:
+      - "@globs(sources)"
+      - "@globs(tests)"
+      - "@globs(configs)"
+      - "tsconfig.json"
+      - "/tsconfig.json"
+      - "/tsconfig.base.json"
+    deps:
+      - "build"
+
   clean:
     command: "rm -rf"
     args:

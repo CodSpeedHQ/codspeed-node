@@ -1,4 +1,5 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
+// eslint-disable-next-line no-undef
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
@@ -12,7 +13,7 @@ module.exports = {
   },
   testPathIgnorePatterns: [
     "/node_modules/",
-    "<rootDir>/tests/",
+    "<rootDir>/src/",
     "<rootDir>/.rollup.cache/",
   ],
 };

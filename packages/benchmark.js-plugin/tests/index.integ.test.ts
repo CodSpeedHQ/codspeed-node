@@ -56,7 +56,7 @@ describe("Benchmark", () => {
     expect(onComplete).toHaveBeenCalled();
     expect(mockCore.startInstrumentation).toHaveBeenCalled();
     expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
-      "packages/benchmark.js-plugin/tests/unit.test.ts::RegExpSingle"
+      "packages/benchmark.js-plugin/tests/index.integ.test.ts::RegExpSingle"
     );
   });
   it("check error handling", async () => {
@@ -139,7 +139,7 @@ describe("Benchmark.Suite", () => {
     await suite.run({ maxTime: 0.1, initCount: 1 });
     expect(mockCore.startInstrumentation).toHaveBeenCalled();
     expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
-      "packages/benchmark.js-plugin/tests/unit.test.ts::RegExp"
+      "packages/benchmark.js-plugin/tests/index.integ.test.ts::RegExp"
     );
   });
   it("check suite name is in the uri", async () => {
@@ -157,10 +157,10 @@ describe("Benchmark.Suite", () => {
       }, benchOptions)
       .run();
     expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
-      "packages/benchmark.js-plugin/tests/unit.test.ts::thesuite::RegExp"
+      "packages/benchmark.js-plugin/tests/index.integ.test.ts::thesuite::RegExp"
     );
     expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
-      "packages/benchmark.js-plugin/tests/unit.test.ts::thesuite::unknown_1"
+      "packages/benchmark.js-plugin/tests/index.integ.test.ts::thesuite::unknown_1"
     );
   });
   it("check error handling", async () => {

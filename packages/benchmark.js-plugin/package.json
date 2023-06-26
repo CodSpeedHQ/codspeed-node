@@ -19,6 +19,7 @@
   "homepage": "https://codspeed.io",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@babel/preset-env": "^7.22.5",
     "@types/benchmark": "^2.1.2",
     "@types/find-up": "^4.0.0",
     "@types/stack-trace": "^0.0.30",
