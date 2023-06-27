@@ -66,16 +66,16 @@ jobs:
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm moon run :build
 
-      - name: Run benchmarks on tinybench-plugin
+      - name: Run benchmarks with tinybench-plugin
         if: matrix.skip-tinybench != true
         uses: CodSpeedHQ/action@feat/node-script
         with:
           run: pnpm moon run tinybench-plugin:bench
         env:
-          SKIP_UPLOAD: true
-      - name: Run benchmarks on benchmark.js-plugin
+          CODSPEED_SKIP_UPLOAD: true
+      - name: Run benchmarks with benchmark.js-plugin
         uses: CodSpeedHQ/action@feat/node-script
         with:
           run: pnpm moon run benchmark.js-plugin:bench
         env:
-          SKIP_UPLOAD: true
+          CODSPEED_SKIP_UPLOAD: true
