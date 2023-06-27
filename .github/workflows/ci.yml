@@ -92,13 +92,13 @@ jobs:
 
       - name: Run benchmarks with tinybench-plugin
         if: matrix.skip-tinybench != true
-        uses: CodSpeedHQ/action@feat/node-script
+        uses: CodSpeedHQ/action@feat/v8-flags-from-codspeed-node-core
         with:
           run: pnpm --filter ${{ matrix.example }} bench-tinybench
         env:
           CODSPEED_SKIP_UPLOAD: true
       - name: Run benchmarks with benchmark.js-plugin
-        uses: CodSpeedHQ/action@feat/node-script
+        uses: CodSpeedHQ/action@feat/v8-flags-from-codspeed-node-core
         with:
           run: pnpm --filter ${{ matrix.example }} bench-benchmark-js
         env:
