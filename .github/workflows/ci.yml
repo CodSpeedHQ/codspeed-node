@@ -36,9 +36,12 @@ jobs:
       - run: pnpm moon run :build
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v1
+        uses: CodSpeedHQ/action@feat/callgraph-generation
         with:
-          run: pnpm moon run :bench
+          run: |
+            pnpm moon run :bench
+            pnpm -r bench-tinybench
+            pnpm -r bench-benchmark-js
 
   list-examples:
     runs-on: "ubuntu-latest"
