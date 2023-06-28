@@ -102,6 +102,7 @@ jobs:
           run: pnpm --filter ${{ matrix.example }} bench-tinybench
         env:
           CODSPEED_SKIP_UPLOAD: true
+          CODSPEED_DEBUG: true
       - name: Run benchmarks with benchmark.js-plugin
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v1`
         uses: CodSpeedHQ/action@main
@@ -109,3 +110,4 @@ jobs:
           run: pnpm --filter ${{ matrix.example }} bench-benchmark-js
         env:
           CODSPEED_SKIP_UPLOAD: true
+          CODSPEED_DEBUG: true
