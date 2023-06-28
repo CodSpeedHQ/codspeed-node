@@ -71,6 +71,8 @@ export const initCore = () => {
 
 export const optimizeFunction = async (fn: CallableFunction) => {
   if (skipOptimization) {
+    // warmup V8 symbols generation of the performance map
+    await fn();
     return;
   }
   // Source: https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#optimization-killers
@@ -82,6 +84,8 @@ export const optimizeFunction = async (fn: CallableFunction) => {
 
 export const optimizeFunctionSync = (fn: CallableFunction) => {
   if (skipOptimization) {
+    // warmup V8 symbols generation of the performance map
+    fn();
     return;
   }
   // Source: https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#optimization-killers
