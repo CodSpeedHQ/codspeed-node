@@ -8,6 +8,8 @@ const getV8Flags = (nodeVersionMajor: number) => {
     "--no-opt",
     "--predictable",
     "--predictable-gc-schedule",
+    "--interpreted-frames-native-stack",
+    "--perf-basic-prof",
   ];
   if (nodeVersionMajor < 18) {
     flags.push("--no-randomize-hashes");
