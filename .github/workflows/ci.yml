@@ -36,7 +36,8 @@ jobs:
       - run: pnpm moon run :build
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@feat/callgraph-generation
+        # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v1`
+        uses: CodSpeedHQ/action@main
         with:
           run: |
             pnpm moon run :bench
@@ -95,13 +96,15 @@ jobs:
 
       - name: Run benchmarks with tinybench-plugin
         if: matrix.skip-tinybench != true
-        uses: CodSpeedHQ/action@feat/v8-flags-from-codspeed-node-core
+        # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v1`
+        uses: CodSpeedHQ/action@main
         with:
           run: pnpm --filter ${{ matrix.example }} bench-tinybench
         env:
           CODSPEED_SKIP_UPLOAD: true
       - name: Run benchmarks with benchmark.js-plugin
-        uses: CodSpeedHQ/action@feat/v8-flags-from-codspeed-node-core
+        # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v1`
+        uses: CodSpeedHQ/action@main
         with:
           run: pnpm --filter ${{ matrix.example }} bench-benchmark-js
         env:
