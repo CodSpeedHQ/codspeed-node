@@ -1,4 +1,9 @@
-import { initCore, measurement, optimizeFunction } from "@codspeed/core";
+import {
+  Measurement,
+  optimizeFunction,
+  setupCore,
+  teardownCore,
+} from "@codspeed/core";
 import { findUpSync, Options } from "find-up";
 import path, { dirname } from "path";
 import { get as getStackTrace } from "stack-trace";
@@ -18,7 +23,7 @@ function isCodSpeedBenchOptions(
 }
 
 export function withCodSpeed(bench: Bench): Bench {
-  if (!measurement.isInstrumented()) {
+  if (!Measurement.isInstrumented()) {
     const rawRun = bench.run;
     bench.run = async () => {
       console.warn(
@@ -28,7 +33,6 @@ export function withCodSpeed(bench: Bench): Bench {
     };
     return bench;
   }
-  initCore();
 
   const rawAdd = bench.add;
   bench.add = (name, fn, opts: CodSpeedBenchOptions) => {
@@ -40,6 +44,7 @@ export function withCodSpeed(bench: Bench): Bench {
   const rootCallingFile = getCallingFile();
 
   bench.run = async () => {
+    setupCore();
     console.log(`[CodSpeed] running with @codspeed/tinybench v${__VERSION__}`);
     for (const task of bench.tasks) {
       const uri = isCodSpeedBenchOptions(task.opts)
@@ -47,15 +52,16 @@ export function withCodSpeed(bench: Bench): Bench {
         : `${rootCallingFile}::${task.name}`;
       await optimizeFunction(task.fn);
       await (async function __codspeed_root_frame__() {
-        measurement.startInstrumentation();
+        Measurement.startInstrumentation();
         await task.fn();
-        measurement.stopInstrumentation(uri);
+        Measurement.stopInstrumentation(uri);
       })();
       console.log(`    ✔ Measured ${uri}`);
     }
     console.log(`[CodSpeed] Done running ${bench.tasks.length} benches.`);
     return bench.tasks;
   };
+  teardownCore();
   return bench;
 }
 

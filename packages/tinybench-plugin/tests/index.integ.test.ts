@@ -1,5 +1,5 @@
 import { mockDeep, mockReset } from "jest-mock-extended";
-const mockCore = mockDeep<Measurement>();
+const mockCore = mockDeep<typeof Measurement>();
 
 import type { Measurement } from "@codspeed/core";
 import { Bench } from "tinybench";
@@ -9,7 +9,7 @@ import { registerOtherBenchmarks } from "./registerOtherBenchmarks";
 
 jest.mock("@codspeed/core", () => ({
   ...jest.requireActual("@codspeed/core"),
-  measurement: mockCore,
+  Measurement: mockCore,
 }));
 
 beforeEach(() => {

@@ -9,7 +9,8 @@ tasks:
   build-native-addon:
     command: prebuildify --napi --strip
     inputs:
-      - "src/measurement.cc"
+      - "src/native_core/**/*.cc"
+      - "src/native_core/**/*.h"
       - "binding.gyp"
     outputs:
       - "prebuilds"

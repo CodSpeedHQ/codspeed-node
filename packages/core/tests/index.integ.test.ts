@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-import type { Measurement } from "../dist";
+export {}; // Make this a module
 
 beforeEach(() => {
   jest.resetModules();
@@ -7,8 +7,8 @@ beforeEach(() => {
 
 describe("with bindings", () => {
   it("should be bound", () => {
-    const measurement = require("..").measurement as Measurement;
-    expect(measurement.isBound).toBe(true);
+    const isBound = require("..").isBound as boolean;
+    expect(isBound).toBe(true);
   });
 });
 
@@ -21,7 +21,7 @@ describe("without bindings", () => {
     process.env = initialEnv;
   });
   it("should not be bound", () => {
-    const measurement = require("..").measurement as Measurement;
-    expect(measurement.isBound).toBe(false);
+    const isBound = require("..").isBound as boolean;
+    expect(isBound).toBe(false);
   });
 });

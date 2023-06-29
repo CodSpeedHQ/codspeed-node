@@ -1,8 +1,9 @@
 import {
-  initCore,
-  measurement,
+  Measurement,
   optimizeFunction,
   optimizeFunctionSync,
+  setupCore,
+  teardownCore,
 } from "@codspeed/core";
 import Benchmark from "benchmark";
 import buildSuiteAdd from "./buildSuiteAdd";
@@ -83,7 +84,7 @@ export function withCodSpeed(item: unknown): unknown {
 }
 
 function withCodSpeedBenchmark(bench: Benchmark): WithCodSpeedBenchmark {
-  if (!measurement.isInstrumented()) {
+  if (!Measurement.isInstrumented()) {
     const rawRun = bench.run;
     bench.run = (options?: Benchmark.Options) => {
       console.warn(
@@ -113,7 +114,7 @@ function withCodSpeedBenchmark(bench: Benchmark): WithCodSpeedBenchmark {
 }
 
 function withCodSpeedSuite(suite: Benchmark.Suite): WithCodSpeedSuite {
-  if (!measurement.isInstrumented()) {
+  if (!Measurement.isInstrumented()) {
     const rawRun = suite.run;
     suite.run = (options?: Benchmark.Options) => {
       console.warn(
@@ -162,7 +163,7 @@ async function runBenchmarks({
   benchmarkCompletedListeners,
 }: RunBenchmarksOptions): Promise<void> {
   console.log(`[CodSpeed] running with @codspeed/benchmark.js v${__VERSION__}`);
-  initCore();
+  setupCore();
   for (let i = 0; i < benches.length; i++) {
     const bench = benches[i];
     const uri = bench.uri ?? `${baseUri}::unknown_${i}`;
@@ -185,20 +186,21 @@ async function runBenchmarks({
     if (isAsync) {
       await optimizeFunction(benchPayload);
       await (async function __codspeed_root_frame__() {
-        measurement.startInstrumentation();
+        Measurement.startInstrumentation();
         await benchPayload();
-        measurement.stopInstrumentation(uri);
+        Measurement.stopInstrumentation(uri);
       })();
     } else {
       optimizeFunctionSync(benchPayload);
       (function __codspeed_root_frame__() {
-        measurement.startInstrumentation();
+        Measurement.startInstrumentation();
         benchPayload();
-        measurement.stopInstrumentation(uri);
+        Measurement.stopInstrumentation(uri);
       })();
     }
     console.log(`    ✔ Measured ${uri}`);
     benchmarkCompletedListeners.forEach((listener) => listener());
+    teardownCore();
   }
   console.log(`[CodSpeed] Done running ${benches.length} benches.`);
 }

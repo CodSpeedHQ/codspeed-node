@@ -1,5 +1,7 @@
-#include <napi.h>
+#include "measurement.h"
 #include <valgrind/callgrind.h>
+
+namespace MeasurementModule {
 
 Napi::Boolean IsInstrumented(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
@@ -31,14 +33,19 @@ void StopInstrumentation(const Napi::CallbackInfo &info) {
   return;
 }
 
-Napi::Object Init(Napi::Env env, Napi::Object exports) {
-  exports.Set(Napi::String::New(env, "isInstrumented"),
-              Napi::Function::New(env, IsInstrumented));
-  exports.Set(Napi::String::New(env, "startInstrumentation"),
-              Napi::Function::New(env, StartInstrumentation));
-  exports.Set(Napi::String::New(env, "stopInstrumentation"),
-              Napi::Function::New(env, StopInstrumentation));
+Napi::Object Initialize(Napi::Env env, Napi::Object exports) {
+  Napi::Object measurementObj = Napi::Object::New(env);
+
+  measurementObj.Set(Napi::String::New(env, "isInstrumented"),
+                     Napi::Function::New(env, IsInstrumented));
+  measurementObj.Set(Napi::String::New(env, "startInstrumentation"),
+                     Napi::Function::New(env, StartInstrumentation));
+  measurementObj.Set(Napi::String::New(env, "stopInstrumentation"),
+                     Napi::Function::New(env, StopInstrumentation));
+
+  exports.Set(Napi::String::New(env, "Measurement"), measurementObj);
+
   return exports;
 }
 
-NODE_API_MODULE(measurement, Init)
+} // namespace MeasurementModule
