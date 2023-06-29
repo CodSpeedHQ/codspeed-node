@@ -71,6 +71,7 @@ tasks:
       - "/tsconfig.base.json"
     deps:
       - "build"
+      - "test/integ"
 
   test/integ:
     command: "jest --passWithNoTests --silent -c jest.config.integ.js"
