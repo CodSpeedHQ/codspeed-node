@@ -1,7 +1,8 @@
 #include "measurement.h"
 #include <valgrind/callgrind.h>
 
-namespace MeasurementModule {
+namespace codspeed_native {
+namespace Measurement {
 
 Napi::Boolean IsInstrumented(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
@@ -48,4 +49,5 @@ Napi::Object Initialize(Napi::Env env, Napi::Object exports) {
   return exports;
 }
 
-} // namespace MeasurementModule
+} // namespace Measurement
+} // namespace codspeed_native

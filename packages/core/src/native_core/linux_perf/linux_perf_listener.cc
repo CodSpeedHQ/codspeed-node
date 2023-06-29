@@ -3,6 +3,8 @@
 #include <sstream>
 #include <uv.h>
 
+namespace codspeed_native {
+
 LinuxPerfHandler::LinuxPerfHandler(v8::Isolate *isolate)
     : v8::CodeEventHandler(isolate) {
   isolate_ = isolate;
@@ -29,3 +31,5 @@ void LinuxPerfHandler::Handle(v8::CodeEvent *code_event) {
           << ":" << code_event->GetScriptLine() << ":"
           << code_event->GetScriptColumn() << std::endl;
 }
+
+} // namespace codspeed_native

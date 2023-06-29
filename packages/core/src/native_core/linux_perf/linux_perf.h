@@ -6,6 +6,8 @@
 #include <napi.h>
 #include <node_object_wrap.h>
 
+namespace codspeed_native {
+
 class LinuxPerfHandler : public v8::CodeEventHandler {
 public:
   explicit LinuxPerfHandler(v8::Isolate *isolate);
@@ -31,5 +33,7 @@ public:
 
   LinuxPerfHandler *handler;
 };
+
+} // namespace codspeed_native
 
 #endif // __LINUX_PERF_H

@@ -3,6 +3,8 @@
 #include "linux_perf.h"
 #include <node_api.h>
 
+namespace codspeed_native {
+
 Napi::Object LinuxPerf::Initialize(Napi::Env env, Napi::Object exports) {
   Napi::Function func = DefineClass(env, "LinuxPerf",
                                     {InstanceMethod("start", &LinuxPerf::Start),
@@ -36,3 +38,5 @@ Napi::Value LinuxPerf::Stop(const Napi::CallbackInfo &info) {
   }
   return Napi::Boolean::New(info.Env(), false);
 }
+
+} // namespace codspeed_native

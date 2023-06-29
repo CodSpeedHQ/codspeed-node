@@ -3,13 +3,15 @@
 
 #include <napi.h>
 
-namespace MeasurementModule {
+namespace codspeed_native {
+namespace Measurement {
 
 Napi::Boolean IsInstrumented(const Napi::CallbackInfo &info);
 void StartInstrumentation(const Napi::CallbackInfo &info);
 void StopInstrumentation(const Napi::CallbackInfo &info);
 Napi::Object Initialize(Napi::Env env, Napi::Object exports);
 
-} // namespace MeasurementModule
+} // namespace Measurement
+} // namespace codspeed_native
 
 #endif // MEASUREMENT_H

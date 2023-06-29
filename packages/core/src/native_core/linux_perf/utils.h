@@ -1,3 +1,6 @@
+#ifndef LINUX_PERF_UTILS_H
+#define LINUX_PERF_UTILS_H
+
 #include "v8-profiler.h"
 
 static inline std::string
@@ -8,3 +11,5 @@ v8LocalStringToString(v8::Local<v8::String> v8String) {
   // Sanitize name, removing unwanted \0 resulted from WriteUtf8
   return std::string(buffer.c_str());
 }
+
+#endif // LINUX_PERF_UTILS_H
