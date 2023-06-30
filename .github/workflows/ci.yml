@@ -40,9 +40,9 @@ jobs:
         uses: CodSpeedHQ/action@main
         with:
           run: |
-            pnpm moon run :bench
-            pnpm -r bench-tinybench
-            pnpm -r bench-benchmark-js
+            pnpm moon run --concurrency 1 :bench
+            pnpm --workspace-concurrency 1 -r bench-tinybench
+            pnpm --workspace-concurrency 1 -r bench-benchmark-js
 
   list-examples:
     runs-on: "ubuntu-latest"
