@@ -1,9 +1,5 @@
 lockfileVersion: '6.0'
 
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
-
 importers:
 
   .:
@@ -15,8 +11,8 @@ importers:
         specifier: ^17.4.4
         version: 17.4.4
       '@moonrepo/cli':
-        specifier: ^0.26.6
-        version: 0.26.6
+        specifier: ^1.9.2
+        version: 1.9.2
       '@rollup/plugin-commonjs':
         specifier: ^24.1.0
         version: 24.1.0(rollup@3.20.2)
@@ -96,10 +92,10 @@ importers:
   examples/with-javascript-cjs:
     devDependencies:
       '@codspeed/benchmark.js-plugin':
-        specifier: workspace:^1.1.0
+        specifier: workspace:*
         version: link:../../packages/benchmark.js-plugin
       '@codspeed/tinybench-plugin':
-        specifier: workspace:^1.1.0
+        specifier: workspace:*
         version: link:../../packages/tinybench-plugin
       benchmark:
         specifier: ^2.1.4
@@ -111,10 +107,10 @@ importers:
   examples/with-javascript-esm:
     devDependencies:
       '@codspeed/benchmark.js-plugin':
-        specifier: workspace:^1.1.0
+        specifier: workspace:*
         version: link:../../packages/benchmark.js-plugin
       '@codspeed/tinybench-plugin':
-        specifier: workspace:^1.1.0
+        specifier: workspace:*
         version: link:../../packages/tinybench-plugin
       benchmark:
         specifier: ^2.1.4
@@ -126,10 +122,10 @@ importers:
   examples/with-typescript-cjs:
     devDependencies:
       '@codspeed/benchmark.js-plugin':
-        specifier: workspace:^1.1.0
+        specifier: workspace:*
         version: link:../../packages/benchmark.js-plugin
       '@codspeed/tinybench-plugin':
-        specifier: workspace:^1.1.0
+        specifier: workspace:*
         version: link:../../packages/tinybench-plugin
       '@types/benchmark':
         specifier: ^2.1.2
@@ -147,10 +143,10 @@ importers:
   examples/with-typescript-esm:
     devDependencies:
       '@codspeed/benchmark.js-plugin':
-        specifier: workspace:^1.1.0
+        specifier: workspace:*
         version: link:../../packages/benchmark.js-plugin
       '@codspeed/tinybench-plugin':
-        specifier: workspace:^1.1.0
+        specifier: workspace:*
         version: link:../../packages/tinybench-plugin
       '@types/benchmark':
         specifier: ^2.1.2
@@ -168,10 +164,10 @@ importers:
   examples/with-typescript-simple-cjs:
     devDependencies:
       '@codspeed/benchmark.js-plugin':
-        specifier: workspace:^1.1.0
+        specifier: workspace:*
         version: link:../../packages/benchmark.js-plugin
       '@codspeed/tinybench-plugin':
-        specifier: workspace:^1.1.0
+        specifier: workspace:*
         version: link:../../packages/tinybench-plugin
       '@types/benchmark':
         specifier: ^2.1.2
@@ -192,10 +188,10 @@ importers:
   examples/with-typescript-simple-esm:
     devDependencies:
       '@codspeed/benchmark.js-plugin':
-        specifier: workspace:^1.1.0
+        specifier: workspace:*
         version: link:../../packages/benchmark.js-plugin
       '@codspeed/tinybench-plugin':
-        specifier: workspace:^1.1.0
+        specifier: workspace:*
         version: link:../../packages/tinybench-plugin
       '@types/benchmark':
         specifier: ^2.1.2
@@ -2084,6 +2080,48 @@ packages:
       slash: 3.0.0
     dev: true
 
+  /@jest/core@29.5.0:
+    resolution: {integrity: sha512-28UzQc7ulUrOQw1IsN/kv1QES3q2kkbl/wGslyhAclqZ/8cMdB5M68BffkIdSJgKBUt50d3hbwJ92XESlE7LiQ==}
+    engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+    peerDependencies:
+      node-notifier: ^8.0.1 || ^9.0.0 || ^10.0.0
+    peerDependenciesMeta:
+      node-notifier:
+        optional: true
+    dependencies:
+      '@jest/console': 29.5.0
+      '@jest/reporters': 29.5.0
+      '@jest/test-result': 29.5.0
+      '@jest/transform': 29.5.0
+      '@jest/types': 29.5.0
+      '@types/node': 18.15.11
+      ansi-escapes: 4.3.2
+      chalk: 4.1.2
+      ci-info: 3.8.0
+      exit: 0.1.2
+      graceful-fs: 4.2.11
+      jest-changed-files: 29.5.0
+      jest-config: 29.5.0(@types/node@18.15.11)
+      jest-haste-map: 29.5.0
+      jest-message-util: 29.5.0
+      jest-regex-util: 29.4.3
+      jest-resolve: 29.5.0
+      jest-resolve-dependencies: 29.5.0
+      jest-runner: 29.5.0
+      jest-runtime: 29.5.0
+      jest-snapshot: 29.5.0
+      jest-util: 29.5.0
+      jest-validate: 29.5.0
+      jest-watcher: 29.5.0
+      micromatch: 4.0.5
+      pretty-format: 29.5.0
+      slash: 3.0.0
+      strip-ansi: 6.0.1
+    transitivePeerDependencies:
+      - supports-color
+      - ts-node
+    dev: true
+
   /@jest/core@29.5.0(ts-node@10.9.1):
     resolution: {integrity: sha512-28UzQc7ulUrOQw1IsN/kv1QES3q2kkbl/wGslyhAclqZ/8cMdB5M68BffkIdSJgKBUt50d3hbwJ92XESlE7LiQ==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
@@ -2435,72 +2473,72 @@ packages:
       - supports-color
     dev: true
 
-  /@moonrepo/cli@0.26.6:
-    resolution: {integrity: sha512-II8+wQBgY7nOx6uPBP4WXB+aG5icUaTL03zD+5OWu/MhxZnP6KR9SaPzWVYxg2wlMC/PRBIJrO4HHOvXwPf5FQ==}
+  /@moonrepo/cli@1.9.2:
+    resolution: {integrity: sha512-AvrHKnEpVc733++HoN06lbAZMXSCdOBKC4n9Q22M0AOC6XrrmO8OPb5dHGrLz4UktNEBMExYrT/BC6HkYB6CTg==}
     hasBin: true
     requiresBuild: true
     dependencies:
       detect-libc: 2.0.1
     optionalDependencies:
-      '@moonrepo/core-linux-arm64-gnu': 0.26.6
-      '@moonrepo/core-linux-arm64-musl': 0.26.6
-      '@moonrepo/core-linux-x64-gnu': 0.26.6
-      '@moonrepo/core-linux-x64-musl': 0.26.6
-      '@moonrepo/core-macos-arm64': 0.26.6
-      '@moonrepo/core-macos-x64': 0.26.6
-      '@moonrepo/core-windows-x64-msvc': 0.26.6
+      '@moonrepo/core-linux-arm64-gnu': 1.9.2
+      '@moonrepo/core-linux-arm64-musl': 1.9.2
+      '@moonrepo/core-linux-x64-gnu': 1.9.2
+      '@moonrepo/core-linux-x64-musl': 1.9.2
+      '@moonrepo/core-macos-arm64': 1.9.2
+      '@moonrepo/core-macos-x64': 1.9.2
+      '@moonrepo/core-windows-x64-msvc': 1.9.2
     dev: true
 
-  /@moonrepo/core-linux-arm64-gnu@0.26.6:
-    resolution: {integrity: sha512-EoTXj6CbjuH7ZjKFuWSUMAmlhhfEdybOH0RK7kcZB1Yfaj5jkATbE3nldx5tZqhY6XhH21+tzVPVhnv984Fe4Q==}
+  /@moonrepo/core-linux-arm64-gnu@1.9.2:
+    resolution: {integrity: sha512-5zpGLw7nrB86etWLVeJQEQs22mkym+GSyYkP6ntjP+FbLLb7iDAof09Obua00AlZwJkSTz3JQW4ZFw4OTAQf1Q==}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
     dev: true
     optional: true
 
-  /@moonrepo/core-linux-arm64-musl@0.26.6:
-    resolution: {integrity: sha512-QV/QI7ei0hmffI/6Ye+DoQjZe0nUhQMStwHBKHBIw0Z2a0DlJT1RBzXjg/JvAzZ52YlvFWiErChyUDXcCsjA4w==}
+  /@moonrepo/core-linux-arm64-musl@1.9.2:
+    resolution: {integrity: sha512-FTSPH4wRYBAxHVwLoXRUIhR84f2rlt5+qOXwsszCqzvzdz6Mn9XGPKwbOF1SnAPy7KMx/2Slmi1yHBX49zXhvQ==}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
     dev: true
     optional: true
 
-  /@moonrepo/core-linux-x64-gnu@0.26.6:
-    resolution: {integrity: sha512-FN/BN3PguMxVceSWWaAT7MH/l4GJ5tpke6/93+Tj7C2zb8CxWy8K5Xbt3S0eP8gi/8294SczLs5dnX41rqQLrQ==}
+  /@moonrepo/core-linux-x64-gnu@1.9.2:
+    resolution: {integrity: sha512-zKR61O1tGZEYFQ7TU8cgv8vraDJNuDZS+qfvU9QCO+epDPSREdEyDY9G7p66eY0VZCBckepTLY20XKPTJna7Jg==}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     dev: true
     optional: true
 
-  /@moonrepo/core-linux-x64-musl@0.26.6:
-    resolution: {integrity: sha512-dGLqyCgivx0SdEdjjf9YqNH3cVI99VbPqUpJY0ZnTfT+V2MA3zJelYlmFEvV8ENzlNGSNWHhtnHOo4v55NQekQ==}
+  /@moonrepo/core-linux-x64-musl@1.9.2:
+    resolution: {integrity: sha512-CnH+HTkyu+J1PE9mmTQHQhjPaeg95DOLcBes+2ntR1tMMfMp3t0LgEbTFZMC2NR0QCvaV4QZ4gzYFSy0e3LHVA==}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     dev: true
     optional: true
 
-  /@moonrepo/core-macos-arm64@0.26.6:
-    resolution: {integrity: sha512-Mx2ONXONWOd5y5gILj6rFZDxDcISwPcNmk4U0vOPw+bfwQRAmBE5wN/XK/8h+Z1lWBOqLYc3JpAsjRcuublj0w==}
+  /@moonrepo/core-macos-arm64@1.9.2:
+    resolution: {integrity: sha512-2ywr3TJfTKIaDXWTQG6/EOq/Wh/3Ldbob4qUe5xVoclGgncX7Xbt/3VyJ3uhl/oU6EvqX9T50kqVQRaMa5NTxA==}
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
     dev: true
     optional: true
 
-  /@moonrepo/core-macos-x64@0.26.6:
-    resolution: {integrity: sha512-5b9jZImp8D68R5TbUSExOivNZGuvblsJy2NVoyGa5cM1d4Uw5wcfFsQyeNURqTuBVxs0oMFFgSJMX2sgEPU5dg==}
+  /@moonrepo/core-macos-x64@1.9.2:
+    resolution: {integrity: sha512-Hh1h5EskzDUroePsd3WJdvxriQS9oM+fu+MFL14sL+CN1R9Qeei9/BJ8aPrRWGPGaVJ3WQWsVVsu+2BaivHxHQ==}
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
     dev: true
     optional: true
 
-  /@moonrepo/core-windows-x64-msvc@0.26.6:
-    resolution: {integrity: sha512-mpHwTGcqB4W9yPaMqGhUeWWQajUG4eH3nbsuWfRDKD2xrQGjmLbxuYXFVnxvVpGCkecL/h88FwF7+5GVeximHg==}
+  /@moonrepo/core-windows-x64-msvc@1.9.2:
+    resolution: {integrity: sha512-239QR5mNueWawS6btcy5b3FIqVxW9nf6c4MhBDGgCjneyfBxkVE0VPO62s3EHaOGrXh0f/PAjwu+ijnK1ZOkDA==}
     cpu: [x64]
     os: [win32]
     requiresBuild: true
@@ -4814,7 +4852,7 @@ packages:
       debug: 4.3.4
       enhanced-resolve: 5.12.0
       eslint: 7.32.0
-      eslint-module-utils: 2.7.4(@typescript-eslint/parser@5.58.0)(eslint-import-resolver-node@0.3.7)(eslint-import-resolver-typescript@3.5.5)(eslint@7.32.0)
+      eslint-module-utils: 2.7.4(@typescript-eslint/parser@5.58.0)(eslint-import-resolver-typescript@3.5.5)(eslint@7.32.0)
       eslint-plugin-import: 2.27.5(@typescript-eslint/parser@5.58.0)(eslint-import-resolver-typescript@3.5.5)(eslint@7.32.0)
       get-tsconfig: 4.5.0
       globby: 13.1.4
@@ -4853,6 +4891,35 @@ packages:
       debug: 3.2.7
       eslint: 7.32.0
       eslint-import-resolver-node: 0.3.7
+      eslint-import-resolver-typescript: 3.5.5(@typescript-eslint/parser@5.58.0)(eslint-plugin-import@2.27.5)(eslint@7.32.0)
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
+
+  /eslint-module-utils@2.7.4(@typescript-eslint/parser@5.58.0)(eslint-import-resolver-typescript@3.5.5)(eslint@7.32.0):
+    resolution: {integrity: sha512-j4GT+rqzCoRKHwURX7pddtIPGySnX9Si/cgMI5ztrcqOPtk5dDEeZ34CQVPphnqkJytlc97Vuk05Um2mJ3gEQA==}
+    engines: {node: '>=4'}
+    peerDependencies:
+      '@typescript-eslint/parser': '*'
+      eslint: '*'
+      eslint-import-resolver-node: '*'
+      eslint-import-resolver-typescript: '*'
+      eslint-import-resolver-webpack: '*'
+    peerDependenciesMeta:
+      '@typescript-eslint/parser':
+        optional: true
+      eslint:
+        optional: true
+      eslint-import-resolver-node:
+        optional: true
+      eslint-import-resolver-typescript:
+        optional: true
+      eslint-import-resolver-webpack:
+        optional: true
+    dependencies:
+      '@typescript-eslint/parser': 5.58.0(eslint@7.32.0)(typescript@4.9.4)
+      debug: 3.2.7
+      eslint: 7.32.0
       eslint-import-resolver-typescript: 3.5.5(@typescript-eslint/parser@5.58.0)(eslint-plugin-import@2.27.5)(eslint@7.32.0)
     transitivePeerDependencies:
       - supports-color
@@ -6217,6 +6284,34 @@ packages:
       - supports-color
     dev: true
 
+  /jest-cli@29.5.0:
+    resolution: {integrity: sha512-L1KcP1l4HtfwdxXNFCL5bmUbLQiKrakMUriBEcc1Vfz6gx31ORKdreuWvmQVBit+1ss9NNR3yxjwfwzZNdQXJw==}
+    engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+    hasBin: true
+    peerDependencies:
+      node-notifier: ^8.0.1 || ^9.0.0 || ^10.0.0
+    peerDependenciesMeta:
+      node-notifier:
+        optional: true
+    dependencies:
+      '@jest/core': 29.5.0
+      '@jest/test-result': 29.5.0
+      '@jest/types': 29.5.0
+      chalk: 4.1.2
+      exit: 0.1.2
+      graceful-fs: 4.2.11
+      import-local: 3.1.0
+      jest-config: 29.5.0
+      jest-util: 29.5.0
+      jest-validate: 29.5.0
+      prompts: 2.4.2
+      yargs: 17.7.1
+    transitivePeerDependencies:
+      - '@types/node'
+      - supports-color
+      - ts-node
+    dev: true
+
   /jest-cli@29.5.0(@types/node@18.15.11)(ts-node@10.9.1):
     resolution: {integrity: sha512-L1KcP1l4HtfwdxXNFCL5bmUbLQiKrakMUriBEcc1Vfz6gx31ORKdreuWvmQVBit+1ss9NNR3yxjwfwzZNdQXJw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
@@ -6243,6 +6338,83 @@ packages:
       - '@types/node'
       - supports-color
       - ts-node
+    dev: true
+
+  /jest-config@29.5.0:
+    resolution: {integrity: sha512-kvDUKBnNJPNBmFFOhDbm59iu1Fii1Q6SxyhXfvylq3UTHbg6o7j/g8k2dZyXWLvfdKB1vAPxNZnMgtKJcmu3kA==}
+    engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+    peerDependencies:
+      '@types/node': '*'
+      ts-node: '>=9.0.0'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      ts-node:
+        optional: true
+    dependencies:
+      '@babel/core': 7.21.4
+      '@jest/test-sequencer': 29.5.0
+      '@jest/types': 29.5.0
+      babel-jest: 29.5.0(@babel/core@7.21.4)
+      chalk: 4.1.2
+      ci-info: 3.8.0
+      deepmerge: 4.3.1
+      glob: 7.2.3
+      graceful-fs: 4.2.11
+      jest-circus: 29.5.0
+      jest-environment-node: 29.5.0
+      jest-get-type: 29.4.3
+      jest-regex-util: 29.4.3
+      jest-resolve: 29.5.0
+      jest-runner: 29.5.0
+      jest-util: 29.5.0
+      jest-validate: 29.5.0
+      micromatch: 4.0.5
+      parse-json: 5.2.0
+      pretty-format: 29.5.0
+      slash: 3.0.0
+      strip-json-comments: 3.1.1
+    transitivePeerDependencies:
+      - supports-color
+    dev: true
+
+  /jest-config@29.5.0(@types/node@18.15.11):
+    resolution: {integrity: sha512-kvDUKBnNJPNBmFFOhDbm59iu1Fii1Q6SxyhXfvylq3UTHbg6o7j/g8k2dZyXWLvfdKB1vAPxNZnMgtKJcmu3kA==}
+    engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+    peerDependencies:
+      '@types/node': '*'
+      ts-node: '>=9.0.0'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      ts-node:
+        optional: true
+    dependencies:
+      '@babel/core': 7.21.4
+      '@jest/test-sequencer': 29.5.0
+      '@jest/types': 29.5.0
+      '@types/node': 18.15.11
+      babel-jest: 29.5.0(@babel/core@7.21.4)
+      chalk: 4.1.2
+      ci-info: 3.8.0
+      deepmerge: 4.3.1
+      glob: 7.2.3
+      graceful-fs: 4.2.11
+      jest-circus: 29.5.0
+      jest-environment-node: 29.5.0
+      jest-get-type: 29.4.3
+      jest-regex-util: 29.4.3
+      jest-resolve: 29.5.0
+      jest-runner: 29.5.0
+      jest-util: 29.5.0
+      jest-validate: 29.5.0
+      micromatch: 4.0.5
+      parse-json: 5.2.0
+      pretty-format: 29.5.0
+      slash: 3.0.0
+      strip-json-comments: 3.1.1
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /jest-config@29.5.0(@types/node@18.15.11)(ts-node@10.9.1):
@@ -6388,7 +6560,7 @@ packages:
       jest: ^24.0.0 || ^25.0.0 || ^26.0.0 || ^27.0.0 || ^28.0.0 || ^29.0.0
       typescript: ^3.0.0 || ^4.0.0 || ^5.0.0
     dependencies:
-      jest: 29.5.0(@types/node@18.15.11)(ts-node@10.9.1)
+      jest: 29.5.0
       ts-essentials: 7.0.3(typescript@5.1.3)
       typescript: 5.1.3
     dev: true
@@ -6580,6 +6752,26 @@ packages:
       jest-util: 29.5.0
       merge-stream: 2.0.0
       supports-color: 8.1.1
+    dev: true
+
+  /jest@29.5.0:
+    resolution: {integrity: sha512-juMg3he2uru1QoXX078zTa7pO85QyB9xajZc6bU+d9yEGwrKX6+vGmJQ3UdVZsvTEUARIdObzH68QItim6OSSQ==}
+    engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+    hasBin: true
+    peerDependencies:
+      node-notifier: ^8.0.1 || ^9.0.0 || ^10.0.0
+    peerDependenciesMeta:
+      node-notifier:
+        optional: true
+    dependencies:
+      '@jest/core': 29.5.0
+      '@jest/types': 29.5.0
+      import-local: 3.1.0
+      jest-cli: 29.5.0
+    transitivePeerDependencies:
+      - '@types/node'
+      - supports-color
+      - ts-node
     dev: true
 
   /jest@29.5.0(@types/node@18.15.11)(ts-node@10.9.1):
@@ -9704,3 +9896,7 @@ packages:
   /yocto-queue@1.0.0:
     resolution: {integrity: sha512-9bnSc/HEW2uRy67wc+T8UwauLuPJVn28jb+GtJY16iiKWyvmYJRXVT4UamsAEGQfPohgr2q4Tq0sQbQlxTfi1g==}
     engines: {node: '>=12.20'}
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
