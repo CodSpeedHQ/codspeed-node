@@ -7,8 +7,8 @@
     "bench-tinybench": "node tinybench.js"
   },
   "devDependencies": {
-    "@codspeed/benchmark.js-plugin": "workspace:^1.1.0",
-    "@codspeed/tinybench-plugin": "workspace:^1.1.0",
+    "@codspeed/benchmark.js-plugin": "workspace:*",
+    "@codspeed/tinybench-plugin": "workspace:*",
     "benchmark": "^2.1.4",
     "tinybench": "^2.5.0"
   }

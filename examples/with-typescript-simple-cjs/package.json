@@ -6,8 +6,8 @@
     "bench-tinybench": "node -r esbuild-register tinybench.ts"
   },
   "devDependencies": {
-    "@codspeed/benchmark.js-plugin": "workspace:^1.1.0",
-    "@codspeed/tinybench-plugin": "workspace:^1.1.0",
+    "@codspeed/benchmark.js-plugin": "workspace:*",
+    "@codspeed/tinybench-plugin": "workspace:*",
     "@types/benchmark": "^2.1.2",
     "benchmark": "^2.1.4",
     "esbuild-register": "^3.4.2",
