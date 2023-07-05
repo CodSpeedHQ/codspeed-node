@@ -1,0 +1,43 @@
+name: Release on tag
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v3
+        with:
+          cache: pnpm
+          node-version-file: .nvmrc
+          registry-url: "https://registry.npmjs.org"
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: sudo apt-get install -y valgrind
+
+      - name: Build the libraries
+        run: pnpm moon run :build
+
+      - name: Publish the libraries
+        run: pnpm publish -r --access=public --no-git-checks
+        env:
+          NPM_CONFIG_PROVENANCE: true
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create a draft release
+        run: |
+          NEW_VERSION=$(pnpm lerna list --json | jq -r '.[] | select(.name == "@codspeed/core") | .version')
+          gh release create v$NEW_VERSION --title "v$NEW_VERSION" --generate-notes -d
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
