@@ -20,11 +20,5 @@ bench
   });
 
 bench.run().then(() => {
-  console.table(
-    bench.tasks.map(({ name, result }) => ({
-      "Task Name": name,
-      "Average Time (ps)": result?.mean ? result.mean * 1000 : "N/A",
-      "Variance (ps)": result?.variance ? result.variance * 1000 : "N/A",
-    }))
-  );
+  console.table(bench.table());
 });
