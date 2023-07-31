@@ -2,6 +2,7 @@ tasks:
   clean:
     args:
       - build
+      - generated/openapi
   build:
     deps:
       - "build-native-addon"
@@ -14,3 +15,10 @@ tasks:
       - "binding.gyp"
     outputs:
       - "prebuilds"
+
+  build-tracer-client:
+    inputs:
+      - "./tracer.spec.json"
+    outputs:
+      - "src/generated/openapi"
+    command: openapi --client axios --input ./tracer.spec.json --name MongoTracer --output ./src/generated/openapi

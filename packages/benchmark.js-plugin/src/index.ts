@@ -1,5 +1,6 @@
 import {
   Measurement,
+  mongoMeasurement,
   optimizeFunction,
   optimizeFunctionSync,
   setupCore,
@@ -192,18 +193,22 @@ async function runBenchmarks({
 
     if (isAsync) {
       await optimizeFunction(benchPayload);
+      await mongoMeasurement.start(uri);
       await (async function __codspeed_root_frame__() {
         Measurement.startInstrumentation();
         await benchPayload();
         Measurement.stopInstrumentation(uri);
       })();
+      await mongoMeasurement.stop(uri);
     } else {
       optimizeFunctionSync(benchPayload);
+      await mongoMeasurement.start(uri);
       (function __codspeed_root_frame__() {
         Measurement.startInstrumentation();
         benchPayload();
         Measurement.stopInstrumentation(uri);
       })();
+      await mongoMeasurement.stop(uri);
     }
 
     if (typeof bench.options.teardown === "function") {

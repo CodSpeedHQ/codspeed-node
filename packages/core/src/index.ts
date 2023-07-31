@@ -1,4 +1,5 @@
 import { checkV8Flags } from "./introspection";
+import { MongoMeasurement } from "./mongoMeasurement";
 import native_core from "./native_core";
 import { initOptimization } from "./optimization";
 
@@ -8,6 +9,8 @@ const linuxPerf = new native_core.LinuxPerf();
 
 export const isBound = native_core.isBound;
 
+export let mongoMeasurement: MongoMeasurement;
+
 export const setupCore = () => {
   initOptimization();
   native_core.Measurement.stopInstrumentation(
@@ -15,6 +18,7 @@ export const setupCore = () => {
   );
   linuxPerf.start();
   checkV8Flags();
+  mongoMeasurement = new MongoMeasurement();
 };
 
 export const teardownCore = () => {

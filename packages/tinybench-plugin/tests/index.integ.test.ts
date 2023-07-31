@@ -29,6 +29,8 @@ describe("Benchmark.Suite", () => {
     await bench.run();
 
     expect(onComplete).toHaveBeenCalled();
+    expect(mockCore.mongoMeasurement.start).not.toHaveBeenCalled();
+    expect(mockCore.mongoMeasurement.stop).not.toHaveBeenCalled();
     expect(mockCore.Measurement.startInstrumentation).not.toHaveBeenCalled();
     expect(mockCore.Measurement.stopInstrumentation).not.toHaveBeenCalled();
   });
@@ -39,6 +41,11 @@ describe("Benchmark.Suite", () => {
         /o/.test("Hello World!");
       })
       .run();
+
+    expect(mockCore.mongoMeasurement.start).toHaveBeenCalledWith(
+      "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp"
+    );
+    expect(mockCore.mongoMeasurement.stop).toHaveBeenCalledTimes(1);
     expect(mockCore.Measurement.startInstrumentation).toHaveBeenCalled();
     expect(mockCore.Measurement.stopInstrumentation).toHaveBeenCalledWith(
       "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp"
@@ -54,6 +61,14 @@ describe("Benchmark.Suite", () => {
         /o/.test("Hello World!");
       })
       .run();
+
+    expect(mockCore.mongoMeasurement.start).toHaveBeenCalledWith(
+      "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp"
+    );
+    expect(mockCore.mongoMeasurement.start).toHaveBeenCalledWith(
+      "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp2"
+    );
+    expect(mockCore.mongoMeasurement.stop).toHaveBeenCalledTimes(2);
     expect(mockCore.Measurement.stopInstrumentation).toHaveBeenCalledWith(
       "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp"
     );

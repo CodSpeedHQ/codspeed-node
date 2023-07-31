@@ -1,6 +1,7 @@
 import {
   getGitDir,
   Measurement,
+  mongoMeasurement,
   optimizeFunction,
   setupCore,
   teardownCore,
@@ -65,11 +66,15 @@ export function withCodSpeed(bench: Bench): Bench {
 
       // run instrumented benchmark
       await task.opts.beforeEach?.call(task);
+
+      await mongoMeasurement.start(uri);
       await (async function __codspeed_root_frame__() {
         Measurement.startInstrumentation();
         await task.fn();
         Measurement.stopInstrumentation(uri);
       })();
+      await mongoMeasurement.stop(uri);
+
       await task.opts.afterEach?.call(task);
 
       await task.opts.afterAll?.call(task);
