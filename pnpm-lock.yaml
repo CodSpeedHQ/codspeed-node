@@ -137,6 +137,9 @@ importers:
       benchmark:
         specifier: ^2.1.4
         version: 2.1.4
+      esbuild-register:
+        specifier: ^3.4.2
+        version: 3.4.2(esbuild@0.17.16)
       tinybench:
         specifier: ^2.5.0
         version: 2.5.0
@@ -158,6 +161,9 @@ importers:
       benchmark:
         specifier: ^2.1.4
         version: 2.1.4
+      esbuild-register:
+        specifier: ^3.4.2
+        version: 3.4.2(esbuild@0.17.16)
       tinybench:
         specifier: ^2.5.0
         version: 2.5.0

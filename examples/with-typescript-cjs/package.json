@@ -10,6 +10,7 @@
     "@codspeed/tinybench-plugin": "workspace:*",
     "@types/benchmark": "^2.1.2",
     "benchmark": "^2.1.4",
+    "esbuild-register": "^3.4.2",
     "tinybench": "^2.5.0",
     "typescript": "^5.1.3"
   }
