@@ -1,5 +1,6 @@
 import {
   Measurement,
+  mongoMeasurement,
   optimizeFunction,
   optimizeFunctionSync,
   setupCore,
@@ -183,6 +184,7 @@ async function runBenchmarks({
       benchPayload = bench.fn as CallableFunction;
     }
 
+    await mongoMeasurement.start(uri);
     if (isAsync) {
       await optimizeFunction(benchPayload);
       await (async function __codspeed_root_frame__() {
@@ -198,6 +200,8 @@ async function runBenchmarks({
         Measurement.stopInstrumentation(uri);
       })();
     }
+    await mongoMeasurement.stop(uri);
+
     console.log(`    ✔ Measured ${uri}`);
     benchmarkCompletedListeners.forEach((listener) => listener());
     teardownCore();

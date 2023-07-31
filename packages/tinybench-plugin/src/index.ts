@@ -1,5 +1,6 @@
 import {
   Measurement,
+  mongoMeasurement,
   optimizeFunction,
   setupCore,
   teardownCore,
@@ -60,11 +61,14 @@ export function withCodSpeed(bench: Bench): Bench {
         ? task.opts.uri
         : `${rootCallingFile}::${task.name}`;
       await optimizeFunction(task.fn);
+
+      await mongoMeasurement.start(uri);
       await (async function __codspeed_root_frame__() {
         Measurement.startInstrumentation();
         await task.fn();
         Measurement.stopInstrumentation(uri);
       })();
+      await mongoMeasurement.stop(uri);
 
       // run after hooks
       if (task.opts.afterEach != null) {
