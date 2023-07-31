@@ -47,6 +47,15 @@ export function withCodSpeed(bench: Bench): Bench {
     setupCore();
     console.log(`[CodSpeed] running with @codspeed/tinybench v${__VERSION__}`);
     for (const task of bench.tasks) {
+      // run before hooks
+      if (task.opts.beforeAll != null) {
+        await task.opts.beforeAll.call(task);
+      }
+      if (task.opts.beforeEach != null) {
+        await task.opts.beforeEach.call(task);
+      }
+
+      // run the actual benchmark, with instrumentation
       const uri = isCodSpeedBenchOptions(task.opts)
         ? task.opts.uri
         : `${rootCallingFile}::${task.name}`;
@@ -56,6 +65,16 @@ export function withCodSpeed(bench: Bench): Bench {
         await task.fn();
         Measurement.stopInstrumentation(uri);
       })();
+
+      // run after hooks
+      if (task.opts.afterEach != null) {
+        await task.opts.afterEach.call(task);
+      }
+      if (task.opts.afterAll != null) {
+        await task.opts.afterAll.call(task);
+      }
+
+      // print results
       console.log(`    ✔ Measured ${uri}`);
     }
     console.log(`[CodSpeed] Done running ${bench.tasks.length} benches.`);

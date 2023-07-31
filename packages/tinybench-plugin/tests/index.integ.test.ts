@@ -131,4 +131,34 @@ describe("Benchmark.Suite", () => {
       );
     }
   );
+
+  it("should run before and after hooks", async () => {
+    mockCore.isInstrumented.mockReturnValue(true);
+    const beforeAll = jest.fn();
+    const beforeEach = jest.fn();
+    const afterEach = jest.fn();
+    const afterAll = jest.fn();
+
+    await withCodSpeed(new Bench())
+      .add(
+        "RegExp",
+        function () {
+          /o/.test("Hello World!");
+        },
+        { afterAll, afterEach, beforeAll, beforeEach }
+      )
+      .add(
+        "RegExp2",
+        () => {
+          /o/.test("Hello World!");
+        },
+        { afterAll, afterEach, beforeAll, beforeEach }
+      )
+      .run();
+
+    expect(beforeAll).toHaveBeenCalledTimes(2);
+    expect(beforeEach).toHaveBeenCalledTimes(2);
+    expect(afterEach).toHaveBeenCalledTimes(2);
+    expect(afterAll).toHaveBeenCalledTimes(2);
+  });
 });
