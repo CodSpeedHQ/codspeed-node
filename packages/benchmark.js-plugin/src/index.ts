@@ -183,6 +183,10 @@ async function runBenchmarks({
       benchPayload = bench.fn as CallableFunction;
     }
 
+    if (typeof bench.options.setup === "function") {
+      await bench.options.setup();
+    }
+
     if (isAsync) {
       await optimizeFunction(benchPayload);
       await (async function __codspeed_root_frame__() {
@@ -198,6 +202,11 @@ async function runBenchmarks({
         Measurement.stopInstrumentation(uri);
       })();
     }
+
+    if (typeof bench.options.teardown === "function") {
+      await bench.options.teardown();
+    }
+
     console.log(`    ✔ Measured ${uri}`);
     benchmarkCompletedListeners.forEach((listener) => listener());
   }

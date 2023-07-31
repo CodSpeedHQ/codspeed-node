@@ -104,6 +104,23 @@ describe("Benchmark", () => {
       }
     }
   );
+  it("should call setup and teardown", async () => {
+    mockCore.Measurement.isInstrumented.mockReturnValue(true);
+    const setup = jest.fn();
+    const teardown = jest.fn();
+    const bench = withCodSpeed(
+      new Benchmark(
+        "RegExpSingle",
+        function () {
+          /o/.test("Hello World!");
+        },
+        { ...benchOptions, setup, teardown }
+      )
+    );
+    await bench.run();
+    expect(setup).toHaveBeenCalled();
+    expect(teardown).toHaveBeenCalled();
+  });
 });
 
 describe("Benchmark.Suite", () => {
@@ -249,5 +266,22 @@ describe("Benchmark.Suite", () => {
 
     expect(mockCore.setupCore).toHaveBeenCalledTimes(1);
     expect(mockCore.teardownCore).toHaveBeenCalledTimes(1);
+  });
+  it("should call setup and teardown", async () => {
+    mockCore.Measurement.isInstrumented.mockReturnValue(true);
+    const setup = jest.fn();
+    const teardown = jest.fn();
+
+    const suite = withCodSpeed(new Benchmark.Suite("thesuite")).add(
+      "RegExpSingle",
+      function () {
+        /o/.test("Hello World!");
+      },
+      { ...benchOptions, setup, teardown }
+    );
+    await suite.run();
+
+    expect(setup).toHaveBeenCalled();
+    expect(teardown).toHaveBeenCalled();
   });
 });
