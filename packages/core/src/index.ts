@@ -21,12 +21,12 @@ export const setupCore = () => {
   mongoMeasurement = new MongoMeasurement();
 };
 
-export const teardownCore = () => {
+export const teardownCore = async () => {
   linuxPerf.stop();
-  const aggregate = mongoMeasurement.terminate();
+  const aggregate = await mongoMeasurement.terminate();
   if (aggregate !== undefined) {
     console.log(`[CodSpeed] Mongo Aggregate: ${aggregate}`);
-    return;
+    return aggregate;
   }
   console.log(`[CodSpeed] Mongo Aggregate: no aggregate`);
 };
