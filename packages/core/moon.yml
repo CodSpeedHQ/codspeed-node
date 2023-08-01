@@ -22,3 +22,11 @@ tasks:
     outputs:
       - "src/generated/openapi"
     command: openapi --client axios --input ./tracer.spec.json --name MongoTracer --output ./src/generated/openapi
+
+  typecheck:
+    deps:
+      - build-tracer-client
+
+  lint:
+    deps:
+      - build-tracer-client
