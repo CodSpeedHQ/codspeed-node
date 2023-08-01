@@ -23,6 +23,12 @@ export const setupCore = () => {
 
 export const teardownCore = () => {
   linuxPerf.stop();
+  const aggregate = mongoMeasurement.terminate();
+  if (aggregate !== undefined) {
+    console.log(`[CodSpeed] Mongo Aggregate: ${aggregate}`);
+    return;
+  }
+  console.log(`[CodSpeed] Mongo Aggregate: no aggregate`);
 };
 
 export { getV8Flags, tryIntrospect } from "./introspection";

@@ -39,4 +39,10 @@ export class MongoMeasurement {
       });
     }
   }
+
+  public async terminate() {
+    if (this.tracerClient !== undefined) {
+      return await this.tracerClient.instrumentation.terminate();
+    }
+  }
 }
