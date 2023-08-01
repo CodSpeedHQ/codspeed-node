@@ -1,16 +1,13 @@
 import { mockDeep, mockReset } from "jest-mock-extended";
-const mockCore = mockDeep<typeof Measurement>();
+const mockCore = mockDeep<typeof core>();
 
-import type { Measurement } from "@codspeed/core";
+import * as core from "@codspeed/core";
 import Benchmark from "benchmark";
 import { withCodSpeed } from "..";
 import { registerBenchmarks } from "./registerBenchmarks";
 import { registerOtherBenchmarks } from "./registerOtherBenchmarks";
 
-jest.mock("@codspeed/core", () => ({
-  ...jest.requireActual("@codspeed/core"),
-  Measurement: mockCore,
-}));
+jest.mock("@codspeed/core", () => mockCore);
 
 beforeEach(() => {
   mockReset(mockCore);
@@ -23,7 +20,7 @@ const benchOptions: Benchmark.Options = {
 
 describe("Benchmark", () => {
   it("simple benchmark", async () => {
-    mockCore.isInstrumented.mockReturnValue(false);
+    mockCore.Measurement.isInstrumented.mockReturnValue(false);
     const bench = withCodSpeed(
       new Benchmark(
         "RegExp",
@@ -37,11 +34,11 @@ describe("Benchmark", () => {
     bench.on("complete", onComplete);
     await bench.run();
     expect(onComplete).toHaveBeenCalled();
-    expect(mockCore.startInstrumentation).not.toHaveBeenCalled();
-    expect(mockCore.stopInstrumentation).not.toHaveBeenCalled();
+    expect(mockCore.Measurement.startInstrumentation).not.toHaveBeenCalled();
+    expect(mockCore.Measurement.stopInstrumentation).not.toHaveBeenCalled();
   });
   it("check core methods are called", async () => {
-    mockCore.isInstrumented.mockReturnValue(true);
+    mockCore.Measurement.isInstrumented.mockReturnValue(true);
 
     const bench = withCodSpeed(
       new Benchmark(
@@ -56,13 +53,13 @@ describe("Benchmark", () => {
     bench.on("complete", onComplete);
     await bench.run();
     expect(onComplete).toHaveBeenCalled();
-    expect(mockCore.startInstrumentation).toHaveBeenCalled();
-    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
+    expect(mockCore.Measurement.startInstrumentation).toHaveBeenCalled();
+    expect(mockCore.Measurement.stopInstrumentation).toHaveBeenCalledWith(
       "packages/benchmark.js-plugin/tests/index.integ.test.ts::RegExpSingle"
     );
   });
   it("check error handling", async () => {
-    mockCore.isInstrumented.mockReturnValue(true);
+    mockCore.Measurement.isInstrumented.mockReturnValue(true);
     const bench = withCodSpeed(
       new Benchmark(
         "throwing",
@@ -79,7 +76,7 @@ describe("Benchmark", () => {
     async (instrumented) => {
       const logSpy = jest.spyOn(console, "log");
       const warnSpy = jest.spyOn(console, "warn");
-      mockCore.isInstrumented.mockReturnValue(instrumented);
+      mockCore.Measurement.isInstrumented.mockReturnValue(instrumented);
       await withCodSpeed(
         new Benchmark(
           "RegExpSingle",
@@ -111,7 +108,7 @@ describe("Benchmark", () => {
 
 describe("Benchmark.Suite", () => {
   it("simple suite", async () => {
-    mockCore.isInstrumented.mockReturnValue(false);
+    mockCore.Measurement.isInstrumented.mockReturnValue(false);
     const suite = withCodSpeed(new Benchmark.Suite());
     suite.add(
       "RegExp",
@@ -124,11 +121,11 @@ describe("Benchmark.Suite", () => {
     suite.on("complete", onComplete);
     await suite.run({ maxTime: 0.1, initCount: 1 });
     expect(onComplete).toHaveBeenCalled();
-    expect(mockCore.startInstrumentation).not.toHaveBeenCalled();
-    expect(mockCore.stopInstrumentation).not.toHaveBeenCalled();
+    expect(mockCore.Measurement.startInstrumentation).not.toHaveBeenCalled();
+    expect(mockCore.Measurement.stopInstrumentation).not.toHaveBeenCalled();
   });
   it("check core methods are called", async () => {
-    mockCore.isInstrumented.mockReturnValue(true);
+    mockCore.Measurement.isInstrumented.mockReturnValue(true);
     const suite = withCodSpeed(new Benchmark.Suite()).add(
       "RegExp",
       function () {
@@ -139,13 +136,13 @@ describe("Benchmark.Suite", () => {
     const onComplete = jest.fn();
     suite.on("complete", onComplete);
     await suite.run({ maxTime: 0.1, initCount: 1 });
-    expect(mockCore.startInstrumentation).toHaveBeenCalled();
-    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
+    expect(mockCore.Measurement.startInstrumentation).toHaveBeenCalled();
+    expect(mockCore.Measurement.stopInstrumentation).toHaveBeenCalledWith(
       "packages/benchmark.js-plugin/tests/index.integ.test.ts::RegExp"
     );
   });
   it("check suite name is in the uri", async () => {
-    mockCore.isInstrumented.mockReturnValue(true);
+    mockCore.Measurement.isInstrumented.mockReturnValue(true);
     await withCodSpeed(new Benchmark.Suite("thesuite"))
       .add(
         "RegExp",
@@ -158,15 +155,15 @@ describe("Benchmark.Suite", () => {
         /o/.test("Hello World!");
       }, benchOptions)
       .run();
-    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
+    expect(mockCore.Measurement.stopInstrumentation).toHaveBeenCalledWith(
       "packages/benchmark.js-plugin/tests/index.integ.test.ts::thesuite::RegExp"
     );
-    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
+    expect(mockCore.Measurement.stopInstrumentation).toHaveBeenCalledWith(
       "packages/benchmark.js-plugin/tests/index.integ.test.ts::thesuite::unknown_1"
     );
   });
   it("check error handling", async () => {
-    mockCore.isInstrumented.mockReturnValue(true);
+    mockCore.Measurement.isInstrumented.mockReturnValue(true);
     const bench = withCodSpeed(new Benchmark.Suite("thesuite")).add(
       "throwing",
       () => {
@@ -180,7 +177,7 @@ describe("Benchmark.Suite", () => {
     async (instrumented) => {
       const logSpy = jest.spyOn(console, "log");
       const warnSpy = jest.spyOn(console, "warn");
-      mockCore.isInstrumented.mockReturnValue(instrumented);
+      mockCore.Measurement.isInstrumented.mockReturnValue(instrumented);
       await withCodSpeed(new Benchmark.Suite("thesuite"))
         .add(
           "RegExp",
@@ -212,30 +209,30 @@ describe("Benchmark.Suite", () => {
     }
   );
   it("check nested file path is in the uri when bench is registered in another file", async () => {
-    mockCore.isInstrumented.mockReturnValue(true);
+    mockCore.Measurement.isInstrumented.mockReturnValue(true);
     const suite = withCodSpeed(new Benchmark.Suite("thesuite"));
     registerBenchmarks(suite);
     const onComplete = jest.fn();
     suite.on("complete", onComplete);
     await suite.run({ maxTime: 0.1, initCount: 1 });
-    expect(mockCore.startInstrumentation).toHaveBeenCalled();
-    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
+    expect(mockCore.Measurement.startInstrumentation).toHaveBeenCalled();
+    expect(mockCore.Measurement.stopInstrumentation).toHaveBeenCalledWith(
       "packages/benchmark.js-plugin/tests/registerBenchmarks.ts::thesuite::RegExp"
     );
   });
   it("check that benchmarks with same name have different URIs when registered in different files", async () => {
-    mockCore.isInstrumented.mockReturnValue(true);
+    mockCore.Measurement.isInstrumented.mockReturnValue(true);
     const suite = withCodSpeed(new Benchmark.Suite("thesuite"));
     registerBenchmarks(suite);
     registerOtherBenchmarks(suite);
     const onComplete = jest.fn();
     suite.on("complete", onComplete);
     await suite.run({ maxTime: 0.1, initCount: 1 });
-    expect(mockCore.startInstrumentation).toHaveBeenCalled();
-    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
+    expect(mockCore.Measurement.startInstrumentation).toHaveBeenCalled();
+    expect(mockCore.Measurement.stopInstrumentation).toHaveBeenCalledWith(
       "packages/benchmark.js-plugin/tests/registerBenchmarks.ts::thesuite::RegExp"
     );
-    expect(mockCore.stopInstrumentation).toHaveBeenCalledWith(
+    expect(mockCore.Measurement.stopInstrumentation).toHaveBeenCalledWith(
       "packages/benchmark.js-plugin/tests/registerOtherBenchmarks.ts::thesuite::RegExp"
     );
   });
