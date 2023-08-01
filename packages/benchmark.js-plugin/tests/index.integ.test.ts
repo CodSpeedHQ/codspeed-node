@@ -236,4 +236,18 @@ describe("Benchmark.Suite", () => {
       "packages/benchmark.js-plugin/tests/registerOtherBenchmarks.ts::thesuite::RegExp"
     );
   });
+  it("should call setupCore and teardownCore only once after run()", async () => {
+    mockCore.Measurement.isInstrumented.mockReturnValue(true);
+    const suite = withCodSpeed(new Benchmark.Suite("thesuite"));
+    registerBenchmarks(suite);
+    registerOtherBenchmarks(suite);
+
+    expect(mockCore.setupCore).not.toHaveBeenCalled();
+    expect(mockCore.teardownCore).not.toHaveBeenCalled();
+
+    await suite.run({ maxTime: 0.1, initCount: 1 });
+
+    expect(mockCore.setupCore).toHaveBeenCalledTimes(1);
+    expect(mockCore.teardownCore).toHaveBeenCalledTimes(1);
+  });
 });

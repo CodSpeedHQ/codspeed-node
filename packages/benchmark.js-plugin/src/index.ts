@@ -200,7 +200,7 @@ async function runBenchmarks({
     }
     console.log(`    ✔ Measured ${uri}`);
     benchmarkCompletedListeners.forEach((listener) => listener());
-    teardownCore();
   }
+  teardownCore();
   console.log(`[CodSpeed] Done running ${benches.length} benches.`);
 }

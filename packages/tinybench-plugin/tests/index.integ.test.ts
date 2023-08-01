@@ -158,4 +158,23 @@ describe("Benchmark.Suite", () => {
     expect(afterEach).toHaveBeenCalledTimes(2);
     expect(afterAll).toHaveBeenCalledTimes(2);
   });
+
+  it("should call setupCore and teardownCore only once after run()", async () => {
+    mockCore.Measurement.isInstrumented.mockReturnValue(true);
+    const bench = withCodSpeed(new Bench())
+      .add("RegExp", function () {
+        /o/.test("Hello World!");
+      })
+      .add("RegExp2", () => {
+        /o/.test("Hello World!");
+      });
+
+    expect(mockCore.setupCore).not.toHaveBeenCalled();
+    expect(mockCore.teardownCore).not.toHaveBeenCalled();
+
+    await bench.run();
+
+    expect(mockCore.setupCore).toHaveBeenCalledTimes(1);
+    expect(mockCore.teardownCore).toHaveBeenCalledTimes(1);
+  });
 });

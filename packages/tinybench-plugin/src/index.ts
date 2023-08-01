@@ -44,8 +44,8 @@ export function withCodSpeed(bench: Bench): Bench {
   const rootCallingFile = getCallingFile();
 
   bench.run = async () => {
-    setupCore();
     console.log(`[CodSpeed] running with @codspeed/tinybench v${__VERSION__}`);
+    setupCore();
     for (const task of bench.tasks) {
       // run before hooks
       if (task.opts.beforeAll != null) {
@@ -77,10 +77,10 @@ export function withCodSpeed(bench: Bench): Bench {
       // print results
       console.log(`    ✔ Measured ${uri}`);
     }
+    teardownCore();
     console.log(`[CodSpeed] Done running ${bench.tasks.length} benches.`);
     return bench.tasks;
   };
-  teardownCore();
   return bench;
 }
 
