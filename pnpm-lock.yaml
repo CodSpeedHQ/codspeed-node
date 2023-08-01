@@ -264,6 +264,9 @@ importers:
       find-up:
         specifier: ^6.3.0
         version: 6.3.0
+      form-data:
+        specifier: ^4.0.0
+        version: 4.0.0
       node-gyp-build:
         specifier: ^4.6.0
         version: 4.6.0
