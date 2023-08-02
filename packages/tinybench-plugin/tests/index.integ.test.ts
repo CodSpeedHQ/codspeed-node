@@ -131,6 +131,9 @@ describe("Benchmark.Suite", () => {
 
   it("should run before and after hooks", async () => {
     mockCore.Measurement.isInstrumented.mockReturnValue(true);
+    mockCore.optimizeFunction.mockImplementation(async (fn) => {
+      await fn();
+    });
     const beforeAll = jest.fn();
     const beforeEach = jest.fn();
     const afterEach = jest.fn();
@@ -153,9 +156,11 @@ describe("Benchmark.Suite", () => {
       )
       .run();
 
+    // since the optimization is running the benchmark once before the actual run, the each hooks are called twice
+    expect(beforeEach).toHaveBeenCalledTimes(4);
+    expect(afterEach).toHaveBeenCalledTimes(4);
+
     expect(beforeAll).toHaveBeenCalledTimes(2);
-    expect(beforeEach).toHaveBeenCalledTimes(2);
-    expect(afterEach).toHaveBeenCalledTimes(2);
     expect(afterAll).toHaveBeenCalledTimes(2);
   });
 

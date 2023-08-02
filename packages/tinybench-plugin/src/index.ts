@@ -47,32 +47,29 @@ export function withCodSpeed(bench: Bench): Bench {
     console.log(`[CodSpeed] running with @codspeed/tinybench v${__VERSION__}`);
     setupCore();
     for (const task of bench.tasks) {
-      // run before hooks
-      if (task.opts.beforeAll != null) {
-        await task.opts.beforeAll.call(task);
-      }
-      if (task.opts.beforeEach != null) {
-        await task.opts.beforeEach.call(task);
-      }
-
-      // run the actual benchmark, with instrumentation
       const uri = isCodSpeedBenchOptions(task.opts)
         ? task.opts.uri
         : `${rootCallingFile}::${task.name}`;
-      await optimizeFunction(task.fn);
+
+      await task.opts.beforeAll?.call(task);
+
+      // run optimizations
+      await optimizeFunction(async () => {
+        await task.opts.beforeEach?.call(task);
+        await task.fn();
+        await task.opts.afterEach?.call(task);
+      });
+
+      // run instrumented benchmark
+      await task.opts.beforeEach?.call(task);
       await (async function __codspeed_root_frame__() {
         Measurement.startInstrumentation();
         await task.fn();
         Measurement.stopInstrumentation(uri);
       })();
+      await task.opts.afterEach?.call(task);
 
-      // run after hooks
-      if (task.opts.afterEach != null) {
-        await task.opts.afterEach.call(task);
-      }
-      if (task.opts.afterAll != null) {
-        await task.opts.afterAll.call(task);
-      }
+      await task.opts.afterAll?.call(task);
 
       // print results
       console.log(`    ✔ Measured ${uri}`);
