@@ -1,6 +1,5 @@
 import {
   Measurement,
-  optimizeFunction,
   setupCore,
   teardownCore,
 } from "@codspeed/core";
@@ -53,23 +52,19 @@ export function withCodSpeed(bench: Bench): Bench {
 
       await task.opts.beforeAll?.call(task);
 
-      // run optimizations
-      await optimizeFunction(async () => {
-        await task.opts.beforeEach?.call(task);
-        await task.fn();
-        await task.opts.afterEach?.call(task);
-      });
+      const { beforeEach, afterEach } = task.opts
 
-      // run instrumented benchmark
-      await task.opts.beforeEach?.call(task);
-      await (async function __codspeed_root_frame__() {
+      task.opts.beforeEach = () => {
         Measurement.startInstrumentation();
-        await task.fn();
-        Measurement.stopInstrumentation(uri);
-      })();
-      await task.opts.afterEach?.call(task);
+        beforeEach?.call(task);
+      }
 
-      await task.opts.afterAll?.call(task);
+      task.opts.afterEach = () => {
+        Measurement.stopInstrumentation(uri);
+        afterEach?.call(task);
+      }
+      
+      await task.fn();
 
       // print results
       console.log(`    ✔ Measured ${uri}`);
