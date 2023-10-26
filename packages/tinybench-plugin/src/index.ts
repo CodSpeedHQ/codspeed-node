@@ -63,8 +63,12 @@ export function withCodSpeed(bench: Bench): Bench {
         Measurement.stopInstrumentation(uri);
         afterEach?.call(task);
       }
+
+      await (async function __codspeed_root_frame__() {
+        await task.fn();
+        Measurement.stopInstrumentation(uri);
+      })();
       
-      await task.fn();
 
       // print results
       console.log(`    ✔ Measured ${uri}`);
