@@ -1,5 +1,6 @@
 import {
   Measurement,
+  optimizeFunction,
   setupCore,
   teardownCore,
 } from "@codspeed/core";
@@ -52,7 +53,19 @@ export function withCodSpeed(bench: Bench): Bench {
 
       await task.opts.beforeAll?.call(task);
 
-      const { beforeEach, afterEach } = task.opts
+      const { beforeAll, beforeEach, afterEach } = task.opts
+
+
+      task.opts.beforeAll = async () => {
+
+        await optimizeFunction(async () => {
+          await task.fn();
+        })
+
+        beforeAll?.call(task)
+      }
+
+
 
       task.opts.beforeEach = () => {
         Measurement.startInstrumentation();
