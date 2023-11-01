@@ -11,8 +11,6 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@v3"
-        with:
-          fetch-depth: 0
       - run: sudo apt-get install -y valgrind
       - uses: pnpm/action-setup@v2
       - uses: actions/setup-node@v3
@@ -20,7 +18,10 @@ jobs:
           cache: pnpm
           node-version-file: .nvmrc
       - run: pnpm install --frozen-lockfile --prefer-offline
-      - run: pnpm moon check --all
+      - name: Tmate Session
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 15
+      - run: pnpm moon run :format :lint :typecheck :build :test
 
   list-examples:
     runs-on: "ubuntu-latest"
@@ -59,8 +60,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: "actions/checkout@v3"
-        with:
-          fetch-depth: 0
       - run: sudo apt-get install -y valgrind
       - uses: pnpm/action-setup@v2
         with:
