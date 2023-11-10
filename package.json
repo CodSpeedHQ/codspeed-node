@@ -4,7 +4,7 @@
   "devDependencies": {
     "@commitlint/cli": "^17.5.1",
     "@commitlint/config-conventional": "^17.4.4",
-    "@moonrepo/cli": "^1.9.2",
+    "@moonrepo/cli": "^1.15.4",
     "@rollup/plugin-commonjs": "^24.1.0",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-node-resolve": "^15.0.2",

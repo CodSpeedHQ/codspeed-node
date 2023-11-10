@@ -2,21 +2,14 @@
 $schema: "https://moonrepo.dev/schemas/toolchain.json"
 
 node:
-  version: 18.16.0
-  syncVersionManagerConfig: "nvm"
-  addEnginesConstraint: true
-
   packageManager: "pnpm"
   pnpm:
     version: "8.6.3"
 
   aliasPackageNames: "name-only"
-
   dedupeOnLockfileChange: false
   dependencyVersionFormat: "workspace"
-
   inferTasksFromScripts: true
-
   syncProjectWorkspaceDependencies: true
 
 typescript:
