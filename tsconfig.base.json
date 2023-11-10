@@ -3,7 +3,7 @@
     "composite": true,
     "moduleResolution": "node",
     "target": "ESNext",
-    "module": "NodeNext",
+    "module": "ESNext",
     "lib": ["esnext"],
     "types": ["node"],
     "strict": true,
