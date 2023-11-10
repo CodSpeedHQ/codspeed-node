@@ -1,11 +1,11 @@
 import {
+  getGitDir,
   Measurement,
   optimizeFunction,
   setupCore,
   teardownCore,
 } from "@codspeed/core";
-import { findUpSync, Options } from "find-up";
-import path, { dirname } from "path";
+import path from "path";
 import { get as getStackTrace } from "stack-trace";
 import { Bench, Task } from "tinybench";
 import { fileURLToPath } from "url";
@@ -92,12 +92,4 @@ function getCallingFile(): string {
     callingFile = fileURLToPath(callingFile);
   }
   return path.relative(gitDir, callingFile);
-}
-
-function getGitDir(path: string): string | undefined {
-  const dotGitPath = findUpSync(".git", {
-    cwd: path,
-    type: "directory",
-  } as Options);
-  return dotGitPath ? dirname(dotGitPath) : undefined;
 }

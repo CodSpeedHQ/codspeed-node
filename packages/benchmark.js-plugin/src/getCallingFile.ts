@@ -1,15 +1,7 @@
-import { findUpSync, Options as FindupOptions } from "find-up";
-import path, { dirname } from "path";
+import { getGitDir } from "@codspeed/core";
+import path from "path";
 import { get as getStackTrace } from "stack-trace";
 import { fileURLToPath } from "url";
-
-function getGitDir(path: string): string | undefined {
-  const dotGitPath = findUpSync(".git", {
-    cwd: path,
-    type: "directory",
-  } as FindupOptions);
-  return dotGitPath ? dirname(dotGitPath) : undefined;
-}
 
 export default function getCallingFile(depth: number): string {
   const stack = getStackTrace();

@@ -7,7 +7,10 @@ import { withCodSpeed } from "..";
 import { registerBenchmarks } from "./registerBenchmarks";
 import { registerOtherBenchmarks } from "./registerOtherBenchmarks";
 
-jest.mock("@codspeed/core", () => mockCore);
+jest.mock("@codspeed/core", () => {
+  mockCore.getGitDir = jest.requireActual("@codspeed/core").getGitDir;
+  return mockCore;
+});
 
 beforeEach(() => {
   mockReset(mockCore);

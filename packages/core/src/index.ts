@@ -23,4 +23,5 @@ export const teardownCore = () => {
 };
 
 export { optimizeFunction, optimizeFunctionSync } from "./optimization";
+export * from "./utils";
 export const Measurement = native_core.Measurement;

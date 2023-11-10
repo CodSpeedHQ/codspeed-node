@@ -21,7 +21,6 @@
   "devDependencies": {
     "@babel/preset-env": "^7.22.5",
     "@types/benchmark": "^2.1.2",
-    "@types/find-up": "^4.0.0",
     "@types/lodash": "^4.14.195",
     "@types/stack-trace": "^0.0.30",
     "benchmark": "^2.1.4",
@@ -29,7 +28,6 @@
   },
   "dependencies": {
     "@codspeed/core": "workspace:^2.2.0",
-    "find-up": "^6.3.0",
     "lodash": "^4.17.10",
     "stack-trace": "1.0.0-pre2"
   },
