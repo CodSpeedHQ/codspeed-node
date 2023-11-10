@@ -1,0 +1,35 @@
+{
+  "name": "@codspeed/vitest-runner",
+  "version": "2.2.0",
+  "description": "vitest runner for CodSpeed",
+  "keywords": [
+    "codspeed",
+    "benchmark",
+    "vitest",
+    "performance"
+  ],
+  "main": "dist/index.es5.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "author": "Adrien Cacciaguerra <adrien@codspeed.io>",
+  "repository": "https://github.com/CodSpeedHQ/codspeed-node",
+  "homepage": "https://codspeed.io",
+  "license": "Apache-2.0",
+  "scripts": {
+    "bench": "vitest bench"
+  },
+  "dependencies": {
+    "@codspeed/core": "workspace:^2.2.0"
+  },
+  "devDependencies": {
+    "@total-typescript/shoehorn": "^0.1.1",
+    "execa": "^8.0.1",
+    "vitest": "1.0.0-beta.4"
+  },
+  "peerDependencies": {
+    "vitest": "^1.0.0-beta.4"
+  }
+}
