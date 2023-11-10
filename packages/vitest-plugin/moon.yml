@@ -1,0 +1,16 @@
+tasks:
+  bench:
+    command: vitest bench
+    inputs:
+      - "benches/**"
+    local: true
+    options:
+      cache: false
+
+  test:
+    command: vitest --run
+    inputs:
+      - "./vitest.config.ts"
+
+  test/integ:
+    command: noop

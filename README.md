@@ -18,6 +18,7 @@ Check out the [documentation](https://docs.codspeed.io/benchmarks/nodejs) for co
 
 This mono-repo contains the integration packages for using CodSpeed with Node.js:
 
+- [`@codspeed/vitest-plugin`](./packages/vitest-plugin): vitest compatibility layer for CodSpeed
 - [`@codspeed/tinybench-plugin`](./packages/tinybench-plugin): tinybench compatibility layer for CodSpeed
 - [`@codspeed/benchmark.js-plugin`](./packages/benchmark.js-plugin): Benchmark.js compatibility layer for CodSpeed
 - [`@codspeed/core`](./packages/core): The core library used to integrate with Codspeed runners
