@@ -1,6 +1,4 @@
-import { tryIntrospect } from "./introspection";
-tryIntrospect();
-
+import { checkV8Flags } from "./introspection";
 import native_core from "./native_core";
 import { initOptimization } from "./optimization";
 
@@ -16,12 +14,14 @@ export const setupCore = () => {
     `Metadata: codspeed-node ${__VERSION__}`
   );
   linuxPerf.start();
+  checkV8Flags();
 };
 
 export const teardownCore = () => {
   linuxPerf.stop();
 };
 
+export { getV8Flags, tryIntrospect } from "./introspection";
 export { optimizeFunction, optimizeFunctionSync } from "./optimization";
 export * from "./utils";
 export const Measurement = native_core.Measurement;

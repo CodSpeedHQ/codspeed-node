@@ -4,6 +4,7 @@ import {
   optimizeFunction,
   setupCore,
   teardownCore,
+  tryIntrospect,
 } from "@codspeed/core";
 import path from "path";
 import { get as getStackTrace } from "stack-trace";
@@ -11,6 +12,8 @@ import { Bench, Task } from "tinybench";
 import { fileURLToPath } from "url";
 
 declare const __VERSION__: string;
+
+tryIntrospect();
 
 type CodSpeedBenchOptions = Task["opts"] & {
   uri: string;
