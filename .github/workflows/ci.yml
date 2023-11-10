@@ -41,21 +41,8 @@ jobs:
     needs: list-examples
     strategy:
       matrix:
-        node-version: ["14", "16", "18", "20"]
+        node-version: ["16", "18", "20.5.1"]
         example: ${{ fromJson(needs.list-examples.outputs.examples) }}
-        include:
-          # tinybench does not support node 14
-          - node-version: "14"
-            pnpm-version: "7"
-            skip-tinybench: true
-        exclude:
-          # esbuild-register does not work well with node 14
-          - node-version: "14"
-            example: with-typescript-cjs
-          - node-version: "14"
-            example: with-typescript-esm
-          - node-version: "14"
-            example: with-typescript-simple-esm
       fail-fast: false
     steps:
       - uses: "actions/checkout@v3"
@@ -63,8 +50,6 @@ jobs:
           fetch-depth: 0
       - run: sudo apt-get install -y valgrind
       - uses: pnpm/action-setup@v2
-        with:
-          version: ${{ matrix.pnpm-version || '' }}
       - uses: actions/setup-node@v3
         with:
           cache: pnpm
@@ -73,7 +58,6 @@ jobs:
       - run: pnpm moon run :build
 
       - name: Run benchmarks with tinybench-plugin
-        if: matrix.skip-tinybench != true
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v1`
         uses: CodSpeedHQ/action@main
         with:
