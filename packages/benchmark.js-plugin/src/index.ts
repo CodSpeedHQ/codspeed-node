@@ -4,6 +4,7 @@ import {
   optimizeFunctionSync,
   setupCore,
   teardownCore,
+  tryIntrospect,
 } from "@codspeed/core";
 import Benchmark from "benchmark";
 import buildSuiteAdd from "./buildSuiteAdd";
@@ -11,6 +12,8 @@ import getCallingFile from "./getCallingFile";
 import { CodSpeedBenchmark } from "./types";
 
 declare const __VERSION__: string;
+
+tryIntrospect();
 
 interface WithCodSpeedBenchmark
   extends Omit<

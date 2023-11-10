@@ -1,6 +1,10 @@
 import { writeFileSync } from "fs";
 
-const getV8Flags = (nodeVersionMajor: number) => {
+const CUSTOM_INTROSPECTION_EXIT_CODE = 0;
+
+export const getV8Flags = () => {
+  const nodeVersionMajor = parseInt(process.version.slice(1).split(".")[0]);
+
   const flags = [
     "--hash-seed=1",
     "--random-seed=1",
@@ -20,15 +24,26 @@ const getV8Flags = (nodeVersionMajor: number) => {
 
 export const tryIntrospect = () => {
   if (process.env.__CODSPEED_NODE_CORE_INTROSPECTION_PATH__ !== undefined) {
-    const nodeVersionMajor = parseInt(process.version.slice(1).split(".")[0]);
-
     const introspectionMetadata = {
-      flags: getV8Flags(nodeVersionMajor),
+      flags: getV8Flags(),
     };
     writeFileSync(
       process.env.__CODSPEED_NODE_CORE_INTROSPECTION_PATH__,
       JSON.stringify(introspectionMetadata)
     );
-    process.exit(0);
+    process.exit(CUSTOM_INTROSPECTION_EXIT_CODE);
+  }
+};
+
+export const checkV8Flags = () => {
+  const requiredFlags = getV8Flags();
+  const actualFlags = process.execArgv;
+  const missingFlags = requiredFlags.filter(
+    (flag) => !actualFlags.includes(flag)
+  );
+  if (missingFlags.length > 0) {
+    console.warn(
+      `[CodSpeed] missing required flags: ${missingFlags.join(", ")}`
+    );
   }
 };
