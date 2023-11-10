@@ -35,6 +35,8 @@ tasks:
       - "/.eslintrc.js"
       - "tsconfig.json"
       - "tsconfig.*.json"
+    deps:
+      - "build"
 
   typecheck:
     command: "tsc --noEmit --pretty"
@@ -45,7 +47,7 @@ tasks:
       - "/tsconfig.json"
       - "/tsconfig.base.json"
     deps:
-      - "^:build"
+      - "build"
 
   build:
     command: "rollup -c rollup.config.ts --configPlugin typescript"
@@ -55,7 +57,6 @@ tasks:
     outputs:
       - "dist/"
     deps:
-      - "typecheck"
       - "^:build"
     env:
       NODE_NO_WARNINGS: "1"
