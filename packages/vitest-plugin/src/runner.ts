@@ -1,5 +1,6 @@
 import {
   getGitDir,
+  logDebug,
   Measurement,
   optimizeFunction,
   setupCore,
@@ -66,7 +67,7 @@ function patchRootSuiteWithFullFilePath(suite: Suite) {
 
 class CodSpeedRunner extends NodeBenchmarkRunner {
   async runSuite(suite: Suite): Promise<void> {
-    logCodSpeed(`PROCESS PID: ${process.pid} in ${__filename}`);
+    logDebug(`PROCESS PID: ${process.pid} in ${__filename}`);
     setupCore();
 
     patchRootSuiteWithFullFilePath(suite);

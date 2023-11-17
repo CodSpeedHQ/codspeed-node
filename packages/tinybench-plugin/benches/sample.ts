@@ -1,3 +1,4 @@
+import { logDebug } from "@codspeed/core";
 import { Bench } from "tinybench";
 import { withCodSpeed } from "..";
 import parsePr from "./parsePr";
@@ -11,7 +12,7 @@ const LONG_BODY =
 
 const bench = withCodSpeed(new Bench({ time: 100 }));
 
-console.log(`PROCESS PID: ${process.pid} in ${__filename}`);
+logDebug(`PROCESS PID: ${process.pid} in ${__filename}`);
 
 bench
   .add("switch 1", () => {

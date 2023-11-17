@@ -1,3 +1,4 @@
+import { logDebug } from "@codspeed/core";
 import Benchmark from "benchmark";
 import { withCodSpeed } from "..";
 import parsePr from "./parsePr";
@@ -11,7 +12,7 @@ const LONG_BODY =
 
 const suite = withCodSpeed(new Benchmark.Suite());
 
-console.log(`PROCESS PID: ${process.pid} in ${__filename}`);
+logDebug(`PROCESS PID: ${process.pid} in ${__filename}`);
 
 suite
   .add("RegExp#test", function () {
