@@ -1,5 +1,5 @@
 import type { WithCodSpeedSuite } from "@codspeed/benchmark.js-plugin";
-import { aBaz, baz } from "../../src/foobarbaz";
+import { baz } from "../../src/foobarbaz";
 
 export function registerFoobarbazBenchmarks(suite: WithCodSpeedSuite) {
   suite
@@ -8,13 +8,5 @@ export function registerFoobarbazBenchmarks(suite: WithCodSpeedSuite) {
     })
     .add("test sync baz 100", () => {
       baz(100);
-    });
-
-  suite
-    .add("test async baz 10", async () => {
-      await aBaz(10);
-    })
-    .add("test async baz 100", async () => {
-      await aBaz(100);
     });
 }
