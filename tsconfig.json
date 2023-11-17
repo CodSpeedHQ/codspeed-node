@@ -1,12 +1,16 @@
 {
   "files": [],
   "include": [],
-  "exclude": [
-    "**/node_modules"
-  ],
+  "exclude": ["**/node_modules"],
   "references": [
     {
-      "path": "packages/benchmark.js"
+      "path": "packages/benchmark.js-plugin"
+    },
+    {
+      "path": "packages/tinybench-plugin"
+    },
+    {
+      "path": "packages/vitest-plugin"
     },
     {
       "path": "packages/core"
