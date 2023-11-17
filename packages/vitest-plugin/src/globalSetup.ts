@@ -1,4 +1,4 @@
-declare const __VERSION__: string;
+declare const __VERSION__: string | undefined;
 
 /**
  * @deprecated
@@ -12,12 +12,15 @@ function logCodSpeed(message: string) {
 let teardownHappened = false;
 
 export default function () {
-  logCodSpeed(`@codspeed/vitest-plugin v${__VERSION__} - setup`);
+  // log the version of the plugin if the global variable is defined
+  const VERSION = typeof __VERSION__ === "string" ? `v${__VERSION__} ` : "";
+
+  logCodSpeed(`@codspeed/vitest-plugin ${VERSION}- setup`);
 
   return () => {
     if (teardownHappened) throw new Error("teardown called twice");
     teardownHappened = true;
 
-    logCodSpeed(`@codspeed/vitest-plugin v${__VERSION__} - teardown`);
+    logCodSpeed(`@codspeed/vitest-plugin ${VERSION}- teardown`);
   };
 }

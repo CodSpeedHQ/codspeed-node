@@ -77,9 +77,7 @@ describe("codSpeedPlugin", () => {
     expect(config({}, fromPartial({}))).toStrictEqual({
       test: {
         globalSetup: [
-          expect.stringContaining(
-            "packages/vitest-plugin/src/globalSetup.es5.js"
-          ),
+          expect.stringContaining("packages/vitest-plugin/src/globalSetup.ts"),
         ],
         pool: "forks",
         poolOptions: {
@@ -95,9 +93,7 @@ describe("codSpeedPlugin", () => {
             ],
           },
         },
-        runner: expect.stringContaining(
-          "packages/vitest-plugin/src/runner.es5.js"
-        ),
+        runner: expect.stringContaining("packages/vitest-plugin/src/runner.ts"),
       },
     });
   });

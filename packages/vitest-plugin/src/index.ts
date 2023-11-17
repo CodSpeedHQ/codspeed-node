@@ -1,6 +1,17 @@
 import { getV8Flags, Measurement } from "@codspeed/core";
+import { join } from "path";
 import { Plugin } from "vite";
 import { UserConfig } from "vitest/config";
+
+// get this file's directory path from import.meta.url
+const __dirname = new URL(".", import.meta.url).pathname;
+const isFileInTs = import.meta.url.endsWith(".ts");
+
+function getCodSpeedFileFromName(name: string) {
+  const fileExtension = isFileInTs ? "ts" : "mjs";
+
+  return join(__dirname, `${name}.${fileExtension}`);
+}
 
 export default function codspeedPlugin(): Plugin {
   return {
@@ -18,8 +29,6 @@ export default function codspeedPlugin(): Plugin {
       return true;
     },
     enforce: "post",
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore - vite does not support vitest config yet in typings
     config(): UserConfig {
       return {
         test: {
@@ -29,8 +38,8 @@ export default function codspeedPlugin(): Plugin {
               execArgv: getV8Flags(),
             },
           },
-          runner: `${__dirname}/runner.es5.js`,
-          globalSetup: [`${__dirname}/globalSetup.es5.js`],
+          runner: getCodSpeedFileFromName("runner"),
+          globalSetup: [getCodSpeedFileFromName("globalSetup")],
         },
       };
     },
