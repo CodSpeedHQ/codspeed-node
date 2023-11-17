@@ -11,6 +11,11 @@ import { Benchmark, Suite } from "vitest";
 import { NodeBenchmarkRunner } from "vitest/runners";
 import { getBenchFn } from "vitest/suite";
 
+const currentFileName =
+  typeof __filename === "string"
+    ? __filename
+    : new URL("runner.mjs", import.meta.url).pathname;
+
 /**
  * @deprecated
  * TODO: try to use something like `updateTask` from `@vitest/runner` instead to use the output
@@ -67,7 +72,7 @@ function patchRootSuiteWithFullFilePath(suite: Suite) {
 
 class CodSpeedRunner extends NodeBenchmarkRunner {
   async runSuite(suite: Suite): Promise<void> {
-    logDebug(`PROCESS PID: ${process.pid} in ${__filename}`);
+    logDebug(`PROCESS PID: ${process.pid} in ${currentFileName}`);
     setupCore();
 
     patchRootSuiteWithFullFilePath(suite);
