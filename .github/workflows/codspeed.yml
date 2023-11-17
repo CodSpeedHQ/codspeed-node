@@ -30,3 +30,4 @@ jobs:
             pnpm moon run --concurrency 1 :bench
             pnpm --workspace-concurrency 1 -r bench-tinybench
             pnpm --workspace-concurrency 1 -r bench-benchmark-js
+            pnpm --workspace-concurrency 1 -r bench-vitest
