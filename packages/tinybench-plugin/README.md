@@ -12,11 +12,11 @@ tinybench compatibility layer for CodSpeed
 
 ## Documentation
 
-Check out the [documentation](https://docs.codspeed.io/benchmarks/nodejs) for complete integration instructions.
+Check out the [documentation](https://docs.codspeed.io/benchmarks/nodejs/tinybench) for complete integration instructions.
 
 ## Installation
 
-First install the plugin [`@codspeed/tinybench-plugin`](https://www.npmjs.com/package/@codspeed/tinybench-plugin) and `tinybench` (if not already installed):
+First, install the plugin [`@codspeed/tinybench-plugin`](https://www.npmjs.com/package/@codspeed/tinybench-plugin) and `tinybench` (if not already installed):
 
 ```sh
 npm install --save-dev @codspeed/tinybench-plugin tinybench
@@ -87,4 +87,4 @@ $ node benches/bench.mjs
 
 And... Congrats🎉, CodSpeed is installed in your benchmarking suite! Locally, CodSpeed will fallback to tinybench since the instrumentation is only available in the CI environment for now.
 
-You can now [run those benchmark in your CI](https://docs.codspeed.io/benchmarks/nodejs#running-the-benchmarks-in-your-ci) to continuously get consistent performance measurements.
+You can now [run those benchmarks in your CI](https://docs.codspeed.io/benchmarks/nodejs/tinybench#running-the-benchmarks-in-your-ci) to continuously get consistent performance measurements.

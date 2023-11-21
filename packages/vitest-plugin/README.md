@@ -12,11 +12,11 @@
 
 ## Documentation
 
-Check out the [documentation](https://docs.codspeed.io/benchmarks/nodejs) for complete integration instructions.
+Check out the [documentation](https://docs.codspeed.io/benchmarks/nodejs/vitest) for complete integration instructions.
 
 ## Installation
 
-First install the plugin [`@codspeed/vitest-plugin`](https://www.npmjs.com/package/@codspeed/vitest-plugin) and `vitest` (if not already installed):
+First, install the plugin [`@codspeed/vitest-plugin`](https://www.npmjs.com/package/@codspeed/vitest-plugin) and `vitest` (if not already installed):
 
 > [!WARNING]
 > The CodSpeed plugin is only compatible with
@@ -87,4 +87,4 @@ $ pnpm vitest bench --run
 
 And... Congrats 🎉, CodSpeed is installed in your benchmarking suite! Locally, CodSpeed will fallback to vitest since the instrumentation is only available in the CI environment for now.
 
-You can now [run those benchmarks in your CI](https://docs.codspeed.io/benchmarks/nodejs#running-the-benchmarks-in-your-ci) to continuously get consistent performance measurements.
+You can now [run those benchmarks in your CI](https://docs.codspeed.io/benchmarks/nodejs/vitest#running-the-benchmarks-in-your-ci) to continuously get consistent performance measurements.

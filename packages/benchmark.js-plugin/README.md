@@ -12,11 +12,11 @@ Benchmark.js compatibility layer for CodSpeed
 
 ## Documentation
 
-Check out the [documentation](https://docs.codspeed.io/benchmarks/nodejs) for complete integration instructions.
+Check out the [documentation](https://docs.codspeed.io/benchmarks/nodejs/benchmark.js) for complete integration instructions.
 
 ## Installation
 
-First install the plugin [`@codspeed/benchmark.js-plugin`](https://www.npmjs.com/package/@codspeed/tinybench-plugin) and `benchmark.js` (if not already installed):
+First, install the plugin [`@codspeed/benchmark.js-plugin`](https://www.npmjs.com/package/@codspeed/benchmark.js-plugin) and `benchmark.js` (if not already installed):
 
 ```sh
 npm install --save-dev @codspeed/benchmark.js-plugin benchmark.js
@@ -83,4 +83,4 @@ fibonacci15 x 194,742 ops/sec ±0.48% (95 runs sampled)
 
 And... Congrats🎉, CodSpeed is installed in your benchmarking suite! Locally, CodSpeed will fallback to tinybench since the instrumentation is only available in the CI environment for now.
 
-You can now [run those benchmark in your CI](https://docs.codspeed.io/benchmarks/nodejs#running-the-benchmarks-in-your-ci) to continuously get consistent performance measurements.
+You can now [run those benchmarks in your CI](https://docs.codspeed.io/benchmarks/nodejs/benchmark.js#running-the-benchmarks-in-your-ci) to continuously get consistent performance measurements.
