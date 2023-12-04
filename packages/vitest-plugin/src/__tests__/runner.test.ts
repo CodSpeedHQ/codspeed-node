@@ -11,6 +11,10 @@ const coreMocks = vi.hoisted(() => {
     },
     setupCore: vi.fn(),
     teardownCore: vi.fn(),
+    mongoMeasurement: {
+      start: vi.fn(),
+      stop: vi.fn(),
+    },
   };
 });
 
@@ -44,7 +48,13 @@ describe("CodSpeedRunner", () => {
     );
 
     // run
+    expect(coreMocks.mongoMeasurement.start).toHaveBeenCalledWith(
+      "packages/vitest-plugin/src/__tests__/runner.test.ts::test bench"
+    );
+    expect(coreMocks.Measurement.startInstrumentation).toHaveBeenCalledTimes(1);
     expect(benchFn).toHaveBeenCalledTimes(2);
+    expect(coreMocks.Measurement.stopInstrumentation).toHaveBeenCalledTimes(1);
+    expect(coreMocks.mongoMeasurement.stop).toHaveBeenCalledTimes(1);
     expect(console.log).toHaveBeenCalledWith(
       "[CodSpeed] packages/vitest-plugin/src/__tests__/runner.test.ts::test bench done"
     );
@@ -89,7 +99,13 @@ describe("CodSpeedRunner", () => {
     );
 
     // run
+    expect(coreMocks.mongoMeasurement.start).toHaveBeenCalledWith(
+      "packages/vitest-plugin/src/__tests__/runner.test.ts::nested suite::test bench"
+    );
+    expect(coreMocks.Measurement.startInstrumentation).toHaveBeenCalledTimes(1);
     expect(benchFn).toHaveBeenCalledTimes(2);
+    expect(coreMocks.Measurement.stopInstrumentation).toHaveBeenCalledTimes(1);
+    expect(coreMocks.mongoMeasurement.stop).toHaveBeenCalledTimes(1);
     expect(console.log).toHaveBeenCalledWith(
       "[CodSpeed] packages/vitest-plugin/src/__tests__/runner.test.ts::nested suite::test bench done"
     );

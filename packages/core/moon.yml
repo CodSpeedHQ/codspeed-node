@@ -5,7 +5,8 @@ tasks:
       - generated/openapi
   build:
     deps:
-      - "build-native-addon"
+      - build-native-addon
+      - build-tracer-client
 
   build-native-addon:
     command: prebuildify --napi --strip

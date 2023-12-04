@@ -2,6 +2,7 @@ import {
   getGitDir,
   logDebug,
   Measurement,
+  mongoMeasurement,
   optimizeFunction,
   setupCore,
   teardownCore,
@@ -48,12 +49,14 @@ async function runBenchmarkSuite(suite: Suite, parentSuiteName?: string) {
     const fn = getBenchFn(benchmark);
 
     await optimizeFunction(fn);
+    await mongoMeasurement.start(uri);
     await (async function __codspeed_root_frame__() {
       Measurement.startInstrumentation();
       // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench
       await fn();
       Measurement.stopInstrumentation(uri);
     })();
+    await mongoMeasurement.stop(uri);
 
     logCodSpeed(`${uri} done`);
   }
@@ -82,7 +85,10 @@ class CodSpeedRunner extends NodeBenchmarkRunner {
     await runBenchmarkSuite(suite);
     logCodSpeed(`running suite ${suite.name} done`);
 
-    teardownCore();
+    const mongoAggregate = await teardownCore();
+    logCodSpeed(
+      `[CodSpeed] Mongo Aggregate: ${JSON.stringify(mongoAggregate, null, 2)}`
+    );
   }
 }
 
