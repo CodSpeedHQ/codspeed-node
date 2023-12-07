@@ -82,10 +82,7 @@ export function withCodSpeed(bench: Bench): Bench {
       // print results
       console.log(`    ✔ Measured ${uri}`);
     }
-    const aggregate = await teardownCore();
-    console.log(
-      `[CodSpeed] Mongo Aggregate: ${JSON.stringify(aggregate, null, 2)}`
-    );
+    teardownCore();
     console.log(`[CodSpeed] Done running ${bench.tasks.length} benches.`);
     return bench.tasks;
   };

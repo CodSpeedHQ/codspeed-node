@@ -21,14 +21,8 @@ export const setupCore = () => {
   mongoMeasurement = new MongoMeasurement();
 };
 
-export const teardownCore = async () => {
+export const teardownCore = () => {
   linuxPerf.stop();
-  const aggregate = await mongoMeasurement.terminate();
-  if (aggregate !== undefined) {
-    console.log(`[CodSpeed] Mongo Aggregate: ${aggregate}`);
-    return aggregate;
-  }
-  console.log(`[CodSpeed] Mongo Aggregate: no aggregate`);
 };
 
 export { getV8Flags, tryIntrospect } from "./introspection";

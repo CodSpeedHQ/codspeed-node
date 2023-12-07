@@ -1,4 +1,4 @@
-import { ApiError, MongoTracer } from "./generated/openapi";
+import { MongoTracer } from "./generated/openapi";
 
 export class MongoMeasurement {
   private tracerClient: MongoTracer | undefined;
@@ -37,20 +37,6 @@ export class MongoMeasurement {
       await this.tracerClient.instrumentation.stop({
         uri,
       });
-    }
-  }
-
-  public async terminate() {
-    if (this.tracerClient !== undefined) {
-      try {
-        return await this.tracerClient.instrumentation.terminate();
-      } catch (e) {
-        // TODO handle terminate killing the server instead of returning a response first
-        if (e instanceof ApiError) {
-          console.error("Terminate failed with error");
-          console.log(e.body);
-        }
-      }
     }
   }
 }

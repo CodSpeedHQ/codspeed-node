@@ -85,10 +85,7 @@ class CodSpeedRunner extends NodeBenchmarkRunner {
     await runBenchmarkSuite(suite);
     logCodSpeed(`running suite ${suite.name} done`);
 
-    const mongoAggregate = await teardownCore();
-    logCodSpeed(
-      `[CodSpeed] Mongo Aggregate: ${JSON.stringify(mongoAggregate, null, 2)}`
-    );
+    teardownCore();
   }
 }
 
