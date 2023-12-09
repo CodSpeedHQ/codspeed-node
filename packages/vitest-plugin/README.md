@@ -18,25 +18,25 @@ Check out the [documentation](https://docs.codspeed.io/benchmarks/nodejs/vitest)
 
 First, install the plugin [`@codspeed/vitest-plugin`](https://www.npmjs.com/package/@codspeed/vitest-plugin) and `vitest` (if not already installed):
 
-> [!WARNING]
+> [!NOTE]
 > The CodSpeed plugin is only compatible with
-> [vitest@1.0.0-beta.4](https://github.com/vitest-dev/vitest/releases/tag/v1.0.0-beta.4)
+> [vitest@1.0.0](https://www.npmjs.com/package/vitest/v/1.0.0)
 > and above.
 
 ```sh
-npm install --save-dev @codspeed/vitest-plugin vitest@1.0.0-beta.4
+npm install --save-dev @codspeed/vitest-plugin vitest
 ```
 
 or with `yarn`:
 
 ```sh
-yarn add --dev @codspeed/vitest-plugin vitest@1.0.0-beta.4
+yarn add --dev @codspeed/vitest-plugin vitest
 ```
 
 or with `pnpm`:
 
 ```sh
-pnpm add --save-dev @codspeed/vitest-plugin vitest@1.0.0-beta.4
+pnpm add --save-dev @codspeed/vitest-plugin vitest
 ```
 
 ## Usage
