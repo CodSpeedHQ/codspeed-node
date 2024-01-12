@@ -9,7 +9,7 @@ const linuxPerf = new native_core.LinuxPerf();
 
 export const isBound = native_core.isBound;
 
-export let mongoMeasurement: MongoMeasurement;
+export const mongoMeasurement = new MongoMeasurement();
 
 export const setupCore = () => {
   initOptimization();
@@ -18,7 +18,6 @@ export const setupCore = () => {
   );
   linuxPerf.start();
   checkV8Flags();
-  mongoMeasurement = new MongoMeasurement();
 };
 
 export const teardownCore = () => {
