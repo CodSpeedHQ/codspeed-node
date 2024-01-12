@@ -4,6 +4,8 @@ import {
   mongoMeasurement,
   optimizeFunction,
   setupCore,
+  StartInstrumentsRequestBody,
+  StartInstrumentsResponse,
   teardownCore,
   tryIntrospect,
 } from "@codspeed/core";
@@ -100,4 +102,19 @@ function getCallingFile(): string {
     callingFile = fileURLToPath(callingFile);
   }
   return path.relative(gitDir, callingFile);
+}
+
+/**
+ * Dynamically starts the CodSpeed instruments.
+ */
+export async function startInstruments(
+  body: StartInstrumentsRequestBody
+): Promise<StartInstrumentsResponse> {
+  if (!Measurement.isInstrumented()) {
+    console.warn("[CodSpeed] No instrumentation found, using default mongoUrl");
+
+    return { remoteAddr: body.mongoUrl };
+  }
+
+  return await mongoMeasurement.startInstruments(body);
 }
