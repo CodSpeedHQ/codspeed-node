@@ -6,7 +6,6 @@ node:
   pnpm:
     version: "8.6.3"
 
-  aliasPackageNames: "name-only"
   dedupeOnLockfileChange: false
   dependencyVersionFormat: "workspace"
   inferTasksFromScripts: true
