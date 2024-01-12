@@ -3,7 +3,7 @@
   "info": {
     "title": "CodSpeed MongoDB Tracer",
     "description": "Instrumentation API for CodSpeed Tracer",
-    "version": "0.1.0"
+    "version": "0.1.1-beta.4"
   },
   "paths": {
     "/benchmark/start": {
@@ -61,6 +61,40 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InstrumentationStatus"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/instruments/start": {
+      "post": {
+        "tags": ["instruments"],
+        "operationId": "start",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartInstrumentsRequestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartInstrumentsResponse"
                 }
               }
             }
@@ -249,12 +283,35 @@
           "query_documents",
           "response_documents"
         ]
+      },
+      "StartInstrumentsRequestBody": {
+        "type": "object",
+        "properties": {
+          "mongoUrl": {
+            "description": "The full `MONGO_URL` that is usually used to connect to the database.",
+            "type": "string"
+          }
+        },
+        "required": ["mongoUrl"]
+      },
+      "StartInstrumentsResponse": {
+        "type": "object",
+        "properties": {
+          "remoteAddr": {
+            "description": "The patched `MONGO_URL` that should be used to connect to the database.",
+            "type": "string"
+          }
+        },
+        "required": ["remoteAddr"]
       }
     }
   },
   "tags": [
     {
       "name": "instrumentation"
+    },
+    {
+      "name": "instruments"
     }
   ]
 }

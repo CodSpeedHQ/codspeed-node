@@ -1,4 +1,10 @@
-import { MongoTracer } from "./generated/openapi";
+import {
+  MongoTracer,
+  StartInstrumentsRequestBody,
+  StartInstrumentsResponse,
+} from "./generated/openapi";
+
+export type { StartInstrumentsRequestBody };
 
 export class MongoMeasurement {
   private tracerClient: MongoTracer | undefined;
@@ -11,6 +17,15 @@ export class MongoMeasurement {
         BASE: serverUrl,
       });
     }
+  }
+
+  public async startInstruments(
+    body: StartInstrumentsRequestBody
+  ): Promise<StartInstrumentsResponse> {
+    if (this.tracerClient === undefined) {
+      throw new Error("MongoDB Instrumentation is not enabled");
+    }
+    return await this.tracerClient.instruments.start(body);
   }
 
   public async start(uri: string) {
