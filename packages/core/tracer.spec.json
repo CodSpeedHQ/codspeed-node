@@ -3,7 +3,7 @@
   "info": {
     "title": "CodSpeed MongoDB Tracer",
     "description": "Instrumentation API for CodSpeed Tracer",
-    "version": "0.1.1-beta.4"
+    "version": "0.2.0"
   },
   "paths": {
     "/benchmark/start": {
@@ -74,15 +74,17 @@
         }
       }
     },
-    "/instruments/start": {
+    "/instruments/setup": {
       "post": {
         "tags": ["instruments"],
-        "operationId": "start",
+        "summary": "Start the instruments (proxy and aggregator) for the given `body.mongo_url`.",
+        "description": "If other endpoints of the instrumentation server are called before this one, they will likely fail as the proxy and aggregator are not running yet.",
+        "operationId": "setup",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/StartInstrumentsRequestBody"
+                "$ref": "#/components/schemas/SetupInstrumentsRequestBody"
               }
             }
           },
@@ -94,7 +96,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StartInstrumentsResponse"
+                  "$ref": "#/components/schemas/SetupInstrumentsResponse"
                 }
               }
             }
@@ -284,7 +286,7 @@
           "response_documents"
         ]
       },
-      "StartInstrumentsRequestBody": {
+      "SetupInstrumentsRequestBody": {
         "type": "object",
         "properties": {
           "mongoUrl": {
@@ -294,7 +296,7 @@
         },
         "required": ["mongoUrl"]
       },
-      "StartInstrumentsResponse": {
+      "SetupInstrumentsResponse": {
         "type": "object",
         "properties": {
           "remoteAddr": {

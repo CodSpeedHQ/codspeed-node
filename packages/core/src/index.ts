@@ -25,8 +25,8 @@ export const teardownCore = () => {
 };
 
 export type {
-  StartInstrumentsRequestBody,
-  StartInstrumentsResponse,
+  SetupInstrumentsRequestBody,
+  SetupInstrumentsResponse,
 } from "./generated/openapi";
 export { getV8Flags, tryIntrospect } from "./introspection";
 export { optimizeFunction, optimizeFunctionSync } from "./optimization";
