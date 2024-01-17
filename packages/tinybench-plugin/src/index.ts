@@ -8,6 +8,7 @@ import {
 } from "@codspeed/core";
 import path from "path";
 import { get as getStackTrace } from "stack-trace";
+import request from "sync-request";
 import { Bench, Task } from "tinybench";
 import { fileURLToPath } from "url";
 
@@ -15,10 +16,12 @@ declare const __VERSION__: string;
 
 tryIntrospect();
 
-async function doSomeWork() {
-  for (let i = 0; i < 1000; i++) {
-    Math.random();
-  }
+function doSomeWorkSync() {
+  const result = request("GET", "https://google.com");
+
+  console.log(`request ended with status code ${result.statusCode}`);
+
+  return result;
 }
 
 type CodSpeedBenchOptions = Task["opts"] & {
@@ -62,7 +65,7 @@ export function withCodSpeed(bench: Bench): Bench {
 
       await task.opts.beforeAll?.call(task);
 
-      await doSomeWork();
+      doSomeWorkSync();
 
       // run optimizations
       await optimizeFunction(async () => {
@@ -71,7 +74,7 @@ export function withCodSpeed(bench: Bench): Bench {
         await task.opts.afterEach?.call(task);
       });
 
-      await doSomeWork();
+      doSomeWorkSync();
 
       // run instrumented benchmark
       await task.opts.beforeEach?.call(task);

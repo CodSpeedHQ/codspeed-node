@@ -7,6 +7,7 @@ import {
   tryIntrospect,
 } from "@codspeed/core";
 import Benchmark from "benchmark";
+import request from "sync-request";
 import buildSuiteAdd from "./buildSuiteAdd";
 import getCallingFile from "./getCallingFile";
 import { CodSpeedBenchmark } from "./types";
@@ -15,10 +16,12 @@ declare const __VERSION__: string;
 
 tryIntrospect();
 
-async function doSomeWork() {
-  for (let i = 0; i < 1000; i++) {
-    Math.random();
-  }
+function doSomeWorkSync() {
+  const result = request("GET", "https://google.com");
+
+  console.log(`request ended with status code ${result.statusCode}`);
+
+  return result;
 }
 interface WithCodSpeedBenchmark
   extends Omit<
@@ -195,7 +198,7 @@ async function runBenchmarks({
       await bench.options.setup();
     }
 
-    await doSomeWork();
+    doSomeWorkSync();
 
     if (isAsync) {
       await optimizeFunction(benchPayload);
@@ -213,7 +216,7 @@ async function runBenchmarks({
       })();
     }
 
-    await doSomeWork();
+    doSomeWorkSync();
 
     if (typeof bench.options.teardown === "function") {
       await bench.options.teardown();

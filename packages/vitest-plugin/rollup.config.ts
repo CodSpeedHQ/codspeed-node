@@ -24,6 +24,6 @@ export default defineConfig([
     input: "src/runner.ts",
     output: { file: "dist/runner.mjs", format: "es" },
     plugins: jsPlugins(pkg.version),
-    external: ["@codspeed/core", /^vitest/],
+    external: ["@codspeed/core", /^vitest/, "sync-request"],
   },
 ]);
