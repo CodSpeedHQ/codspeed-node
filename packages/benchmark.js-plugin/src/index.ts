@@ -4,6 +4,8 @@ import {
   optimizeFunction,
   optimizeFunctionSync,
   setupCore,
+  SetupInstrumentsRequestBody,
+  SetupInstrumentsResponse,
   teardownCore,
   tryIntrospect,
 } from "@codspeed/core";
@@ -220,4 +222,19 @@ async function runBenchmarks({
   }
   teardownCore();
   console.log(`[CodSpeed] Done running ${benches.length} benches.`);
+}
+
+/**
+ * Dynamically setup the CodSpeed instruments.
+ */
+export async function setupInstruments(
+  body: SetupInstrumentsRequestBody
+): Promise<SetupInstrumentsResponse> {
+  if (!Measurement.isInstrumented()) {
+    console.warn("[CodSpeed] No instrumentation found, using default mongoUrl");
+
+    return { remoteAddr: body.mongoUrl };
+  }
+
+  return await mongoMeasurement.setupInstruments(body);
 }
