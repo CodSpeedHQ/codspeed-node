@@ -15,6 +15,12 @@ declare const __VERSION__: string;
 
 tryIntrospect();
 
+function doSomeWork() {
+  for (let i = 0; i < 1000; i++) {
+    Math.random();
+  }
+}
+
 type CodSpeedBenchOptions = Task["opts"] & {
   uri: string;
 };
@@ -56,12 +62,16 @@ export function withCodSpeed(bench: Bench): Bench {
 
       await task.opts.beforeAll?.call(task);
 
+      doSomeWork();
+
       // run optimizations
       await optimizeFunction(async () => {
         await task.opts.beforeEach?.call(task);
         await task.fn();
         await task.opts.afterEach?.call(task);
       });
+
+      doSomeWork();
 
       // run instrumented benchmark
       await task.opts.beforeEach?.call(task);

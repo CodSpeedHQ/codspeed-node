@@ -15,6 +15,11 @@ declare const __VERSION__: string;
 
 tryIntrospect();
 
+function doSomeWork() {
+  for (let i = 0; i < 1000; i++) {
+    Math.random();
+  }
+}
 interface WithCodSpeedBenchmark
   extends Omit<
     Benchmark,
@@ -190,6 +195,8 @@ async function runBenchmarks({
       await bench.options.setup();
     }
 
+    doSomeWork();
+
     if (isAsync) {
       await optimizeFunction(benchPayload);
       await (async function __codspeed_root_frame__() {
@@ -205,6 +212,8 @@ async function runBenchmarks({
         Measurement.stopInstrumentation(uri);
       })();
     }
+
+    doSomeWork();
 
     if (typeof bench.options.teardown === "function") {
       await bench.options.teardown();

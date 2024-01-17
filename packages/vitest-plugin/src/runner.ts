@@ -11,6 +11,11 @@ import { Benchmark, Suite } from "vitest";
 import { NodeBenchmarkRunner } from "vitest/runners";
 import { getBenchFn } from "vitest/suite";
 
+function doSomeWork() {
+  for (let i = 0; i < 1000; i++) {
+    Math.random();
+  }
+}
 const currentFileName =
   typeof __filename === "string"
     ? __filename
@@ -48,12 +53,14 @@ async function runBenchmarkSuite(suite: Suite, parentSuiteName?: string) {
     const fn = getBenchFn(benchmark);
 
     await optimizeFunction(fn);
+    doSomeWork();
     await (async function __codspeed_root_frame__() {
       Measurement.startInstrumentation();
       // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench
       await fn();
       Measurement.stopInstrumentation(uri);
     })();
+    doSomeWork();
 
     logCodSpeed(`${uri} done`);
   }
