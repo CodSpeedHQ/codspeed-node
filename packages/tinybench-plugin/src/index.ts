@@ -15,7 +15,7 @@ declare const __VERSION__: string;
 
 tryIntrospect();
 
-function doSomeWork() {
+async function doSomeWork() {
   for (let i = 0; i < 1000; i++) {
     Math.random();
   }
@@ -62,7 +62,7 @@ export function withCodSpeed(bench: Bench): Bench {
 
       await task.opts.beforeAll?.call(task);
 
-      doSomeWork();
+      await doSomeWork();
 
       // run optimizations
       await optimizeFunction(async () => {
@@ -71,7 +71,7 @@ export function withCodSpeed(bench: Bench): Bench {
         await task.opts.afterEach?.call(task);
       });
 
-      doSomeWork();
+      await doSomeWork();
 
       // run instrumented benchmark
       await task.opts.beforeEach?.call(task);

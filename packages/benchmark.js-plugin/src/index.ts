@@ -15,7 +15,7 @@ declare const __VERSION__: string;
 
 tryIntrospect();
 
-function doSomeWork() {
+async function doSomeWork() {
   for (let i = 0; i < 1000; i++) {
     Math.random();
   }
@@ -195,7 +195,7 @@ async function runBenchmarks({
       await bench.options.setup();
     }
 
-    doSomeWork();
+    await doSomeWork();
 
     if (isAsync) {
       await optimizeFunction(benchPayload);
@@ -213,7 +213,7 @@ async function runBenchmarks({
       })();
     }
 
-    doSomeWork();
+    await doSomeWork();
 
     if (typeof bench.options.teardown === "function") {
       await bench.options.teardown();
