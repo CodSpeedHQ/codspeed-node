@@ -1,6 +1,6 @@
 tasks:
   bench:
-    command: vitest bench
+    command: vitest bench --run
     inputs:
       - "benches/**"
     local: true
