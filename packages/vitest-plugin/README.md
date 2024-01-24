@@ -20,7 +20,7 @@ First, install the plugin [`@codspeed/vitest-plugin`](https://www.npmjs.com/pack
 
 > [!NOTE]
 > The CodSpeed plugin is only compatible with
-> [vitest@1.0.0](https://www.npmjs.com/package/vitest/v/1.0.0)
+> [vitest@1.2.2](https://www.npmjs.com/package/vitest/v/1.2.2)
 > and above.
 
 ```sh

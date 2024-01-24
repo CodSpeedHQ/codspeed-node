@@ -8,9 +8,33 @@ import {
   teardownCore,
 } from "@codspeed/core";
 import path from "path";
-import { Benchmark, Suite } from "vitest";
+import { Benchmark, chai, Suite, Task } from "vitest";
 import { NodeBenchmarkRunner } from "vitest/runners";
-import { getBenchFn } from "vitest/suite";
+import { getBenchFn, getHooks } from "vitest/suite";
+
+type SuiteHooks = ReturnType<typeof getHooks>;
+
+function getSuiteHooks(suite: Suite, name: keyof SuiteHooks) {
+  return getHooks(suite)[name];
+}
+
+export async function callSuiteHook<T extends keyof SuiteHooks>(
+  suite: Suite,
+  currentTask: Task,
+  name: T
+): Promise<void> {
+  if (name === "beforeEach" && suite.suite) {
+    await callSuiteHook(suite.suite, currentTask, name);
+  }
+
+  const hooks = getSuiteHooks(suite, name);
+
+  await Promise.all(hooks.map((fn) => fn()));
+
+  if (name === "afterEach" && suite.suite) {
+    await callSuiteHook(suite.suite, currentTask, name);
+  }
+}
 
 const currentFileName =
   typeof __filename === "string"
@@ -26,39 +50,62 @@ function logCodSpeed(message: string) {
   console.log(`[CodSpeed] ${message}`);
 }
 
-async function runBenchmarkSuite(suite: Suite, parentSuiteName?: string) {
-  const benchmarkGroup: Benchmark[] = [];
-  const benchmarkSuiteGroup: Suite[] = [];
-  for (const task of suite.tasks) {
-    if (task.mode !== "run") continue;
+async function runBench(benchmark: Benchmark, currentSuiteName: string) {
+  const uri = `${currentSuiteName}::${benchmark.name}`;
+  const fn = getBenchFn(benchmark);
 
-    if (task.meta?.benchmark) benchmarkGroup.push(task as Benchmark);
-    else if (task.type === "suite") benchmarkSuiteGroup.push(task);
+  await callSuiteHook(benchmark.suite, benchmark, "beforeEach");
+  try {
+    await optimizeFunction(fn);
+  } catch (e) {
+    // if the error is not an assertion error, we want to fail the run
+    // we allow assertion errors because we want to be able to use `expect` in the benchmark to allow for better authoring
+    // assertions are allowed to fail in the optimization phase since it might be linked to stateful code
+    if (!(e instanceof chai.AssertionError)) {
+      throw e;
+    }
   }
+  await callSuiteHook(benchmark.suite, benchmark, "afterEach");
 
+  await callSuiteHook(benchmark.suite, benchmark, "beforeEach");
+  await mongoMeasurement.start(uri);
+  await (async function __codspeed_root_frame__() {
+    Measurement.startInstrumentation();
+    // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench
+    await fn();
+    Measurement.stopInstrumentation(uri);
+  })();
+  await mongoMeasurement.stop(uri);
+  await callSuiteHook(benchmark.suite, benchmark, "afterEach");
+
+  logCodSpeed(`${uri} done`);
+}
+
+async function runBenchmarkSuite(suite: Suite, parentSuiteName?: string) {
   const currentSuiteName = parentSuiteName
     ? parentSuiteName + "::" + suite.name
     : suite.name;
 
-  for (const subSuite of benchmarkSuiteGroup) {
-    await runBenchmarkSuite(subSuite, currentSuiteName);
+  // do not call `beforeAll` if we are in the root suite, since it is already called by vitest
+  // see https://github.com/vitest-dev/vitest/blob/1fee63f2598edc228017f18eca325f85ee54aee0/packages/runner/src/run.ts#L293
+  if (parentSuiteName !== undefined) {
+    await callSuiteHook(suite, suite, "beforeAll");
   }
 
-  for (const benchmark of benchmarkGroup) {
-    const uri = `${currentSuiteName}::${benchmark.name}`;
-    const fn = getBenchFn(benchmark);
+  for (const task of suite.tasks) {
+    if (task.mode !== "run") continue;
 
-    await optimizeFunction(fn);
-    await mongoMeasurement.start(uri);
-    await (async function __codspeed_root_frame__() {
-      Measurement.startInstrumentation();
-      // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench
-      await fn();
-      Measurement.stopInstrumentation(uri);
-    })();
-    await mongoMeasurement.stop(uri);
+    if (task.meta?.benchmark) {
+      await runBench(task as Benchmark, currentSuiteName);
+    } else if (task.type === "suite") {
+      await runBenchmarkSuite(task, currentSuiteName);
+    }
+  }
 
-    logCodSpeed(`${uri} done`);
+  // do not call `afterAll` if we are in the root suite, since it is already called by vitest
+  // see https://github.com/vitest-dev/vitest/blob/1fee63f2598edc228017f18eca325f85ee54aee0/packages/runner/src/run.ts#L324
+  if (parentSuiteName !== undefined) {
+    await callSuiteHook(suite, suite, "afterAll");
   }
 }
 
