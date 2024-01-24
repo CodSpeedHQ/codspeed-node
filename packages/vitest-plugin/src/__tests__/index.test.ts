@@ -43,7 +43,7 @@ describe("codSpeedPlugin", () => {
       expect(applyPlugin).toBe(false);
     });
 
-    it("should not apply the plugin when there is no instrumentation", async () => {
+    it("should apply the plugin when there is no instrumentation", async () => {
       coreMocks.Measurement.isInstrumented.mockReturnValue(false);
 
       const applyPlugin = applyPluginFunction(
@@ -52,9 +52,9 @@ describe("codSpeedPlugin", () => {
       );
 
       expect(console.warn).toHaveBeenCalledWith(
-        "[CodSpeed] bench detected but no instrumentation found, falling back to default vitest runner"
+        "[CodSpeed] bench detected but no instrumentation found"
       );
-      expect(applyPlugin).toBe(false);
+      expect(applyPlugin).toBe(true);
     });
 
     it("should apply the plugin when there is instrumentation", async () => {

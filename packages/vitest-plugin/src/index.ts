@@ -27,10 +27,7 @@ export default function codspeedPlugin(): Plugin {
         return false;
       }
       if (!Measurement.isInstrumented()) {
-        console.warn(
-          `[CodSpeed] bench detected but no instrumentation found, falling back to default vitest runner`
-        );
-        return false;
+        console.warn("[CodSpeed] bench detected but no instrumentation found");
       }
       return true;
     },
