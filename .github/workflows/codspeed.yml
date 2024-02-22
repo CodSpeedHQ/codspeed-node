@@ -29,6 +29,7 @@ jobs:
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
         uses: CodSpeedHQ/action@main
         with:
+          runner-version: 2.2.1-beta.1
           run: |
             pnpm moon run --concurrency 1 :bench
             pnpm --workspace-concurrency 1 -r bench-tinybench
