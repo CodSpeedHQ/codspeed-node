@@ -34,3 +34,5 @@ jobs:
             pnpm --workspace-concurrency 1 -r bench-tinybench
             pnpm --workspace-concurrency 1 -r bench-benchmark-js
             pnpm --workspace-concurrency 1 -r bench-vitest
+        env:
+          CODSPEED_DEBUG: true
