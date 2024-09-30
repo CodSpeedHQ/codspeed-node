@@ -1,4 +1,4 @@
-name: "codspeed"
+name: CodSpeed
 on:
   push:
     branches:
@@ -8,6 +8,7 @@ on:
 
 jobs:
   codspeed:
+    name: Run CodSpeed
     runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@v4"
