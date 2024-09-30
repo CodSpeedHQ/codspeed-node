@@ -10,7 +10,7 @@ jobs:
   check:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
         with:
           fetch-depth: 0
       - name: Install valgrind
@@ -31,7 +31,7 @@ jobs:
     outputs:
       examples: ${{ steps.list-examples.outputs.examples }}
     steps:
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
       # list the directories in ./examples and output them to a github action workflow variables as a JSON array
       - run: |
           examples=$(find ./examples -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | jq -R -s -c 'split("\n") | map(select(length > 0))')
@@ -48,7 +48,7 @@ jobs:
         example: ${{ fromJson(needs.list-examples.outputs.examples) }}
       fail-fast: false
     steps:
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
         with:
           fetch-depth: 0
       - name: Install valgrind
