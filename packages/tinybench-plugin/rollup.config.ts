@@ -1,6 +1,6 @@
 import { defineConfig } from "rollup";
 import { declarationsPlugin, jsPlugins } from "../../rollup.options";
-import pkg from "./package.json" assert { type: "json" };
+import pkg from "./package.json" with { type: "json" };
 
 const entrypoint = "src/index.ts";
 

@@ -50,7 +50,7 @@ tasks:
       - "build"
 
   build:
-    command: "rollup -c rollup.config.ts --configPlugin typescript"
+    command: "rollup --configPlugin typescript --configImportAttributesKey with -c rollup.config.ts"
     inputs:
       - "@globs(sources)"
       - "rollup.config.ts"
