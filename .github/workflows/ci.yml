@@ -44,7 +44,7 @@ jobs:
     needs: list-examples
     strategy:
       matrix:
-        node-version: ["16", "18", "20.5.1"]
+        node-version: ["16", "18", "20.5.1", "22.12.0"]
         example: ${{ fromJson(needs.list-examples.outputs.examples) }}
       fail-fast: false
     steps:

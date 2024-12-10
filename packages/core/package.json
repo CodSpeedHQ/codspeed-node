@@ -22,7 +22,7 @@
   "devDependencies": {
     "@types/find-up": "^4.0.0",
     "node-addon-api": "^5.1.0",
-    "node-gyp": "^9.3.1",
+    "node-gyp": "^11.0.0",
     "openapi-typescript-codegen": "^0.23.0",
     "prebuildify": "^5.0.1"
   },
