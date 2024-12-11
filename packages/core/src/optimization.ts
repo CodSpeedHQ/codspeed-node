@@ -1,8 +1,3 @@
-export const initOptimization = () => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  require("v8").setFlagsFromString("--allow-natives-syntax");
-};
-
 export const optimizeFunction = async (fn: CallableFunction) => {
   // Source: https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#optimization-killers
   // a total of 7 calls seems to be the sweet spot

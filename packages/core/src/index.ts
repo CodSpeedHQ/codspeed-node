@@ -1,7 +1,6 @@
 import { checkV8Flags } from "./introspection";
 import { MongoMeasurement } from "./mongoMeasurement";
 import native_core from "./native_core";
-import { initOptimization } from "./optimization";
 
 declare const __VERSION__: string;
 
@@ -12,7 +11,6 @@ export const isBound = native_core.isBound;
 export const mongoMeasurement = new MongoMeasurement();
 
 export const setupCore = () => {
-  initOptimization();
   native_core.Measurement.stopInstrumentation(
     `Metadata: codspeed-node ${__VERSION__}`
   );
