@@ -196,6 +196,7 @@ async function runBenchmarks({
     if (isAsync) {
       await optimizeFunction(benchPayload);
       await mongoMeasurement.start(uri);
+      global.gc?.();
       await (async function __codspeed_root_frame__() {
         Measurement.startInstrumentation();
         await benchPayload();

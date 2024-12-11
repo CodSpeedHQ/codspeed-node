@@ -18,6 +18,8 @@ const coreMocks = vi.hoisted(() => {
   };
 });
 
+global.eval = vi.fn();
+
 vi.mock("@codspeed/core", async (importOriginal) => {
   const mod = await importOriginal<typeof import("@codspeed/core")>();
   return { ...mod, ...coreMocks };
@@ -25,16 +27,13 @@ vi.mock("@codspeed/core", async (importOriginal) => {
 
 console.log = vi.fn();
 
-vi.mock("vitest/suite", () => ({
-  getBenchFn: vi.fn(),
-  // wrapping the value in vi.fn(...) here will not work for some reason
-  getHooks: () => ({
-    beforeAll: [],
-    beforeEach: [],
-    afterEach: [],
-    afterAll: [],
-  }),
-}));
+vi.mock("vitest/suite", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("vitest/suite")>();
+  return {
+    ...actual,
+    getBenchFn: vi.fn(),
+  };
+});
 const mockedGetBenchFn = vi.mocked(getBenchFn);
 
 describe("CodSpeedRunner", () => {
@@ -62,7 +61,7 @@ describe("CodSpeedRunner", () => {
       "packages/vitest-plugin/src/__tests__/runner.test.ts::test bench"
     );
     expect(coreMocks.Measurement.startInstrumentation).toHaveBeenCalledTimes(1);
-    expect(benchFn).toHaveBeenCalledTimes(2);
+    expect(benchFn).toHaveBeenCalledTimes(8);
     expect(coreMocks.Measurement.stopInstrumentation).toHaveBeenCalledTimes(1);
     expect(coreMocks.mongoMeasurement.stop).toHaveBeenCalledTimes(1);
     expect(console.log).toHaveBeenCalledWith(
@@ -116,7 +115,7 @@ describe("CodSpeedRunner", () => {
       "packages/vitest-plugin/src/__tests__/runner.test.ts::nested suite::test bench"
     );
     expect(coreMocks.Measurement.startInstrumentation).toHaveBeenCalledTimes(1);
-    expect(benchFn).toHaveBeenCalledTimes(2);
+    expect(benchFn).toHaveBeenCalledTimes(8);
     expect(coreMocks.Measurement.stopInstrumentation).toHaveBeenCalledTimes(1);
     expect(coreMocks.mongoMeasurement.stop).toHaveBeenCalledTimes(1);
     expect(console.log).toHaveBeenCalledWith(

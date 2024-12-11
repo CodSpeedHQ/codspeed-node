@@ -15,7 +15,7 @@ import { getBenchFn, getHooks } from "vitest/suite";
 type SuiteHooks = ReturnType<typeof getHooks>;
 
 function getSuiteHooks(suite: Suite, name: keyof SuiteHooks) {
-  return getHooks(suite)[name];
+  return getHooks(suite)?.[name] ?? [];
 }
 
 export async function callSuiteHook<T extends keyof SuiteHooks>(
@@ -23,7 +23,7 @@ export async function callSuiteHook<T extends keyof SuiteHooks>(
   currentTask: Task,
   name: T
 ): Promise<void> {
-  if (name === "beforeEach" && suite.suite) {
+  if (name === "beforeEach" && suite?.suite) {
     await callSuiteHook(suite.suite, currentTask, name);
   }
 
@@ -31,7 +31,7 @@ export async function callSuiteHook<T extends keyof SuiteHooks>(
 
   await Promise.all(hooks.map((fn) => fn()));
 
-  if (name === "afterEach" && suite.suite) {
+  if (name === "afterEach" && suite?.suite) {
     await callSuiteHook(suite.suite, currentTask, name);
   }
 }
@@ -69,6 +69,7 @@ async function runBench(benchmark: Benchmark, currentSuiteName: string) {
 
   await callSuiteHook(benchmark.suite, benchmark, "beforeEach");
   await mongoMeasurement.start(uri);
+  global.gc?.();
   await (async function __codspeed_root_frame__() {
     Measurement.startInstrumentation();
     // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench

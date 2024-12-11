@@ -12,6 +12,10 @@ export const getV8Flags = () => {
     "--predictable",
     "--predictable-gc-schedule",
     "--interpreted-frames-native-stack",
+    "--allow-natives-syntax",
+    "--expose-gc",
+    "--no-concurrent-sweeping",
+    "--max-old-space-size=4096",
   ];
   if (nodeVersionMajor < 18) {
     flags.push("--no-randomize-hashes");
