@@ -1,6 +1,6 @@
 {
   "name": "@codspeed/core",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "The core Node library used to integrate with Codspeed runners",
   "keywords": [
     "codspeed",
