@@ -83,6 +83,8 @@ async function runBench(benchmark: Benchmark, currentSuiteName: string) {
 }
 
 async function runBenchmarkSuite(suite: Suite, parentSuiteName?: string) {
+  await callSuiteHook(suite, suite, "setup");
+
   const currentSuiteName = parentSuiteName
     ? parentSuiteName + "::" + suite.name
     : suite.name;
@@ -108,6 +110,8 @@ async function runBenchmarkSuite(suite: Suite, parentSuiteName?: string) {
   if (parentSuiteName !== undefined) {
     await callSuiteHook(suite, suite, "afterAll");
   }
+
+  await callSuiteHook(suite, suite, "teardown");
 }
 
 function patchRootSuiteWithFullFilePath(suite: Suite) {
