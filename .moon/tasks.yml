@@ -25,6 +25,15 @@ tasks:
       - "@globs(sources)"
       - "@globs(tests)"
       - "@globs(configs)"
+  fix-format:
+    local: true
+    command: "prettier --config @in(0) --ignore-path @in(1) --write ."
+    inputs:
+      - "/.prettierrc.json"
+      - "/.prettierignore"
+      - "@globs(sources)"
+      - "@globs(tests)"
+      - "@globs(configs)"
   lint:
     command: "eslint ."
     inputs:
