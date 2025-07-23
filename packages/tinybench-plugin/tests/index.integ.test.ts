@@ -1,27 +1,48 @@
-import { mockDeep, mockReset } from "jest-mock-extended";
-const mockCore = mockDeep<typeof core>();
-
-import * as core from "@codspeed/core";
 import { Bench } from "tinybench";
-import { withCodSpeed } from "..";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { withCodSpeed } from "../src";
 import { registerBenchmarks } from "./registerBenchmarks";
 import { registerOtherBenchmarks } from "./registerOtherBenchmarks";
 
-jest.mock("@codspeed/core", () => {
-  mockCore.getGitDir = jest.requireActual("@codspeed/core").getGitDir;
-  return mockCore;
+const mockCore = vi.hoisted(() => {
+  return {
+    mongoMeasurement: {
+      start: vi.fn(),
+      stop: vi.fn(),
+      setupInstruments: vi.fn(),
+    },
+    Measurement: {
+      isInstrumented: vi.fn(),
+      startInstrumentation: vi.fn(),
+      stopInstrumentation: vi.fn(),
+    },
+    optimizeFunction: vi
+      .fn()
+      .mockImplementation(async (fn: () => Promise<void>) => {
+        await fn();
+      }),
+    setupCore: vi.fn(),
+    teardownCore: vi.fn(),
+  };
+});
+
+vi.mock("@codspeed/core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@codspeed/core")>();
+  return {
+    ...actual,
+    ...mockCore,
+  };
 });
 
 beforeEach(() => {
-  mockReset(mockCore);
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe("Benchmark.Suite", () => {
   it("simple suite", async () => {
     mockCore.Measurement.isInstrumented.mockReturnValue(false);
     const bench = withCodSpeed(new Bench({ time: 100 }));
-    const onComplete = jest.fn();
+    const onComplete = vi.fn();
     bench.add("RegExp", function () {
       /o/.test("Hello World!");
     });
@@ -87,8 +108,8 @@ describe("Benchmark.Suite", () => {
   it.each([true, false])(
     "check console output(instrumented=%p) ",
     async (instrumented) => {
-      const logSpy = jest.spyOn(console, "log");
-      const warnSpy = jest.spyOn(console, "warn");
+      const logSpy = vi.spyOn(console, "log");
+      const warnSpy = vi.spyOn(console, "warn");
       mockCore.Measurement.isInstrumented.mockReturnValue(instrumented);
       await withCodSpeed(new Bench({ time: 100 }))
         .add("RegExp", function () {
@@ -128,8 +149,8 @@ describe("Benchmark.Suite", () => {
     );
   });
   // TODO: this is not supported at the moment as tinybench does not support tasks with same name
-  // remove `.failing` when tinybench supports it
-  it.failing(
+  // remove `.fails` when tinybench supports it
+  it.fails(
     "check that benchmarks with same name have different URIs when registered in different files",
     async () => {
       mockCore.Measurement.isInstrumented.mockReturnValue(true);
@@ -152,10 +173,10 @@ describe("Benchmark.Suite", () => {
     mockCore.optimizeFunction.mockImplementation(async (fn) => {
       await fn();
     });
-    const beforeAll = jest.fn();
-    const beforeEach = jest.fn();
-    const afterEach = jest.fn();
-    const afterAll = jest.fn();
+    const beforeAll = vi.fn();
+    const beforeEach = vi.fn();
+    const afterEach = vi.fn();
+    const afterAll = vi.fn();
 
     await withCodSpeed(new Bench())
       .add(

@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Benchmark.Suite check console output(instrumented=false)  1`] = `
+exports[`Benchmark.Suite > check console output(instrumented=%p)  false 1`] = `
 {
   "log": [],
   "warn": [
@@ -11,7 +11,7 @@ exports[`Benchmark.Suite check console output(instrumented=false)  1`] = `
 }
 `;
 
-exports[`Benchmark.Suite check console output(instrumented=true)  1`] = `
+exports[`Benchmark.Suite > check console output(instrumented=%p)  true 1`] = `
 {
   "log": [
     [

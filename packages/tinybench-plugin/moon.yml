@@ -7,3 +7,10 @@ tasks:
     platform: "system"
     options:
       cache: false
+  test:
+    command: vitest --run
+    inputs:
+      - "./vitest.config.ts"
+
+  test/integ:
+    command: noop
