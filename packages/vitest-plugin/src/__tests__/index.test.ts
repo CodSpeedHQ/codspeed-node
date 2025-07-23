@@ -93,7 +93,6 @@ describe("codSpeedPlugin", () => {
               "--expose-gc",
               "--no-concurrent-sweeping",
               "--max-old-space-size=4096",
-              "--no-scavenge-task",
             ],
           },
         },
