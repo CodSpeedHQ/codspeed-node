@@ -5,6 +5,8 @@ import { registerBenchmarks } from "./registerBenchmarks";
 import { registerOtherBenchmarks } from "./registerOtherBenchmarks";
 
 const mockCore = vi.hoisted(() => {
+  process.env.CODSPEED_ENV = "true";
+  process.env.CODSPEED_RUNNER_MODE = "instrumentation";
   return {
     mongoMeasurement: {
       start: vi.fn(),

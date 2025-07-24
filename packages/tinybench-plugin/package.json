@@ -26,7 +26,8 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/stack-trace": "^0.0.30",
-    "tinybench": "^2.5.0",
+    "esbuild-register": "^3.4.2",
+    "tinybench": "^4.0.1",
     "vitest": "^1.2.2"
   },
   "dependencies": {
@@ -34,6 +35,6 @@
     "stack-trace": "1.0.0-pre2"
   },
   "peerDependencies": {
-    "tinybench": "^2.3.0"
+    "tinybench": "^4.0.1"
   }
 }

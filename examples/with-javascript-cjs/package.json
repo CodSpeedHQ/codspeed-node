@@ -9,6 +9,6 @@
     "@codspeed/benchmark.js-plugin": "workspace:*",
     "@codspeed/tinybench-plugin": "workspace:*",
     "benchmark": "^2.1.4",
-    "tinybench": "^2.5.0"
+    "tinybench": "^4.0.1"
   }
 }

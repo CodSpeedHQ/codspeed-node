@@ -1,6 +1,6 @@
 tasks:
   bench:
-    command: node -r esbuild-register benches/sample.ts
+    command: node --loader esbuild-register/loader -r esbuild-register benches/sample.ts
     inputs:
       - "benches/**"
     local: true

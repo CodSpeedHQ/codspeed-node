@@ -105,8 +105,8 @@ importers:
         specifier: ^2.1.4
         version: 2.1.4
       tinybench:
-        specifier: ^2.5.0
-        version: 2.5.0
+        specifier: ^4.0.1
+        version: 4.0.1
 
   examples/with-javascript-esm:
     devDependencies:
@@ -120,8 +120,8 @@ importers:
         specifier: ^2.1.4
         version: 2.1.4
       tinybench:
-        specifier: ^2.5.0
-        version: 2.5.0
+        specifier: ^4.0.1
+        version: 4.0.1
 
   examples/with-typescript-cjs:
     devDependencies:
@@ -141,8 +141,8 @@ importers:
         specifier: ^3.4.2
         version: 3.4.2(esbuild@0.17.16)
       tinybench:
-        specifier: ^2.5.0
-        version: 2.5.0
+        specifier: ^4.0.1
+        version: 4.0.1
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -168,8 +168,8 @@ importers:
         specifier: ^3.4.2
         version: 3.4.2(esbuild@0.17.16)
       tinybench:
-        specifier: ^2.5.0
-        version: 2.5.0
+        specifier: ^4.0.1
+        version: 4.0.1
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -195,8 +195,8 @@ importers:
         specifier: ^3.4.2
         version: 3.4.2(esbuild@0.17.16)
       tinybench:
-        specifier: ^2.5.0
-        version: 2.5.0
+        specifier: ^4.0.1
+        version: 4.0.1
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -219,8 +219,8 @@ importers:
         specifier: ^3.4.2
         version: 3.4.2(esbuild@0.17.16)
       tinybench:
-        specifier: ^2.5.0
-        version: 2.5.0
+        specifier: ^4.0.1
+        version: 4.0.1
       typescript:
         specifier: ^5.1.3
         version: 5.1.3
@@ -299,9 +299,12 @@ importers:
       '@types/stack-trace':
         specifier: ^0.0.30
         version: 0.0.30
+      esbuild-register:
+        specifier: ^3.4.2
+        version: 3.4.2(esbuild@0.17.16)
       tinybench:
-        specifier: ^2.5.0
-        version: 2.5.0
+        specifier: ^4.0.1
+        version: 4.0.1
       vitest:
         specifier: ^1.2.2
         version: 1.2.2(@types/node@18.15.11)
@@ -2546,7 +2549,7 @@ packages:
     engines: {node: ^10.12.0 || >=12.0.0}
     dependencies:
       ajv: 6.12.6
-      debug: 4.3.4
+      debug: 4.4.1
       espree: 7.3.1
       globals: 13.20.0
       ignore: 4.0.6
@@ -2567,7 +2570,7 @@ packages:
     engines: {node: '>=10.10.0'}
     dependencies:
       '@humanwhocodes/object-schema': 1.2.1
-      debug: 4.3.4
+      debug: 4.4.1
       minimatch: 3.1.2
     transitivePeerDependencies:
       - supports-color
@@ -4325,7 +4328,7 @@ packages:
     dependencies:
       '@typescript-eslint/typescript-estree': 5.58.0(typescript@4.9.4)
       '@typescript-eslint/utils': 5.58.0(eslint@7.32.0)(typescript@4.9.4)
-      debug: 4.3.4
+      debug: 4.4.1
       eslint: 7.32.0
       tsutils: 3.21.0(typescript@4.9.4)
       typescript: 4.9.4
@@ -4349,7 +4352,7 @@ packages:
     dependencies:
       '@typescript-eslint/types': 5.58.0
       '@typescript-eslint/visitor-keys': 5.58.0
-      debug: 4.3.4
+      debug: 4.4.1
       globby: 11.1.0
       is-glob: 4.0.3
       semver: 7.4.0
@@ -4970,7 +4973,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001727
-      electron-to-chromium: 1.5.187
+      electron-to-chromium: 1.5.190
       node-releases: 2.0.19
       update-browserslist-db: 1.1.3(browserslist@4.25.1)
     dev: true
@@ -5789,8 +5792,8 @@ packages:
     resolution: {integrity: sha512-VocVwjPp05HUXzf3xmL0boRn5b0iyqC7amtDww84Jb1QJNPBc7F69gJyEeXRoriLBC4a5pSyckdllrXAg4mmRA==}
     dev: true
 
-  /electron-to-chromium@1.5.187:
-    resolution: {integrity: sha512-cl5Jc9I0KGUoOoSbxvTywTa40uspGJt/BDBoDLoxJRSBpWh4FFXBsjNRHfQrONsV/OoEjDfHUmZQa2d6Ze4YgA==}
+  /electron-to-chromium@1.5.190:
+    resolution: {integrity: sha512-k4McmnB2091YIsdCgkS0fMVMPOJgxl93ltFzaryXqwip1AaxeDqKCGLxkXODDA5Ab/D+tV5EL5+aTx76RvLRxw==}
     dev: true
 
   /emittery@0.13.1:
@@ -11055,12 +11058,13 @@ packages:
       globrex: 0.1.2
     dev: true
 
-  /tinybench@2.5.0:
-    resolution: {integrity: sha512-kRwSG8Zx4tjF9ZiyH4bhaebu+EDz1BOx9hOigYHlUW4xxI/wKIUQUqo018UlU4ar6ATPBsaMrdbKZ+tmPdohFA==}
+  /tinybench@2.9.0:
+    resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
     dev: true
 
-  /tinybench@2.5.1:
-    resolution: {integrity: sha512-65NKvSuAVDP/n4CqH+a9w2kTlLReS9vhsAP06MWx+/89nMinJyB2icyl58RIcqCmIggpojIGeuJGhjU1aGMBSg==}
+  /tinybench@4.0.1:
+    resolution: {integrity: sha512-Nb1srn7dvzkVx0J5h1vq8f48e3TIcbrS7e/UfAI/cDSef/n8yLh4zsAEsFkfpw6auTY+ZaspEvam/xs8nMnotQ==}
+    engines: {node: '>=18.0.0'}
     dev: true
 
   /tinypool@0.8.2:
@@ -11607,7 +11611,7 @@ packages:
       picocolors: 1.0.0
       std-env: 3.6.0
       strip-literal: 1.3.0
-      tinybench: 2.5.1
+      tinybench: 2.9.0
       tinypool: 0.8.2
       vite: 5.0.0(@types/node@18.15.11)
       vite-node: 1.2.2(@types/node@18.15.11)
