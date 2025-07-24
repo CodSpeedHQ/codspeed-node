@@ -1,6 +1,7 @@
 import { Bench } from "tinybench";
 import { withCodSpeed } from "..";
 import parsePr from "./parsePr";
+import { registerTimingBenchmarks } from "./timing";
 
 const LONG_BODY =
   new Array(1_000)
@@ -33,6 +34,16 @@ bench
     parsePr({ body: LONG_BODY, title: "test", number: 124 });
   });
 
-bench.run().then(() => {
+(async () => {
+  await bench.run();
   console.table(bench.table());
-});
+
+  const timingBench = withCodSpeed(
+    new Bench({ name: "timing", iterations: 5, warmup: false })
+  );
+
+  registerTimingBenchmarks(timingBench);
+
+  await timingBench.run();
+  console.table(timingBench.table());
+})();

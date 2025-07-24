@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  codspeed:
-    name: Run CodSpeed
+  codspeed-instrumented:
+    name: Run CodSpeed instrumented
     runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@v4"
@@ -35,3 +35,31 @@ jobs:
             pnpm --workspace-concurrency 1 -r bench-tinybench
             pnpm --workspace-concurrency 1 -r bench-benchmark-js
             pnpm --workspace-concurrency 1 -r bench-vitest
+
+  codspeed-walltime:
+    name: Run CodSpeed walltime
+    runs-on: "codspeed-macro"
+    steps:
+      - uses: "actions/checkout@v4"
+        with:
+          fetch-depth: 0
+      - name: Install valgrind
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y valgrind
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v3
+        with:
+          cache: pnpm
+          node-version-file: .nvmrc
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm moon run :build
+
+      - name: Run benchmarks
+        # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
+        uses: CodSpeedHQ/action@main
+        with:
+          # Only tinybench supports walltime for now
+          run: |
+            pnpm moon run tinybench-plugin:bench
+            pnpm --workspace-concurrency 1 -r bench-tinybench

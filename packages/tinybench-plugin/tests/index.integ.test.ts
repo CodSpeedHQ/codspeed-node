@@ -35,26 +35,12 @@ vi.mock("@codspeed/core", async (importOriginal) => {
 });
 
 beforeEach(() => {
+  process.env.CODSPEED_ENV = "true";
+  process.env.CODSPEED_RUNNER_MODE = "instrumentation";
   vi.clearAllMocks();
 });
 
 describe("Benchmark.Suite", () => {
-  it("simple suite", async () => {
-    mockCore.Measurement.isInstrumented.mockReturnValue(false);
-    const bench = withCodSpeed(new Bench({ time: 100 }));
-    const onComplete = vi.fn();
-    bench.add("RegExp", function () {
-      /o/.test("Hello World!");
-    });
-    bench.getTask("RegExp")?.addEventListener("complete", onComplete);
-    await bench.run();
-
-    expect(onComplete).toHaveBeenCalled();
-    expect(mockCore.mongoMeasurement.start).not.toHaveBeenCalled();
-    expect(mockCore.mongoMeasurement.stop).not.toHaveBeenCalled();
-    expect(mockCore.Measurement.startInstrumentation).not.toHaveBeenCalled();
-    expect(mockCore.Measurement.stopInstrumentation).not.toHaveBeenCalled();
-  });
   it("check core methods are called", async () => {
     mockCore.Measurement.isInstrumented.mockReturnValue(true);
     await withCodSpeed(new Bench())
