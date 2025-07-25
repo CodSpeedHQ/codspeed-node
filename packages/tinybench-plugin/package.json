@@ -8,9 +8,15 @@
     "tinybench",
     "performance"
   ],
-  "main": "dist/index.cjs.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.es5.js",
   "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    "import": "./dist/index.es5.js",
+    "require": "./dist/index.cjs",
+    "types": "./dist/index.d.ts"
+  },
   "files": [
     "dist"
   ],
