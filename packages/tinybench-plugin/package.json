@@ -26,8 +26,8 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/stack-trace": "^0.0.30",
-    "jest-mock-extended": "^3.0.4",
-    "tinybench": "^2.5.0"
+    "tinybench": "^2.5.0",
+    "vitest": "^1.2.2"
   },
   "dependencies": {
     "@codspeed/core": "workspace:^4.0.1",
