@@ -6,6 +6,8 @@ tasks:
     local: true
     options:
       cache: false
+    deps:
+      - build
 
   test:
     command: vitest --run

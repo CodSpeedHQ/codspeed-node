@@ -1,4 +1,5 @@
 import {
+  getCodspeedRunnerMode,
   getV8Flags,
   Measurement,
   mongoMeasurement,
@@ -19,6 +20,15 @@ function getCodSpeedFileFromName(name: string) {
   return join(__dirname, `${name}.${fileExtension}`);
 }
 
+function getRunnerFile(): string | undefined {
+  const codspeedRunnerMode = getCodspeedRunnerMode();
+  if (codspeedRunnerMode === "disabled") {
+    return undefined;
+  }
+
+  return getCodSpeedFileFromName(codspeedRunnerMode);
+}
+
 export default function codspeedPlugin(): Plugin {
   return {
     name: "codspeed:vitest",
@@ -26,14 +36,18 @@ export default function codspeedPlugin(): Plugin {
       if (mode !== "benchmark") {
         return false;
       }
-      if (!Measurement.isInstrumented()) {
+      if (
+        getCodspeedRunnerMode() == "instrumented" &&
+        !Measurement.isInstrumented()
+      ) {
         console.warn("[CodSpeed] bench detected but no instrumentation found");
       }
       return true;
     },
     enforce: "post",
     config(): UserConfig {
-      return {
+      const runnerFile = getRunnerFile();
+      const config: UserConfig = {
         test: {
           pool: "forks",
           poolOptions: {
@@ -41,10 +55,16 @@ export default function codspeedPlugin(): Plugin {
               execArgv: getV8Flags(),
             },
           },
-          runner: getCodSpeedFileFromName("runner"),
           globalSetup: [getCodSpeedFileFromName("globalSetup")],
         },
       };
+
+      // Only set custom runner when CODSPEED_ENV is set
+      if (runnerFile) {
+        config.test!.runner = runnerFile;
+      }
+
+      return config;
     },
   };
 }

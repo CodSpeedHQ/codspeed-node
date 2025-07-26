@@ -1,5 +1,5 @@
 import { fromPartial } from "@total-typescript/shoehorn";
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import codspeedPlugin from "../index";
 
 const coreMocks = vi.hoisted(() => {
@@ -25,6 +25,18 @@ vi.mock("@codspeed/core", async (importOriginal) => {
 console.warn = vi.fn();
 
 describe("codSpeedPlugin", () => {
+  beforeAll(() => {
+    // Set environment variables to trigger instrumented mode
+    process.env.CODSPEED_ENV = "1";
+    process.env.CODSPEED_RUNNER_MODE = "instrumentation";
+  });
+
+  afterAll(() => {
+    // Clean up environment variables
+    delete process.env.CODSPEED_ENV;
+    delete process.env.CODSPEED_RUNNER_MODE;
+  });
+
   it("should have a name", async () => {
     expect(resolvedCodSpeedPlugin.name).toBe("codspeed:vitest");
   });
@@ -96,7 +108,9 @@ describe("codSpeedPlugin", () => {
             ],
           },
         },
-        runner: expect.stringContaining("packages/vitest-plugin/src/runner.ts"),
+        runner: expect.stringContaining(
+          "packages/vitest-plugin/src/instrumented.ts"
+        ),
       },
     });
   });

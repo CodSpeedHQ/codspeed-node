@@ -106,3 +106,4 @@ export class InstrumentedRunner extends NodeBenchmarkRunner {
   }
 }
 
+export default InstrumentedRunner;

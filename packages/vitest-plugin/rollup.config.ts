@@ -21,8 +21,14 @@ export default defineConfig([
     external: ["@codspeed/core", /^vitest/],
   },
   {
-    input: "src/runner.ts",
-    output: { file: "dist/runner.mjs", format: "es" },
+    input: "src/instrumented.ts",
+    output: { file: "dist/instrumented.mjs", format: "es" },
+    plugins: jsPlugins(pkg.version),
+    external: ["@codspeed/core", /^vitest/],
+  },
+  {
+    input: "src/walltime.ts",
+    output: { file: "dist/walltime.mjs", format: "es" },
     plugins: jsPlugins(pkg.version),
     external: ["@codspeed/core", /^vitest/],
   },
