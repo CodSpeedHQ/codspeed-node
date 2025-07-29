@@ -4,7 +4,7 @@ $schema: "https://moonrepo.dev/schemas/toolchain.json"
 node:
   packageManager: "pnpm"
   pnpm:
-    version: "8.6.3"
+    version: "10.12.4"
 
   dedupeOnLockfileChange: false
   dependencyVersionFormat: "workspace"
