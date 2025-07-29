@@ -30,7 +30,11 @@ export function withCodSpeed(bench: Bench): Bench {
   const rawAdd = bench.add;
   bench.add = (name, fn, opts?) => {
     const callingFile = getCallingFile();
-    const uri = `${callingFile}::${name}`;
+    let uri = callingFile;
+    if (bench.name !== undefined) {
+      uri += `::${bench.name}`;
+    }
+    uri += `::${name}`;
     uriMap.set(name, uri);
     return rawAdd.bind(bench)(name, fn, opts);
   };
