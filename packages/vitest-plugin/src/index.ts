@@ -8,7 +8,7 @@ import {
 } from "@codspeed/core";
 import { join } from "path";
 import { Plugin } from "vite";
-import { UserConfig } from "vitest/config";
+import { type ViteUserConfig } from "vitest/config";
 
 // get this file's directory path from import.meta.url
 const __dirname = new URL(".", import.meta.url).pathname;
@@ -45,9 +45,11 @@ export default function codspeedPlugin(): Plugin {
       return true;
     },
     enforce: "post",
-    config(): UserConfig {
+    config(): ViteUserConfig {
       const runnerFile = getRunnerFile();
-      const config: UserConfig = {
+      const runnerMode = getCodspeedRunnerMode();
+
+      const config: ViteUserConfig = {
         test: {
           pool: "forks",
           poolOptions: {
@@ -56,13 +58,16 @@ export default function codspeedPlugin(): Plugin {
             },
           },
           globalSetup: [getCodSpeedFileFromName("globalSetup")],
+          ...(runnerFile && {
+            runner: runnerFile,
+          }),
+          ...(runnerMode === "walltime" && {
+            benchmark: {
+              includeSamples: true,
+            },
+          }),
         },
       };
-
-      // Only set custom runner when CODSPEED_ENV is set
-      if (runnerFile) {
-        config.test!.runner = runnerFile;
-      }
 
       return config;
     },

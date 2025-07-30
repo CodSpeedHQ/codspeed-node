@@ -28,7 +28,7 @@
     "@types/stack-trace": "^0.0.30",
     "esbuild-register": "^3.4.2",
     "tinybench": "^4.0.1",
-    "vitest": "^1.2.2"
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@codspeed/core": "workspace:^4.0.1",

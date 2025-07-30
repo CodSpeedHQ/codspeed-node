@@ -1,5 +1,5 @@
 import { fromPartial } from "@total-typescript/shoehorn";
-import { describe, expect, it, Suite, vi } from "vitest";
+import { describe, expect, it, vi, type RunnerTestSuite } from "vitest";
 import { getBenchFn } from "vitest/suite";
 import { InstrumentedRunner as CodSpeedRunner } from "../instrumented";
 
@@ -37,17 +37,23 @@ vi.mock("vitest/suite", async (importOriginal) => {
 const mockedGetBenchFn = vi.mocked(getBenchFn);
 
 describe("CodSpeedRunner", () => {
-  it("should run the bench functions only twice", async () => {
+  it("should run the bench function", async () => {
     const benchFn = vi.fn();
     mockedGetBenchFn.mockReturnValue(benchFn);
 
     const runner = new CodSpeedRunner(fromPartial({}));
-    const suite = fromPartial<Suite>({
-      filepath: __filename,
+    const suite = fromPartial<RunnerTestSuite>({
+      file: { filepath: __filename },
       name: "test suite",
-      tasks: [{ mode: "run", meta: { benchmark: true }, name: "test bench" }],
+      tasks: [
+        {
+          type: "test",
+          mode: "run",
+          meta: { benchmark: true },
+          name: "test bench",
+        },
+      ],
     });
-    suite.tasks[0].suite = suite;
     await runner.runSuite(suite);
 
     // setup
@@ -80,8 +86,8 @@ describe("CodSpeedRunner", () => {
     mockedGetBenchFn.mockReturnValue(benchFn);
 
     const runner = new CodSpeedRunner(fromPartial({}));
-    const rootSuite = fromPartial<Suite>({
-      filepath: __filename,
+    const rootSuite = fromPartial<RunnerTestSuite>({
+      file: { filepath: __filename },
       name: "test suite",
       tasks: [
         {
@@ -90,6 +96,7 @@ describe("CodSpeedRunner", () => {
           mode: "run",
           tasks: [
             {
+              type: "test",
               mode: "run",
               meta: { benchmark: true },
               name: "test bench",
@@ -98,9 +105,6 @@ describe("CodSpeedRunner", () => {
         },
       ],
     });
-    rootSuite.tasks[0].suite = rootSuite;
-    // @ts-expect-error type is not narrow enough, but it is fine
-    rootSuite.tasks[0].tasks[0].suite = rootSuite.tasks[0];
 
     await runner.runSuite(rootSuite);
 

@@ -6,27 +6,26 @@ import {
   type Benchmark,
   type BenchmarkStats,
 } from "@codspeed/core";
-import { BenchTaskResult, Suite, type Custom } from "vitest";
+import {
+  type Benchmark as VitestBenchmark,
+  type RunnerTaskResult,
+  type RunnerTestSuite,
+} from "vitest";
 import { NodeBenchmarkRunner } from "vitest/runners";
 import { getBenchOptions } from "vitest/suite";
-import { patchRootSuiteWithFullFilePath } from "./common";
+import {
+  isVitestTaskBenchmark,
+  patchRootSuiteWithFullFilePath,
+} from "./common";
 
 declare const __VERSION__: string;
-
-// Vitest's task result structure extends Tinybench with additional properties
-interface VitestTaskResult {
-  state: "pass" | "fail" | "skip" | "todo";
-  startTime: number;
-  duration?: number;
-  benchmark?: BenchTaskResult;
-}
 
 /**
  * WalltimeRunner uses Vitest's default benchmark execution
  * and extracts results from the suite after completion
  */
 export class WalltimeRunner extends NodeBenchmarkRunner {
-  async runSuite(suite: Suite): Promise<void> {
+  async runSuite(suite: RunnerTestSuite): Promise<void> {
     patchRootSuiteWithFullFilePath(suite);
 
     console.log(
@@ -52,7 +51,7 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
   }
 
   private async extractBenchmarkResults(
-    suite: Suite,
+    suite: RunnerTestSuite,
     parentPath = ""
   ): Promise<Benchmark[]> {
     const benchmarks: Benchmark[] = [];
@@ -61,11 +60,7 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
       : suite.name;
 
     for (const task of suite.tasks) {
-      if (
-        task.meta.benchmark &&
-        task.type === "custom" &&
-        task.result?.state === "pass"
-      ) {
+      if (isVitestTaskBenchmark(task) && task.result?.state === "pass") {
         const benchmark = await this.processBenchmarkTask(task, currentPath);
         if (benchmark) {
           benchmarks.push(benchmark);
@@ -83,7 +78,7 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
   }
 
   private async processBenchmarkTask(
-    task: Custom,
+    task: VitestBenchmark,
     suitePath: string
   ): Promise<Benchmark | null> {
     const uri = `${suitePath}::${task.name}`;
@@ -99,7 +94,7 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
       const benchOptions = getBenchOptions(task);
 
       const stats = this.convertVitestResultToBenchmarkStats(
-        result as VitestTaskResult,
+        result,
         benchOptions
       );
 
@@ -135,7 +130,7 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
   }
 
   private convertVitestResultToBenchmarkStats(
-    result: VitestTaskResult,
+    result: RunnerTaskResult,
     benchOptions: {
       time?: number;
       warmupTime?: number;
