@@ -1,8 +1,8 @@
 import { bench, describe } from "vitest";
-import { iterativeFibonacci } from "./fibonacci";
+import { recursiveFibonacci } from "./fibonacci";
 
-describe("iterativeFibonacci", () => {
-  bench("fibo 10", () => {
-    iterativeFibonacci(10);
+describe("recursiveFibonacci", () => {
+  bench("fibo 30", () => {
+    recursiveFibonacci(30);
   });
 });
