@@ -1,0 +1,3 @@
+[submodule "packages/core/src/native_core/instruments/hooks"]
+	path = packages/core/src/native_core/instruments/hooks
+	url = git@github.com:CodSpeedHQ/instrument-hooks.git
