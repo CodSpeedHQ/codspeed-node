@@ -1,4 +1,4 @@
-export interface Hooks {
+export interface InstrumentHooks {
   /**
    * Check if instrumentation is enabled
    */

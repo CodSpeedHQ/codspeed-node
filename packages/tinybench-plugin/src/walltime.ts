@@ -1,5 +1,6 @@
 import {
   calculateQuantiles,
+  InstrumentHooks,
   mongoMeasurement,
   msToNs,
   msToS,
@@ -17,6 +18,7 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
     console.log(
       `[CodSpeed] running with @codspeed/tinybench v${__VERSION__} (walltime mode)`
     );
+    InstrumentHooks.setIntegration("codspeed-node", __VERSION__);
 
     // Store the original run method before we override it
     const originalRun = bench.run;

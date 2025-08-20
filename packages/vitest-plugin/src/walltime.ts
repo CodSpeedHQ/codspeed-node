@@ -1,6 +1,5 @@
 import {
   calculateQuantiles,
-  Hooks,
   msToNs,
   msToS,
   writeWalltimeResults,
@@ -33,7 +32,7 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
       `[CodSpeed] running with @codspeed/vitest-plugin v${__VERSION__} (walltime mode)`
     );
 
-    Hooks.setIntegration("codspeed-node", __VERSION__);
+    // InstrumentHooks.setIntegration("codspeed-node", __VERSION__);
 
     // Let Vitest's default benchmark runner handle execution
     await super.runSuite(suite);

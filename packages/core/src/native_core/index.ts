@@ -1,11 +1,11 @@
 import path from "path";
-import { Hooks } from "./instruments/hooks";
+import { InstrumentHooks } from "./instruments/hooks";
 import { LinuxPerf } from "./linux_perf/linux_perf";
 import { Measurement } from "./measurement/measurement";
 interface NativeCore {
   Measurement: Measurement;
+  InstrumentHooks: InstrumentHooks;
   LinuxPerf: typeof LinuxPerf;
-  Hooks: Hooks;
 }
 
 interface NativeCoreWithBindingStatus extends NativeCore {
@@ -39,7 +39,7 @@ try {
         return false;
       }
     },
-    Hooks: {
+    InstrumentHooks: {
       isInstrumented: () => {
         return false;
       },
@@ -56,7 +56,6 @@ try {
         return 0;
       },
     },
-
     isBound: false,
   };
 }

@@ -1,6 +1,7 @@
 import {
   getCodspeedRunnerMode,
   getV8Flags,
+  InstrumentHooks,
   Measurement,
   mongoMeasurement,
   SetupInstrumentsRequestBody,
@@ -28,6 +29,8 @@ function getRunnerFile(): string | undefined {
 
   return getCodSpeedFileFromName(codspeedRunnerMode);
 }
+
+InstrumentHooks.setIntegration("codspeed-node", "abcd");
 
 export default function codspeedPlugin(): Plugin {
   return {
