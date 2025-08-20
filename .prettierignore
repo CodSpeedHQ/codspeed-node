@@ -2,3 +2,4 @@ node_modules
 .rollup.cache
 dist
 generated
+packages/core/src/native_core/instruments/hooks
