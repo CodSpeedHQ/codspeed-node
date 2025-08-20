@@ -1,106 +1,137 @@
 #include "hooks_wrapper.h"
 #include "hooks/includes/core.h"
-#include <unistd.h>
-
-// Alias the C library type to avoid naming conflict
-using InstrumentHooksHandle = ::InstrumentHooks;
+#include <memory>
 
 namespace codspeed_native {
+namespace instruments {
+namespace hooks_wrapper {
 
-Napi::FunctionReference Hooks::constructor;
+// Global instance to maintain state across calls
+static std::unique_ptr<InstrumentHooks, decltype(&instrument_hooks_deinit)>
+    g_hooks{nullptr, &instrument_hooks_deinit};
 
-Napi::Object Hooks::Initialize(Napi::Env env, Napi::Object exports) {
-  Napi::Function func = DefineClass(env, "Hooks", {
-    InstanceMethod("isInstrumented", &Hooks::IsInstrumented),
-    InstanceMethod("startBenchmark", &Hooks::StartBenchmark),
-    InstanceMethod("stopBenchmark", &Hooks::StopBenchmark),
-    InstanceMethod("setExecutedBenchmark", &Hooks::SetExecutedBenchmark),
-    InstanceMethod("setIntegration", &Hooks::SetIntegration),
-  });
-
-  constructor = Napi::Persistent(func);
-  constructor.SuppressDestruct();
-
-  exports.Set("Hooks", func);
-  return exports;
-}
-
-Hooks::Hooks(const Napi::CallbackInfo& info) : Napi::ObjectWrap<Hooks>(info) {
-  hooks_instance = instrument_hooks_init();
-}
-
-Hooks::~Hooks() {
-  if (hooks_instance != nullptr) {
-    instrument_hooks_deinit(static_cast<InstrumentHooksHandle*>(hooks_instance));
+// Initialize instrument hooks if not already done
+static InstrumentHooks *ensureInitialized() {
+  if (!g_hooks) {
+    InstrumentHooks *hooks = instrument_hooks_init();
+    if (hooks) {
+      g_hooks.reset(hooks);
+    }
   }
+  return g_hooks.get();
 }
 
-Napi::Value Hooks::IsInstrumented(const Napi::CallbackInfo& info) {
+Napi::Boolean IsInstrumented(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
-  bool result = instrument_hooks_is_instrumented(static_cast<InstrumentHooksHandle*>(hooks_instance));
-  return Napi::Boolean::New(env, result);
+  InstrumentHooks *hooks = ensureInitialized();
+
+  if (!hooks) {
+    return Napi::Boolean::New(env, false);
+  }
+
+  bool instrumented = instrument_hooks_is_instrumented(hooks);
+  return Napi::Boolean::New(env, instrumented);
 }
 
-Napi::Value Hooks::StartBenchmark(const Napi::CallbackInfo& info) {
+Napi::Number StartBenchmark(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
-  int8_t result = instrument_hooks_start_benchmark(static_cast<InstrumentHooksHandle*>(hooks_instance));
+  InstrumentHooks *hooks = ensureInitialized();
+
+  if (!hooks) {
+    return Napi::Number::New(env, 1); // Return error code
+  }
+
+  uint8_t result = instrument_hooks_start_benchmark(hooks);
   return Napi::Number::New(env, result);
 }
 
-Napi::Value Hooks::StopBenchmark(const Napi::CallbackInfo& info) {
+Napi::Number StopBenchmark(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
-  int8_t result = instrument_hooks_stop_benchmark(static_cast<InstrumentHooksHandle*>(hooks_instance));
+  InstrumentHooks *hooks = ensureInitialized();
+
+  if (!hooks) {
+    return Napi::Number::New(env, 1); // Return error code
+  }
+
+  uint8_t result = instrument_hooks_stop_benchmark(hooks);
   return Napi::Number::New(env, result);
 }
 
-Napi::Value Hooks::SetExecutedBenchmark(const Napi::CallbackInfo& info) {
+Napi::Number SetExecutedBenchmark(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
-  
-  if (info.Length() < 2) {
-    Napi::TypeError::New(env, "Expected pid and uri arguments").ThrowAsJavaScriptException();
-    return env.Null();
+
+  if (info.Length() != 2) {
+    Napi::TypeError::New(env, "Expected 2 arguments: pid and uri")
+        .ThrowAsJavaScriptException();
+    return Napi::Number::New(env, 1);
   }
 
   if (!info[0].IsNumber() || !info[1].IsString()) {
-    Napi::TypeError::New(env, "Expected pid (number) and uri (string) arguments").ThrowAsJavaScriptException();
-    return env.Null();
+    Napi::TypeError::New(env, "Expected number (pid) and string (uri)")
+        .ThrowAsJavaScriptException();
+    return Napi::Number::New(env, 1);
   }
 
-  int32_t pid = info[0].As<Napi::Number>().Int32Value();
+  InstrumentHooks *hooks = ensureInitialized();
+  if (!hooks) {
+    return Napi::Number::New(env, 1);
+  }
+
+  uint32_t pid = info[0].As<Napi::Number>().Uint32Value();
   std::string uri = info[1].As<Napi::String>().Utf8Value();
 
-  int8_t result = instrument_hooks_set_executed_benchmark(
-    static_cast<InstrumentHooksHandle*>(hooks_instance), 
-    pid, 
-    uri.c_str()
-  );
-  
+  uint8_t result =
+      instrument_hooks_set_executed_benchmark(hooks, pid, uri.c_str());
   return Napi::Number::New(env, result);
 }
 
-Napi::Value Hooks::SetIntegration(const Napi::CallbackInfo& info) {
+Napi::Number SetIntegration(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
-  
-  if (info.Length() < 2) {
-    Napi::TypeError::New(env, "Expected name and version arguments").ThrowAsJavaScriptException();
-    return env.Null();
+
+  if (info.Length() != 2) {
+    Napi::TypeError::New(env, "Expected 2 arguments: name and version")
+        .ThrowAsJavaScriptException();
+    return Napi::Number::New(env, 1);
   }
 
   if (!info[0].IsString() || !info[1].IsString()) {
-    Napi::TypeError::New(env, "Expected name and version to be strings").ThrowAsJavaScriptException();
-    return env.Null();
+    Napi::TypeError::New(env, "Expected string (name) and string (version)")
+        .ThrowAsJavaScriptException();
+    return Napi::Number::New(env, 1);
+  }
+
+  InstrumentHooks *hooks = ensureInitialized();
+  if (!hooks) {
+    return Napi::Number::New(env, 1);
   }
 
   std::string name = info[0].As<Napi::String>().Utf8Value();
   std::string version = info[1].As<Napi::String>().Utf8Value();
 
-  int8_t result = instrument_hooks_set_integration(
-    static_cast<InstrumentHooksHandle*>(hooks_instance), 
-    name.c_str(), 
-    version.c_str()
-  );
-  
+  uint8_t result =
+      instrument_hooks_set_integration(hooks, name.c_str(), version.c_str());
   return Napi::Number::New(env, result);
 }
 
-}  // namespace codspeed_native
+Napi::Object Initialize(Napi::Env env, Napi::Object exports) {
+  Napi::Object instrumentHooksObj = Napi::Object::New(env);
+
+  instrumentHooksObj.Set(Napi::String::New(env, "isInstrumented"),
+                         Napi::Function::New(env, IsInstrumented));
+  instrumentHooksObj.Set(Napi::String::New(env, "startBenchmark"),
+                         Napi::Function::New(env, StartBenchmark));
+  instrumentHooksObj.Set(Napi::String::New(env, "stopBenchmark"),
+                         Napi::Function::New(env, StopBenchmark));
+  instrumentHooksObj.Set(Napi::String::New(env, "setExecutedBenchmark"),
+                         Napi::Function::New(env, SetExecutedBenchmark));
+  instrumentHooksObj.Set(Napi::String::New(env, "setIntegration"),
+                         Napi::Function::New(env, SetIntegration));
+
+  exports.Set(Napi::String::New(env, "InstrumentHooks"), instrumentHooksObj);
+
+  return exports;
+}
+
+} // namespace hooks_wrapper
+} // namespace instruments
+} // namespace codspeed_native

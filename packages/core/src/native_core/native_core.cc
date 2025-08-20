@@ -8,7 +8,7 @@ namespace codspeed_native {
 Napi::Object Initialize(Napi::Env env, Napi::Object exports) {
   codspeed_native::LinuxPerf::Initialize(env, exports);
   codspeed_native::Measurement::Initialize(env, exports);
-  codspeed_native::Hooks::Initialize(env, exports);
+  codspeed_native::instruments::hooks_wrapper::Initialize(env, exports);
 
   return exports;
 }

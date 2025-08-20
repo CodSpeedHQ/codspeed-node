@@ -32,5 +32,3 @@ export interface Hooks {
    */
   setIntegration(name: string, version: string): number;
 }
-
-export type HooksConstructor = new () => Hooks;

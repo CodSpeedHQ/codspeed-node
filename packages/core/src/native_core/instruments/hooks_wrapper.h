@@ -1,28 +1,21 @@
-#ifndef HOOKS_WRAPPER_H
-#define HOOKS_WRAPPER_H
+#ifndef INSTRUMENTS_HOOKS_WRAPPER_H
+#define INSTRUMENTS_HOOKS_WRAPPER_H
 
 #include <napi.h>
 
 namespace codspeed_native {
+namespace instruments {
+namespace hooks_wrapper {
 
-class Hooks : public Napi::ObjectWrap<Hooks> {
- public:
-  static Napi::Object Initialize(Napi::Env env, Napi::Object exports);
-  Hooks(const Napi::CallbackInfo& info);
-  ~Hooks();
+Napi::Boolean IsInstrumented(const Napi::CallbackInfo &info);
+Napi::Number StartBenchmark(const Napi::CallbackInfo &info);
+Napi::Number StopBenchmark(const Napi::CallbackInfo &info);
+Napi::Number SetExecutedBenchmark(const Napi::CallbackInfo &info);
+Napi::Number SetIntegration(const Napi::CallbackInfo &info);
+Napi::Object Initialize(Napi::Env env, Napi::Object exports);
 
- private:
-  static Napi::FunctionReference constructor;
-  
-  Napi::Value IsInstrumented(const Napi::CallbackInfo& info);
-  Napi::Value StartBenchmark(const Napi::CallbackInfo& info);
-  Napi::Value StopBenchmark(const Napi::CallbackInfo& info);
-  Napi::Value SetExecutedBenchmark(const Napi::CallbackInfo& info);
-  Napi::Value SetIntegration(const Napi::CallbackInfo& info);
+} // namespace hooks_wrapper
+} // namespace instruments
+} // namespace codspeed_native
 
-  void* hooks_instance;
-};
-
-}  // namespace codspeed_native
-
-#endif
+#endif // INSTRUMENTS_HOOKS_WRAPPER_H

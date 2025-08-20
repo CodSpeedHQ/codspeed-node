@@ -1,11 +1,11 @@
 import path from "path";
-import { HooksConstructor } from "./instruments/hooks";
+import { Hooks } from "./instruments/hooks";
 import { LinuxPerf } from "./linux_perf/linux_perf";
 import { Measurement } from "./measurement/measurement";
 interface NativeCore {
   Measurement: Measurement;
   LinuxPerf: typeof LinuxPerf;
-  Hooks: HooksConstructor;
+  Hooks: Hooks;
 }
 
 interface NativeCoreWithBindingStatus extends NativeCore {
@@ -39,22 +39,22 @@ try {
         return false;
       }
     },
-    Hooks: class Hooks {
-      isInstrumented() {
+    Hooks: {
+      isInstrumented: () => {
         return false;
-      }
-      startBenchmark() {
+      },
+      startBenchmark: () => {
         return 0;
-      }
-      stopBenchmark() {
+      },
+      stopBenchmark: () => {
         return 0;
-      }
-      setExecutedBenchmark(_pid: number, _uri: string) {
+      },
+      setExecutedBenchmark: (_pid: number, _uri: string) => {
         return 0;
-      }
-      setIntegration(_name: string, _version: string) {
+      },
+      setIntegration: (_name: string, _version: string) => {
         return 0;
-      }
+      },
     },
 
     isBound: false,
