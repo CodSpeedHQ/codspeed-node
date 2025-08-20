@@ -14,10 +14,6 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
-      - name: Install valgrind
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y valgrind
       - uses: pnpm/action-setup@v2
       - uses: actions/setup-node@v3
         with:
@@ -56,10 +52,6 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
-      - name: Install valgrind
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y valgrind
       - uses: pnpm/action-setup@v2
       - uses: actions/setup-node@v3
         with:

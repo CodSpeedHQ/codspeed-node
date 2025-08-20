@@ -1,5 +1,5 @@
+#include "callgrind.h"
 #include "measurement.h"
-#include <valgrind/callgrind.h>
 
 namespace codspeed_native {
 namespace Measurement {

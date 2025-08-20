@@ -12,6 +12,7 @@ tasks:
     command: prebuildify --napi --strip
     inputs:
       - "src/native_core/**/*.cc"
+      - "src/native_core/**/*.c"
       - "src/native_core/**/*.h"
       - "binding.gyp"
     outputs:
