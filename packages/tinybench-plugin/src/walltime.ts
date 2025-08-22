@@ -42,7 +42,9 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
         await task.warmup();
       }
       await mongoMeasurement.start(uri);
+      InstrumentHooks.startBenchmark();
       const taskResult = await task.run();
+      InstrumentHooks.stopBenchmark();
       await mongoMeasurement.stop(uri);
       results.push(taskResult);
 
@@ -69,8 +71,8 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
         };
 
         benchmarks.push(benchmark);
-
         console.log(`    ✔ Collected walltime data for ${uri}`);
+        InstrumentHooks.setExecutedBenchmark(process.pid, uri);
       } else {
         console.warn(`    ⚠ No result data available for ${uri}`);
       }

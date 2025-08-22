@@ -115,19 +115,19 @@ Napi::Number SetIntegration(const Napi::CallbackInfo &info) {
 
 Napi::Object Initialize(Napi::Env env, Napi::Object exports) {
   Napi::Object instrumentHooksObj = Napi::Object::New(env);
-  //
-  // instrumentHooksObj.Set(Napi::String::New(env, "isInstrumented"),
-  //                        Napi::Function::New(env, IsInstrumented));
-  // instrumentHooksObj.Set(Napi::String::New(env, "startBenchmark"),
-  //                        Napi::Function::New(env, StartBenchmark));
-  // instrumentHooksObj.Set(Napi::String::New(env, "stopBenchmark"),
-  //                        Napi::Function::New(env, StopBenchmark));
-  // instrumentHooksObj.Set(Napi::String::New(env, "setExecutedBenchmark"),
-  //                        Napi::Function::New(env, SetExecutedBenchmark));
-  // instrumentHooksObj.Set(Napi::String::New(env, "setIntegration"),
-  //                        Napi::Function::New(env, SetIntegration));
-  //
-  // exports.Set(Napi::String::New(env, "InstrumentHooks"), instrumentHooksObj);
+
+  instrumentHooksObj.Set(Napi::String::New(env, "isInstrumented"),
+                         Napi::Function::New(env, IsInstrumented));
+  instrumentHooksObj.Set(Napi::String::New(env, "startBenchmark"),
+                         Napi::Function::New(env, StartBenchmark));
+  instrumentHooksObj.Set(Napi::String::New(env, "stopBenchmark"),
+                         Napi::Function::New(env, StopBenchmark));
+  instrumentHooksObj.Set(Napi::String::New(env, "setExecutedBenchmark"),
+                         Napi::Function::New(env, SetExecutedBenchmark));
+  instrumentHooksObj.Set(Napi::String::New(env, "setIntegration"),
+                         Napi::Function::New(env, SetIntegration));
+
+  exports.Set(Napi::String::New(env, "InstrumentHooks"), instrumentHooksObj);
 
   return exports;
 }
