@@ -1,6 +1,7 @@
 #include "hooks_wrapper.h"
 #include "hooks/includes/core.h"
 #include <memory>
+#include <iostream>
 
 namespace codspeed_native {
 namespace instruments {
@@ -12,12 +13,17 @@ static std::unique_ptr<InstrumentHooks, decltype(&instrument_hooks_deinit)>
 
 // Initialize instrument hooks if not already done
 static InstrumentHooks *ensureInitialized() {
+  std::cerr << "Ensuring instrument hooks are initialized" << std::endl;
   if (!g_hooks) {
+    std::cerr << "2" << std::endl;
     InstrumentHooks *hooks = instrument_hooks_init();
+    std::cerr << "3" << std::endl;
     if (hooks) {
+      std::cerr << "4" << std::endl;
       g_hooks.reset(hooks);
     }
   }
+  std::cerr << "5" << std::endl;
   return g_hooks.get();
 }
 
@@ -86,7 +92,9 @@ Napi::Number SetExecutedBenchmark(const Napi::CallbackInfo &info) {
 }
 
 Napi::Number SetIntegration(const Napi::CallbackInfo &info) {
+  std::cerr <<"Hello world!" << std::endl;
   Napi::Env env = info.Env();
+  std::cerr <<"Hello world!!" << std::endl;
 
   if (info.Length() != 2) {
     Napi::TypeError::New(env, "Expected 2 arguments: name and version")
@@ -100,34 +108,42 @@ Napi::Number SetIntegration(const Napi::CallbackInfo &info) {
     return Napi::Number::New(env, 1);
   }
 
+  std::cerr <<"Hello world!!!" << std::endl;
+
   InstrumentHooks *hooks = ensureInitialized();
   if (!hooks) {
+    std::cerr <<"Returning kekw" << std::endl;
     return Napi::Number::New(env, 1);
   }
+  std::cerr <<"Hello world!!!!!" << std::endl;
 
   std::string name = info[0].As<Napi::String>().Utf8Value();
   std::string version = info[1].As<Napi::String>().Utf8Value();
+  std::cerr <<"Hello world!!!!!!" << std::endl;
 
   uint8_t result =
       instrument_hooks_set_integration(hooks, name.c_str(), version.c_str());
+  std::cerr <<"Hello world!!!!!!!!" << std::endl;
   return Napi::Number::New(env, result);
 }
 
 Napi::Object Initialize(Napi::Env env, Napi::Object exports) {
   Napi::Object instrumentHooksObj = Napi::Object::New(env);
-  //
-  // instrumentHooksObj.Set(Napi::String::New(env, "isInstrumented"),
-  //                        Napi::Function::New(env, IsInstrumented));
-  // instrumentHooksObj.Set(Napi::String::New(env, "startBenchmark"),
-  //                        Napi::Function::New(env, StartBenchmark));
-  // instrumentHooksObj.Set(Napi::String::New(env, "stopBenchmark"),
-  //                        Napi::Function::New(env, StopBenchmark));
-  // instrumentHooksObj.Set(Napi::String::New(env, "setExecutedBenchmark"),
-  //                        Napi::Function::New(env, SetExecutedBenchmark));
-  // instrumentHooksObj.Set(Napi::String::New(env, "setIntegration"),
-  //                        Napi::Function::New(env, SetIntegration));
-  //
-  // exports.Set(Napi::String::New(env, "InstrumentHooks"), instrumentHooksObj);
+
+  std::cerr <<"Hello world" << std::endl;
+
+  instrumentHooksObj.Set(Napi::String::New(env, "isInstrumented"),
+                         Napi::Function::New(env, IsInstrumented));
+  instrumentHooksObj.Set(Napi::String::New(env, "startBenchmark"),
+                         Napi::Function::New(env, StartBenchmark));
+  instrumentHooksObj.Set(Napi::String::New(env, "stopBenchmark"),
+                         Napi::Function::New(env, StopBenchmark));
+  instrumentHooksObj.Set(Napi::String::New(env, "setExecutedBenchmark"),
+                         Napi::Function::New(env, SetExecutedBenchmark));
+  instrumentHooksObj.Set(Napi::String::New(env, "setIntegration"),
+                         Napi::Function::New(env, SetIntegration));
+
+  exports.Set(Napi::String::New(env, "InstrumentHooks"), instrumentHooksObj);
 
   return exports;
 }
