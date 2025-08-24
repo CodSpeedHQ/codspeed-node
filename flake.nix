@@ -23,7 +23,6 @@
               setuptools
             ]
           ))
-          valgrind # TODO: Remove this in favor of codspeed's valgrind
         ];
 
       in

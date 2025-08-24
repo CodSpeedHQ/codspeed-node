@@ -1,8 +1,10 @@
 import path from "path";
+import { InstrumentHooks } from "./instruments/hooks";
 import { LinuxPerf } from "./linux_perf/linux_perf";
 import { Measurement } from "./measurement/measurement";
 interface NativeCore {
   Measurement: Measurement;
+  InstrumentHooks: InstrumentHooks;
   LinuxPerf: typeof LinuxPerf;
 }
 
@@ -37,7 +39,23 @@ try {
         return false;
       }
     },
-
+    InstrumentHooks: {
+      isInstrumented: () => {
+        return false;
+      },
+      startBenchmark: () => {
+        return 0;
+      },
+      stopBenchmark: () => {
+        return 0;
+      },
+      setExecutedBenchmark: (_pid: number, _uri: string) => {
+        return 0;
+      },
+      setIntegration: (_name: string, _version: string) => {
+        return 0;
+      },
+    },
     isBound: false,
   };
 }

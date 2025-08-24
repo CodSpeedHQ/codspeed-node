@@ -53,3 +53,4 @@ export { optimizeFunction, optimizeFunctionSync } from "./optimization";
 export * from "./utils";
 export * from "./walltime";
 export const Measurement = native_core.Measurement;
+export const InstrumentHooks = native_core.InstrumentHooks;
