@@ -35,11 +35,8 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
 
     InstrumentHooks.setIntegration("codspeed-node", __VERSION__);
 
-    // Patch individual benchmarks with URI context
-    this.patchBenchmarksWithURI(suite);
-
-    // Let Vitest's default benchmark runner handle execution
-    await super.runSuite(suite);
+    // Run our custom benchmark suite with InstrumentHooks
+    await this.runCustomBenchmarkSuite(suite);
 
     // Extract benchmark results from the completed suite
     const benchmarks = await this.extractBenchmarkResults(suite);
@@ -56,41 +53,72 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
     }
   }
 
-  private patchBenchmarksWithURI(suite: RunnerTestSuite, parentSuiteName?: string): void {
+  private async runCustomBenchmarkSuite(suite: RunnerTestSuite, parentSuiteName?: string): Promise<void> {
     const currentSuiteName = parentSuiteName
       ? parentSuiteName + "::" + suite.name
       : suite.name;
 
+    // Collect benchmarks and nested suites
+    const benchmarkGroup: VitestBenchmark[] = [];
+    const benchmarkSuiteGroup: RunnerTestSuite[] = [];
+    
     for (const task of suite.tasks) {
-      if (task.mode !== "run") continue;
-
+      if (task.mode !== "run" && task.mode !== "queued") continue;
       if (isVitestTaskBenchmark(task)) {
-        const benchmark = task as VitestBenchmark;
-        const uri = `${currentSuiteName}::${benchmark.name}`;
-        
-        // Store the original function and URI for this benchmark
-        if (!('_codspeedOriginalFn' in benchmark)) {
-          const originalFn = getBenchFn(benchmark);
-          (benchmark as any)._codspeedOriginalFn = originalFn;
-          (benchmark as any)._codspeedURI = uri;
-          
-          // Replace the benchmark function with our wrapped version
-          (benchmark as any).fn = async (...args: any[]) => {
-            InstrumentHooks.startBenchmark();
-            try {
-              // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench
-              const result = await originalFn(...args);
-              InstrumentHooks.stopBenchmark();
-              InstrumentHooks.setExecutedBenchmark(process.pid, uri);
-              return result;
-            } catch (error) {
-              InstrumentHooks.stopBenchmark();
-              throw error;
-            }
-          };
-        }
+        benchmarkGroup.push(task as VitestBenchmark);
       } else if (task.type === "suite") {
-        this.patchBenchmarksWithURI(task, currentSuiteName);
+        benchmarkSuiteGroup.push(task);
+      }
+    }
+
+    // Run sub suites recursively
+    for (const subSuite of benchmarkSuiteGroup) {
+      await this.runCustomBenchmarkSuite(subSuite, currentSuiteName);
+    }
+
+    // Run benchmarks in this suite
+    if (benchmarkGroup.length) {
+      await this.runBenchmarkGroup(benchmarkGroup, currentSuiteName);
+    }
+  }
+
+  private async runBenchmarkGroup(benchmarks: VitestBenchmark[], suiteName: string): Promise<void> {
+    const { Task, Bench } = await this.importTinybench();
+    const benchmarkTasks = new Map();
+
+    // Create tinybench tasks (similar to vitest's implementation)
+    for (const benchmark of benchmarks) {
+      const task = new Task(new Bench(), benchmark.name, getBenchFn(benchmark));
+      benchmarkTasks.set(benchmark, task);
+    }
+
+    // Run each benchmark with InstrumentHooks
+    for (const benchmark of benchmarks) {
+      const task = benchmarkTasks.get(benchmark);
+      const uri = `${suiteName}::${benchmark.name}`;
+
+      // Warmup if needed
+      if (task.opts?.warmup) {
+        await task.warmup();
+      }
+
+      // Run with InstrumentHooks
+      InstrumentHooks.startBenchmark();
+      try {
+        await task.run();
+        InstrumentHooks.stopBenchmark();
+        InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+      } catch (error) {
+        InstrumentHooks.stopBenchmark();
+        throw error;
+      }
+
+      // Store result back to benchmark for extraction later
+      if (task.result) {
+        (benchmark as any).result = {
+          state: "pass",
+          benchmark: task.result
+        };
       }
     }
   }
@@ -133,7 +161,6 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
       console.warn(`    ⚠ No result data available for ${uri}`);
       return null;
     }
-
 
     try {
       // Get tinybench configuration options from vitest
