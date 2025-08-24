@@ -1,5 +1,6 @@
 import {
   calculateQuantiles,
+  InstrumentHooks,
   msToNs,
   msToS,
   writeWalltimeResults,
@@ -12,7 +13,7 @@ import {
   type RunnerTestSuite,
 } from "vitest";
 import { NodeBenchmarkRunner } from "vitest/runners";
-import { getBenchOptions } from "vitest/suite";
+import { getBenchOptions, getBenchFn } from "vitest/suite";
 import {
   isVitestTaskBenchmark,
   patchRootSuiteWithFullFilePath,
@@ -32,7 +33,10 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
       `[CodSpeed] running with @codspeed/vitest-plugin v${__VERSION__} (walltime mode)`
     );
 
-    // InstrumentHooks.setIntegration("codspeed-node", __VERSION__);
+    InstrumentHooks.setIntegration("codspeed-node", __VERSION__);
+
+    // Patch individual benchmarks with URI context
+    this.patchBenchmarksWithURI(suite);
 
     // Let Vitest's default benchmark runner handle execution
     await super.runSuite(suite);
@@ -49,6 +53,45 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
       console.warn(
         `[CodSpeed] No benchmark results found after suite execution`
       );
+    }
+  }
+
+  private patchBenchmarksWithURI(suite: RunnerTestSuite, parentSuiteName?: string): void {
+    const currentSuiteName = parentSuiteName
+      ? parentSuiteName + "::" + suite.name
+      : suite.name;
+
+    for (const task of suite.tasks) {
+      if (task.mode !== "run") continue;
+
+      if (isVitestTaskBenchmark(task)) {
+        const benchmark = task as VitestBenchmark;
+        const uri = `${currentSuiteName}::${benchmark.name}`;
+        
+        // Store the original function and URI for this benchmark
+        if (!('_codspeedOriginalFn' in benchmark)) {
+          const originalFn = getBenchFn(benchmark);
+          (benchmark as any)._codspeedOriginalFn = originalFn;
+          (benchmark as any)._codspeedURI = uri;
+          
+          // Replace the benchmark function with our wrapped version
+          (benchmark as any).fn = async (...args: any[]) => {
+            InstrumentHooks.startBenchmark();
+            try {
+              // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench
+              const result = await originalFn(...args);
+              InstrumentHooks.stopBenchmark();
+              InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+              return result;
+            } catch (error) {
+              InstrumentHooks.stopBenchmark();
+              throw error;
+            }
+          };
+        }
+      } else if (task.type === "suite") {
+        this.patchBenchmarksWithURI(task, currentSuiteName);
+      }
     }
   }
 
@@ -90,6 +133,7 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
       console.warn(`    ⚠ No result data available for ${uri}`);
       return null;
     }
+
 
     try {
       // Get tinybench configuration options from vitest
