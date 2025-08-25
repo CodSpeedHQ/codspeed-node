@@ -13,9 +13,9 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "exports": {
+    "types": "./dist/index.d.ts",
     "import": "./dist/index.es5.js",
-    "require": "./dist/index.cjs",
-    "types": "./dist/index.d.ts"
+    "require": "./dist/index.cjs"
   },
   "files": [
     "dist"
