@@ -86,7 +86,7 @@ describe("codSpeedPlugin", () => {
     if (typeof config !== "function")
       throw new Error("config is not a function");
 
-    expect(config({}, fromPartial({}))).toStrictEqual({
+    expect(config.call({} as never, {}, fromPartial({}))).toStrictEqual({
       test: {
         globalSetup: [
           expect.stringContaining("packages/vitest-plugin/src/globalSetup.ts"),
