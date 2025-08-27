@@ -213,7 +213,7 @@ importers:
   packages/benchmark.js-plugin:
     dependencies:
       '@codspeed/core':
-        specifier: workspace:^5.0.0
+        specifier: workspace:^5.0.0-alpha.0
         version: link:../core
       lodash:
         specifier: ^4.17.10
@@ -275,7 +275,7 @@ importers:
   packages/tinybench-plugin:
     dependencies:
       '@codspeed/core':
-        specifier: workspace:^5.0.0
+        specifier: workspace:^5.0.0-alpha.0
         version: link:../core
       stack-trace:
         specifier: 1.0.0-pre2
@@ -297,7 +297,7 @@ importers:
   packages/vitest-plugin:
     dependencies:
       '@codspeed/core':
-        specifier: workspace:^5.0.0
+        specifier: workspace:^5.0.0-alpha.0
         version: link:../core
     devDependencies:
       '@total-typescript/shoehorn':
