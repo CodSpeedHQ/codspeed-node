@@ -29,7 +29,12 @@ jobs:
         run: pnpm moon run :build
 
       - name: Publish the libraries
-        run: pnpm publish -r --access=public --no-git-checks
+        run: |
+          if [[ "${{ github.ref }}" == *"-alpha"* ]]; then
+            pnpm publish -r --access=public --no-git-checks --tag=alpha
+          else
+            pnpm publish -r --access=public --no-git-checks
+          fi
         env:
           NPM_CONFIG_PROVENANCE: true
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
