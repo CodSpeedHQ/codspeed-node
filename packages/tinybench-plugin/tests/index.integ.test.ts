@@ -11,10 +11,11 @@ const mockCore = vi.hoisted(() => {
       stop: vi.fn(),
       setupInstruments: vi.fn(),
     },
-    Measurement: {
+    InstrumentHooks: {
       isInstrumented: vi.fn(),
-      startInstrumentation: vi.fn(),
-      stopInstrumentation: vi.fn(),
+      startBenchmark: vi.fn(),
+      stopBenchmark: vi.fn(),
+      setExecutedBenchmark: vi.fn(),
     },
     optimizeFunction: vi
       .fn()
@@ -42,7 +43,7 @@ beforeEach(() => {
 
 describe("Benchmark.Suite", () => {
   it("check core methods are called", async () => {
-    mockCore.Measurement.isInstrumented.mockReturnValue(true);
+    mockCore.InstrumentHooks.isInstrumented.mockReturnValue(true);
     await withCodSpeed(new Bench())
       .add("RegExp", function () {
         /o/.test("Hello World!");
@@ -53,13 +54,15 @@ describe("Benchmark.Suite", () => {
       "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp"
     );
     expect(mockCore.mongoMeasurement.stop).toHaveBeenCalledTimes(1);
-    expect(mockCore.Measurement.startInstrumentation).toHaveBeenCalled();
-    expect(mockCore.Measurement.stopInstrumentation).toHaveBeenCalledWith(
+    expect(mockCore.InstrumentHooks.startBenchmark).toHaveBeenCalled();
+    expect(mockCore.InstrumentHooks.stopBenchmark).toHaveBeenCalled();
+    expect(mockCore.InstrumentHooks.setExecutedBenchmark).toHaveBeenCalledWith(
+      process.pid,
       "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp"
     );
   });
   it("check suite name is in the uri", async () => {
-    mockCore.Measurement.isInstrumented.mockReturnValue(true);
+    mockCore.InstrumentHooks.isInstrumented.mockReturnValue(true);
     await withCodSpeed(new Bench())
       .add("RegExp", function () {
         /o/.test("Hello World!");
@@ -76,15 +79,19 @@ describe("Benchmark.Suite", () => {
       "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp2"
     );
     expect(mockCore.mongoMeasurement.stop).toHaveBeenCalledTimes(2);
-    expect(mockCore.Measurement.stopInstrumentation).toHaveBeenCalledWith(
+    expect(mockCore.InstrumentHooks.startBenchmark).toHaveBeenCalledTimes(2);
+    expect(mockCore.InstrumentHooks.stopBenchmark).toHaveBeenCalledTimes(2);
+    expect(mockCore.InstrumentHooks.setExecutedBenchmark).toHaveBeenCalledWith(
+      process.pid,
       "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp"
     );
-    expect(mockCore.Measurement.stopInstrumentation).toHaveBeenCalledWith(
+    expect(mockCore.InstrumentHooks.setExecutedBenchmark).toHaveBeenCalledWith(
+      process.pid,
       "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp2"
     );
   });
   it("check error handling", async () => {
-    mockCore.Measurement.isInstrumented.mockReturnValue(true);
+    mockCore.InstrumentHooks.isInstrumented.mockReturnValue(true);
     const bench = withCodSpeed(new Bench());
     bench.add("throwing", async () => {
       throw new Error("test");
@@ -96,7 +103,7 @@ describe("Benchmark.Suite", () => {
     async (instrumented) => {
       const logSpy = vi.spyOn(console, "log");
       const warnSpy = vi.spyOn(console, "warn");
-      mockCore.Measurement.isInstrumented.mockReturnValue(instrumented);
+      mockCore.InstrumentHooks.isInstrumented.mockReturnValue(instrumented);
       await withCodSpeed(new Bench({ time: 100 }))
         .add("RegExp", function () {
           /o/.test("Hello World!");
@@ -125,12 +132,14 @@ describe("Benchmark.Suite", () => {
     }
   );
   it("check nested file path is in the uri when bench is registered in another file", async () => {
-    mockCore.Measurement.isInstrumented.mockReturnValue(true);
+    mockCore.InstrumentHooks.isInstrumented.mockReturnValue(true);
     const bench = withCodSpeed(new Bench());
     registerBenchmarks(bench);
     await bench.run();
-    expect(mockCore.Measurement.startInstrumentation).toHaveBeenCalled();
-    expect(mockCore.Measurement.stopInstrumentation).toHaveBeenCalledWith(
+    expect(mockCore.InstrumentHooks.startBenchmark).toHaveBeenCalled();
+    expect(mockCore.InstrumentHooks.stopBenchmark).toHaveBeenCalled();
+    expect(mockCore.InstrumentHooks.setExecutedBenchmark).toHaveBeenCalledWith(
+      process.pid,
       "packages/tinybench-plugin/tests/registerBenchmarks.ts::RegExp"
     );
   });
@@ -139,23 +148,30 @@ describe("Benchmark.Suite", () => {
   it.fails(
     "check that benchmarks with same name have different URIs when registered in different files",
     async () => {
-      mockCore.Measurement.isInstrumented.mockReturnValue(true);
+      mockCore.InstrumentHooks.isInstrumented.mockReturnValue(true);
       const bench = withCodSpeed(new Bench());
       registerBenchmarks(bench);
       registerOtherBenchmarks(bench);
       await bench.run();
-      expect(mockCore.Measurement.startInstrumentation).toHaveBeenCalled();
-      expect(mockCore.Measurement.stopInstrumentation).toHaveBeenCalledWith(
+      expect(mockCore.InstrumentHooks.startBenchmark).toHaveBeenCalled();
+      expect(mockCore.InstrumentHooks.stopBenchmark).toHaveBeenCalled();
+      expect(
+        mockCore.InstrumentHooks.setExecutedBenchmark
+      ).toHaveBeenCalledWith(
+        process.pid,
         "packages/tinybench-plugin/tests/registerBenchmarks.ts::RegExp"
       );
-      expect(mockCore.Measurement.stopInstrumentation).toHaveBeenCalledWith(
+      expect(
+        mockCore.InstrumentHooks.setExecutedBenchmark
+      ).toHaveBeenCalledWith(
+        process.pid,
         "packages/tinybench-plugin/tests/registerOtherBenchmarks.ts::RegExp"
       );
     }
   );
 
   it("should run before and after hooks", async () => {
-    mockCore.Measurement.isInstrumented.mockReturnValue(true);
+    mockCore.InstrumentHooks.isInstrumented.mockReturnValue(true);
     mockCore.optimizeFunction.mockImplementation(async (fn) => {
       await fn();
     });
@@ -190,7 +206,7 @@ describe("Benchmark.Suite", () => {
   });
 
   it("should call setupCore and teardownCore only once after run()", async () => {
-    mockCore.Measurement.isInstrumented.mockReturnValue(true);
+    mockCore.InstrumentHooks.isInstrumented.mockReturnValue(true);
     const bench = withCodSpeed(new Bench())
       .add("RegExp", function () {
         /o/.test("Hello World!");

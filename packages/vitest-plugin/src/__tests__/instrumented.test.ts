@@ -5,9 +5,10 @@ import { InstrumentedRunner as CodSpeedRunner } from "../instrumented";
 
 const coreMocks = vi.hoisted(() => {
   return {
-    Measurement: {
-      startInstrumentation: vi.fn(),
-      stopInstrumentation: vi.fn(),
+    InstrumentHooks: {
+      startBenchmark: vi.fn(),
+      stopBenchmark: vi.fn(),
+      setExecutedBenchmark: vi.fn(),
     },
     setupCore: vi.fn(),
     teardownCore: vi.fn(),
@@ -66,9 +67,9 @@ describe("CodSpeedRunner", () => {
     expect(coreMocks.mongoMeasurement.start).toHaveBeenCalledWith(
       "packages/vitest-plugin/src/__tests__/instrumented.test.ts::test bench"
     );
-    expect(coreMocks.Measurement.startInstrumentation).toHaveBeenCalledTimes(1);
+    expect(coreMocks.InstrumentHooks.startBenchmark).toHaveBeenCalledTimes(1);
     expect(benchFn).toHaveBeenCalledTimes(8);
-    expect(coreMocks.Measurement.stopInstrumentation).toHaveBeenCalledTimes(1);
+    expect(coreMocks.InstrumentHooks.stopBenchmark).toHaveBeenCalledTimes(1);
     expect(coreMocks.mongoMeasurement.stop).toHaveBeenCalledTimes(1);
     expect(console.log).toHaveBeenCalledWith(
       "[CodSpeed] packages/vitest-plugin/src/__tests__/instrumented.test.ts::test bench done"
@@ -118,9 +119,9 @@ describe("CodSpeedRunner", () => {
     expect(coreMocks.mongoMeasurement.start).toHaveBeenCalledWith(
       "packages/vitest-plugin/src/__tests__/instrumented.test.ts::nested suite::test bench"
     );
-    expect(coreMocks.Measurement.startInstrumentation).toHaveBeenCalledTimes(1);
+    expect(coreMocks.InstrumentHooks.startBenchmark).toHaveBeenCalledTimes(1);
     expect(benchFn).toHaveBeenCalledTimes(8);
-    expect(coreMocks.Measurement.stopInstrumentation).toHaveBeenCalledTimes(1);
+    expect(coreMocks.InstrumentHooks.stopBenchmark).toHaveBeenCalledTimes(1);
     expect(coreMocks.mongoMeasurement.stop).toHaveBeenCalledTimes(1);
     expect(console.log).toHaveBeenCalledWith(
       "[CodSpeed] packages/vitest-plugin/src/__tests__/instrumented.test.ts::nested suite::test bench done"

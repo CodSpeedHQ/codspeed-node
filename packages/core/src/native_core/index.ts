@@ -1,9 +1,7 @@
 import path from "path";
 import { InstrumentHooks } from "./instruments/hooks";
 import { LinuxPerf } from "./linux_perf/linux_perf";
-import { Measurement } from "./measurement/measurement";
 interface NativeCore {
-  Measurement: Measurement;
   InstrumentHooks: InstrumentHooks;
   LinuxPerf: typeof LinuxPerf;
 }
@@ -24,13 +22,6 @@ try {
   };
 } catch (e) {
   native_core = {
-    Measurement: {
-      isInstrumented: () => false,
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      startInstrumentation: () => {},
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
-      stopInstrumentation: (at) => {},
-    },
     LinuxPerf: class LinuxPerf {
       start() {
         return false;

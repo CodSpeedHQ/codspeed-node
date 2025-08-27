@@ -33,9 +33,7 @@ export function getCodspeedRunnerMode(): CodSpeedRunnerMode {
 }
 
 export const setupCore = () => {
-  native_core.Measurement.stopInstrumentation(
-    `Metadata: codspeed-node ${__VERSION__}`
-  );
+  native_core.InstrumentHooks.setIntegration("codspeed-node", __VERSION__);
   linuxPerf.start();
   checkV8Flags();
 };
@@ -52,5 +50,4 @@ export { getV8Flags, tryIntrospect } from "./introspection";
 export { optimizeFunction, optimizeFunctionSync } from "./optimization";
 export * from "./utils";
 export * from "./walltime";
-export const Measurement = native_core.Measurement;
 export const InstrumentHooks = native_core.InstrumentHooks;

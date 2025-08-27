@@ -1,5 +1,5 @@
 import {
-  Measurement,
+  InstrumentHooks,
   mongoMeasurement,
   optimizeFunction,
   optimizeFunctionSync,
@@ -90,7 +90,7 @@ export function withCodSpeed(item: unknown): unknown {
 }
 
 function withCodSpeedBenchmark(bench: Benchmark): WithCodSpeedBenchmark {
-  if (!Measurement.isInstrumented()) {
+  if (!InstrumentHooks.isInstrumented()) {
     const rawRun = bench.run;
     bench.run = (options?: Benchmark.Options) => {
       console.warn(
@@ -120,7 +120,7 @@ function withCodSpeedBenchmark(bench: Benchmark): WithCodSpeedBenchmark {
 }
 
 function withCodSpeedSuite(suite: Benchmark.Suite): WithCodSpeedSuite {
-  if (!Measurement.isInstrumented()) {
+  if (!InstrumentHooks.isInstrumented()) {
     const rawRun = suite.run;
     suite.run = (options?: Benchmark.Options) => {
       console.warn(
@@ -198,18 +198,20 @@ async function runBenchmarks({
       await mongoMeasurement.start(uri);
       global.gc?.();
       await (async function __codspeed_root_frame__() {
-        Measurement.startInstrumentation();
+        InstrumentHooks.startBenchmark();
         await benchPayload();
-        Measurement.stopInstrumentation(uri);
+        InstrumentHooks.stopBenchmark();
+        InstrumentHooks.setExecutedBenchmark(process.pid, uri);
       })();
       await mongoMeasurement.stop(uri);
     } else {
       optimizeFunctionSync(benchPayload);
       await mongoMeasurement.start(uri);
       (function __codspeed_root_frame__() {
-        Measurement.startInstrumentation();
+        InstrumentHooks.startBenchmark();
         benchPayload();
-        Measurement.stopInstrumentation(uri);
+        InstrumentHooks.stopBenchmark();
+        InstrumentHooks.setExecutedBenchmark(process.pid, uri);
       })();
       await mongoMeasurement.stop(uri);
     }
@@ -231,7 +233,7 @@ async function runBenchmarks({
 export async function setupInstruments(
   body: SetupInstrumentsRequestBody
 ): Promise<SetupInstrumentsResponse> {
-  if (!Measurement.isInstrumented()) {
+  if (!InstrumentHooks.isInstrumented()) {
     console.warn("[CodSpeed] No instrumentation found, using default mongoUrl");
 
     return { remoteAddr: body.mongoUrl };

@@ -1,5 +1,5 @@
 import {
-  Measurement,
+  InstrumentHooks,
   mongoMeasurement,
   optimizeFunction,
   setupCore,
@@ -42,9 +42,10 @@ export function runInstrumentedBench(
       await mongoMeasurement.start(uri);
       global.gc?.();
       await (async function __codspeed_root_frame__() {
-        Measurement.startInstrumentation();
+        InstrumentHooks.startBenchmark();
         await fn();
-        Measurement.stopInstrumentation(uri);
+        InstrumentHooks.stopBenchmark();
+        InstrumentHooks.setExecutedBenchmark(process.pid, uri);
       })();
       await mongoMeasurement.stop(uri);
 
@@ -54,7 +55,9 @@ export function runInstrumentedBench(
 
       // print results
       console.log(
-        `    ✔ ${Measurement.isInstrumented() ? "Measured" : "Checked"} ${uri}`
+        `    ✔ ${
+          InstrumentHooks.isInstrumented() ? "Measured" : "Checked"
+        } ${uri}`
       );
     }
 

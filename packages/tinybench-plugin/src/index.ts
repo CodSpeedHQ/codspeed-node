@@ -1,7 +1,7 @@
 import {
   getCodspeedRunnerMode,
   getGitDir,
-  Measurement,
+  InstrumentHooks,
   mongoMeasurement,
   SetupInstrumentsRequestBody,
   SetupInstrumentsResponse,
@@ -67,7 +67,7 @@ function getCallingFile(): string {
 export async function setupInstruments(
   body: SetupInstrumentsRequestBody
 ): Promise<SetupInstrumentsResponse> {
-  if (!Measurement.isInstrumented()) {
+  if (!InstrumentHooks.isInstrumented()) {
     console.warn("[CodSpeed] No instrumentation found, using default mongoUrl");
 
     return { remoteAddr: body.mongoUrl };

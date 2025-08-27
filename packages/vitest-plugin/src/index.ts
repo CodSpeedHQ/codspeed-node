@@ -1,7 +1,7 @@
 import {
   getCodspeedRunnerMode,
   getV8Flags,
-  Measurement,
+  InstrumentHooks,
   mongoMeasurement,
   SetupInstrumentsRequestBody,
   SetupInstrumentsResponse,
@@ -38,7 +38,7 @@ export default function codspeedPlugin(): Plugin {
       }
       if (
         getCodspeedRunnerMode() == "instrumented" &&
-        !Measurement.isInstrumented()
+        !InstrumentHooks.isInstrumented()
       ) {
         console.warn("[CodSpeed] bench detected but no instrumentation found");
       }
@@ -80,7 +80,7 @@ export default function codspeedPlugin(): Plugin {
 export async function setupInstruments(
   body: SetupInstrumentsRequestBody
 ): Promise<SetupInstrumentsResponse> {
-  if (!Measurement.isInstrumented()) {
+  if (!InstrumentHooks.isInstrumented()) {
     console.warn("[CodSpeed] No instrumentation found, using default mongoUrl");
 
     return { remoteAddr: body.mongoUrl };

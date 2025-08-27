@@ -4,10 +4,8 @@ import codspeedPlugin from "../index";
 
 const coreMocks = vi.hoisted(() => {
   return {
-    Measurement: {
+    InstrumentHooks: {
       isInstrumented: vi.fn(),
-      startInstrumentation: vi.fn(),
-      stopInstrumentation: vi.fn(),
     },
   };
 });
@@ -56,7 +54,7 @@ describe("codSpeedPlugin", () => {
     });
 
     it("should apply the plugin when there is no instrumentation", async () => {
-      coreMocks.Measurement.isInstrumented.mockReturnValue(false);
+      coreMocks.InstrumentHooks.isInstrumented.mockReturnValue(false);
 
       const applyPlugin = applyPluginFunction(
         {},
@@ -70,7 +68,7 @@ describe("codSpeedPlugin", () => {
     });
 
     it("should apply the plugin when there is instrumentation", async () => {
-      coreMocks.Measurement.isInstrumented.mockReturnValue(true);
+      coreMocks.InstrumentHooks.isInstrumented.mockReturnValue(true);
 
       const applyPlugin = applyPluginFunction(
         {},

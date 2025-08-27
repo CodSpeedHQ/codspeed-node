@@ -1,6 +1,6 @@
 import {
+  InstrumentHooks,
   logDebug,
-  Measurement,
   mongoMeasurement,
   optimizeFunction,
   setupCore,
@@ -48,10 +48,11 @@ async function runInstrumentedBench(
   await mongoMeasurement.start(uri);
   global.gc?.();
   await (async function __codspeed_root_frame__() {
-    Measurement.startInstrumentation();
+    InstrumentHooks.startBenchmark();
     // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench
     await fn();
-    Measurement.stopInstrumentation(uri);
+    InstrumentHooks.stopBenchmark();
+    InstrumentHooks.setExecutedBenchmark(process.pid, uri);
   })();
   await mongoMeasurement.stop(uri);
   await callSuiteHook(suite, benchmark, "afterEach");
