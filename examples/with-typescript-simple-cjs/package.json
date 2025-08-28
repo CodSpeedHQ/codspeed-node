@@ -2,8 +2,8 @@
   "name": "with-typescript-simple-cjs",
   "private": true,
   "scripts": {
-    "bench-benchmark-js": "tsx benchmark-js.ts",
-    "bench-tinybench": "tsx tinybench.ts"
+    "bench-benchmark-js": "node --require tsx/cjs benchmark-js.ts",
+    "bench-tinybench": "node --require tsx/cjs tinybench.ts"
   },
   "devDependencies": {
     "@codspeed/benchmark.js-plugin": "link:../../packages/benchmark.js-plugin",

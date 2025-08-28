@@ -1,6 +1,6 @@
 tasks:
   bench:
-    command: tsx benches/sample.ts
+    command: node --import tsx/esm tsx benches/sample.ts
     inputs:
       - "benches/**"
     local: true

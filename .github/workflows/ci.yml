@@ -40,7 +40,7 @@ jobs:
 
   node-versions:
     runs-on: "ubuntu-latest"
-    name: "${{ matrix.example }} on Node ${{ matrix.node-version }}"
+    name: "Node ${{ matrix.node-version }} - ${{ matrix.example }}"
     needs: list-examples
     strategy:
       matrix:

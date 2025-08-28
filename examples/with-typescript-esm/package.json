@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "bench-benchmark-js": "tsx bench/benchmark.js/index.bench.ts",
-    "bench-tinybench": "tsx bench/tinybench/index.bench.ts",
+    "bench-benchmark-js": "node --import tsx/esm bench/benchmark.js/index.bench.ts",
+    "bench-tinybench": "node --import tsx/esm bench/tinybench/index.bench.ts",
     "bench-vitest": "vitest bench --run"
   },
   "devDependencies": {
