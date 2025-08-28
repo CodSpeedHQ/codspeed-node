@@ -93,11 +93,11 @@ importers:
   examples/with-javascript-esm:
     devDependencies:
       '@codspeed/benchmark.js-plugin':
-        specifier: file:../../packages/benchmark.js-plugin
-        version: file:packages/benchmark.js-plugin(benchmark@2.1.4)
+        specifier: link:../../packages/benchmark.js-plugin
+        version: link:../../packages/benchmark.js-plugin
       '@codspeed/tinybench-plugin':
-        specifier: file:../../packages/tinybench-plugin
-        version: file:packages/tinybench-plugin(tinybench@4.0.1)
+        specifier: link:../../packages/tinybench-plugin
+        version: link:../../packages/tinybench-plugin
       benchmark:
         specifier: ^2.1.4
         version: 2.1.4
@@ -108,11 +108,11 @@ importers:
   examples/with-typescript-cjs:
     devDependencies:
       '@codspeed/benchmark.js-plugin':
-        specifier: file:../../packages/benchmark.js-plugin
-        version: file:packages/benchmark.js-plugin(benchmark@2.1.4)
+        specifier: link:../../packages/benchmark.js-plugin
+        version: link:../../packages/benchmark.js-plugin
       '@codspeed/tinybench-plugin':
-        specifier: file:../../packages/tinybench-plugin
-        version: file:packages/tinybench-plugin(tinybench@4.0.1)
+        specifier: link:../../packages/tinybench-plugin
+        version: link:../../packages/tinybench-plugin
       '@types/benchmark':
         specifier: ^2.1.2
         version: 2.1.2
@@ -162,11 +162,11 @@ importers:
   examples/with-typescript-simple-cjs:
     devDependencies:
       '@codspeed/benchmark.js-plugin':
-        specifier: file:../../packages/benchmark.js-plugin
-        version: file:packages/benchmark.js-plugin(benchmark@2.1.4)
+        specifier: link:../../packages/benchmark.js-plugin
+        version: link:../../packages/benchmark.js-plugin
       '@codspeed/tinybench-plugin':
-        specifier: file:../../packages/tinybench-plugin
-        version: file:packages/tinybench-plugin(tinybench@4.0.1)
+        specifier: link:../../packages/tinybench-plugin
+        version: link:../../packages/tinybench-plugin
       '@types/benchmark':
         specifier: ^2.1.2
         version: 2.1.2
@@ -1020,16 +1020,6 @@ packages:
 
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
-
-  '@codspeed/benchmark.js-plugin@file:packages/benchmark.js-plugin':
-    resolution: {directory: packages/benchmark.js-plugin, type: directory}
-    peerDependencies:
-      benchmark: ^2.1.0
-
-  '@codspeed/tinybench-plugin@file:packages/tinybench-plugin':
-    resolution: {directory: packages/tinybench-plugin, type: directory}
-    peerDependencies:
-      tinybench: ^4.0.1
 
   '@commitlint/cli@17.5.1':
     resolution: {integrity: sha512-pRRgGSzdHQHehxZbGA3qF6wVPyl+EEQgTe/t321rtMLFbuJ7nRj2waS17s/v5oEbyZtiY5S8PGB6XtEIm0I+Sg==}
@@ -6824,19 +6814,6 @@ snapshots:
       '@babel/helper-validator-identifier': 7.27.1
 
   '@bcoe/v8-coverage@0.2.3': {}
-
-  '@codspeed/benchmark.js-plugin@file:packages/benchmark.js-plugin(benchmark@2.1.4)':
-    dependencies:
-      '@codspeed/core': link:packages/core
-      benchmark: 2.1.4
-      lodash: 4.17.21
-      stack-trace: 1.0.0-pre2
-
-  '@codspeed/tinybench-plugin@file:packages/tinybench-plugin(tinybench@4.0.1)':
-    dependencies:
-      '@codspeed/core': link:packages/core
-      stack-trace: 1.0.0-pre2
-      tinybench: 4.0.1
 
   '@commitlint/cli@17.5.1':
     dependencies:
