@@ -10,7 +10,7 @@
   "devDependencies": {
     "@codspeed/benchmark.js-plugin": "link:../../packages/benchmark.js-plugin",
     "@codspeed/tinybench-plugin": "link:../../packages/tinybench-plugin",
-    "@codspeed/vitest-plugin": "file:../../packages/vitest-plugin",
+    "@codspeed/vitest-plugin": "link:../../packages/vitest-plugin",
     "@types/benchmark": "^2.1.2",
     "benchmark": "^2.1.4",
     "tinybench": "^4.0.1",
