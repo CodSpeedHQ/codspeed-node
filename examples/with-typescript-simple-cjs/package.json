@@ -6,8 +6,8 @@
     "bench-tinybench": "tsx tinybench.ts"
   },
   "devDependencies": {
-    "@codspeed/benchmark.js-plugin": "workspace:*",
-    "@codspeed/tinybench-plugin": "workspace:*",
+    "@codspeed/benchmark.js-plugin": "file:../../packages/benchmark.js-plugin",
+    "@codspeed/tinybench-plugin": "file:../../packages/tinybench-plugin",
     "@types/benchmark": "^2.1.2",
     "benchmark": "^2.1.4",
     "tsx": "^4.20.5",
