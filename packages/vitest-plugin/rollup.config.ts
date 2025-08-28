@@ -1,7 +1,8 @@
+import { readFileSync } from "fs";
 import { defineConfig } from "rollup";
 import { declarationsPlugin, jsPlugins } from "../../rollup.options";
-import pkg from "./package.json" assert { type: "json" };
 
+const pkg = JSON.parse(readFileSync("./package.json", "utf-8"));
 export default defineConfig([
   {
     input: "src/index.ts",
