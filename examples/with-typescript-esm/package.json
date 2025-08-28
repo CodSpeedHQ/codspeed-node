@@ -8,13 +8,13 @@
     "bench-vitest": "vitest bench --run"
   },
   "devDependencies": {
-    "@codspeed/benchmark.js-plugin": "file:../../packages/benchmark.js-plugin",
-    "@codspeed/tinybench-plugin": "file:../../packages/tinybench-plugin",
+    "@codspeed/benchmark.js-plugin": "link:../../packages/benchmark.js-plugin",
+    "@codspeed/tinybench-plugin": "link:../../packages/tinybench-plugin",
     "@codspeed/vitest-plugin": "file:../../packages/vitest-plugin",
     "@types/benchmark": "^2.1.2",
     "benchmark": "^2.1.4",
-    "tsx": "^4.20.5",
     "tinybench": "^4.0.1",
+    "tsx": "^4.20.5",
     "typescript": "^5.1.3",
     "vitest": "^3.2.4"
   }
