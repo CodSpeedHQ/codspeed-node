@@ -3,18 +3,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "bench-benchmark-js": "node --loader esbuild-register/loader -r esbuild-register bench/benchmark.js/index.bench.ts",
-    "bench-tinybench": "node --loader esbuild-register/loader -r esbuild-register bench/tinybench/index.bench.ts",
+    "bench-benchmark-js": "node --import tsx/esm bench/benchmark.js/index.bench.ts",
+    "bench-tinybench": "node --import tsx/esm bench/tinybench/index.bench.ts",
     "bench-vitest": "vitest bench --run"
   },
   "devDependencies": {
-    "@codspeed/benchmark.js-plugin": "workspace:*",
-    "@codspeed/tinybench-plugin": "workspace:*",
-    "@codspeed/vitest-plugin": "workspace:*",
+    "@codspeed/benchmark.js-plugin": "link:../../packages/benchmark.js-plugin",
+    "@codspeed/tinybench-plugin": "link:../../packages/tinybench-plugin",
+    "@codspeed/vitest-plugin": "link:../../packages/vitest-plugin",
     "@types/benchmark": "^2.1.2",
     "benchmark": "^2.1.4",
-    "esbuild-register": "^3.4.2",
     "tinybench": "^4.0.1",
+    "tsx": "^4.20.5",
     "typescript": "^5.1.3",
     "vitest": "^3.2.4"
   }

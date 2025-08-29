@@ -2,6 +2,9 @@
   "name": "@codspeed/core",
   "version": "5.0.0",
   "description": "The core Node library used to integrate with Codspeed runners",
+  "scripts": {
+    "install": "node-gyp-build"
+  },
   "keywords": [
     "codspeed",
     "benchmark",
@@ -22,14 +25,14 @@
   "devDependencies": {
     "@types/find-up": "^4.0.0",
     "node-addon-api": "^5.1.0",
-    "node-gyp": "^9.3.1",
+    "node-gyp": "^11.4.2",
     "openapi-typescript-codegen": "^0.23.0",
-    "prebuildify": "^5.0.1"
+    "prebuildify": "^6.0.1"
   },
   "dependencies": {
     "axios": "^1.4.0",
     "find-up": "^6.3.0",
     "form-data": "^4.0.4",
-    "node-gyp-build": "^4.6.0"
+    "node-gyp-build": "^4.8.4"
   }
 }

@@ -40,11 +40,11 @@ jobs:
 
   node-versions:
     runs-on: "ubuntu-latest"
-    name: "${{ matrix.example }} on Node ${{ matrix.node-version }}"
+    name: "Node ${{ matrix.node-version }} - ${{ matrix.example }}"
     needs: list-examples
     strategy:
       matrix:
-        node-version: ["18", "20.5.1"]
+        node-version: ["20", "22", "24"]
         example: ${{ fromJson(needs.list-examples.outputs.examples) }}
       fail-fast: false
     steps:
@@ -53,26 +53,38 @@ jobs:
           fetch-depth: 0
           submodules: true
       - uses: pnpm/action-setup@v2
+      # First, build the entire monorepo with the development Node version (from .nvmrc)
+      - uses: actions/setup-node@v3
+        with:
+          cache: pnpm
+          node-version-file: .nvmrc
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm moon run :build
+
+      # Then, switch to the target Node version and test the examples
       - uses: actions/setup-node@v3
         with:
           cache: pnpm
           node-version: ${{ matrix.node-version }}
-      - run: pnpm install --frozen-lockfile --prefer-offline
-      - run: pnpm moon run :build
+
+      - name: Install example dependencies
+        working-directory: examples/${{ matrix.example }}
+        run: pnpm install --ignore-workspace
 
       - name: Run benchmarks with tinybench-plugin
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
         uses: CodSpeedHQ/action@main
         with:
-          run: pnpm --filter ${{ matrix.example }} bench-tinybench
+          run: cd examples/${{ matrix.example }} && pnpm bench-tinybench
         env:
           CODSPEED_SKIP_UPLOAD: true
           CODSPEED_DEBUG: true
+
       - name: Run benchmarks with benchmark.js-plugin
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
         uses: CodSpeedHQ/action@main
         with:
-          run: pnpm --filter ${{ matrix.example }} bench-benchmark-js
+          run: cd examples/${{ matrix.example }} && pnpm bench-benchmark-js
         env:
           CODSPEED_SKIP_UPLOAD: true
           CODSPEED_DEBUG: true

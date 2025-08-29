@@ -40,6 +40,7 @@
               with pkgs;
               [
                 typescript-language-server
+                clang-tools
               ]
               ++ commonBuildInputs;
             shellHook = ''

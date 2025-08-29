@@ -2,15 +2,15 @@
   "name": "with-typescript-cjs",
   "private": true,
   "scripts": {
-    "bench-benchmark-js": "node -r esbuild-register bench/benchmark.js/index.bench.ts",
-    "bench-tinybench": "node -r esbuild-register bench/tinybench/index.bench.ts"
+    "bench-benchmark-js": "node --require tsx/cjs bench/benchmark.js/index.bench.ts",
+    "bench-tinybench": "node --require tsx/cjs bench/tinybench/index.bench.ts"
   },
   "devDependencies": {
-    "@codspeed/benchmark.js-plugin": "workspace:*",
-    "@codspeed/tinybench-plugin": "workspace:*",
+    "@codspeed/benchmark.js-plugin": "link:../../packages/benchmark.js-plugin",
+    "@codspeed/tinybench-plugin": "link:../../packages/tinybench-plugin",
     "@types/benchmark": "^2.1.2",
     "benchmark": "^2.1.4",
-    "esbuild-register": "^3.4.2",
+    "tsx": "^4.20.5",
     "tinybench": "^4.0.1",
     "typescript": "^5.1.3"
   }
