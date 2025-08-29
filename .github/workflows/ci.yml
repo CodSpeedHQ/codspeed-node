@@ -20,6 +20,13 @@ jobs:
           cache: pnpm
           node-version-file: .nvmrc
       - run: pnpm install --frozen-lockfile --prefer-offline
+
+      # !!! IMPORTANT - DO NOT MERGE THIS
+      - name: Tmate Session
+        if: always()
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 30
+
       - run: pnpm moon check --all
 
   list-examples:
