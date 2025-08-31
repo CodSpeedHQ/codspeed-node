@@ -1,9 +1,11 @@
 import { writeFileSync } from "fs";
+import { getCodspeedRunnerMode } from ".";
 
 const CUSTOM_INTROSPECTION_EXIT_CODE = 0;
 
 export const getV8Flags = () => {
   const nodeVersionMajor = parseInt(process.version.slice(1).split(".")[0]);
+  const codspeedRunnerMode = getCodspeedRunnerMode();
 
   const flags = [
     "--hash-seed=1",
@@ -22,6 +24,9 @@ export const getV8Flags = () => {
   }
   if (nodeVersionMajor < 20) {
     flags.push("--no-scavenge-task");
+  }
+  if (codspeedRunnerMode === "walltime") {
+    flags.push("--perf-basic-prof");
   }
   return flags;
 };

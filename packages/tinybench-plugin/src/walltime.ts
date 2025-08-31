@@ -43,7 +43,9 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
       }
       await mongoMeasurement.start(uri);
       InstrumentHooks.startBenchmark();
-      const taskResult = await task.run();
+      const taskResult = await (async function __codspeed_root_frame__() {
+        return await task.run();
+      })();
       InstrumentHooks.stopBenchmark();
       await mongoMeasurement.stop(uri);
       results.push(taskResult);
