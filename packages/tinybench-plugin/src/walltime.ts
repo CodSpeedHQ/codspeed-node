@@ -36,6 +36,12 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
     // Collect and report walltime data
     for (const task of bench.tasks) {
       const uri = getTaskUri(bench, task.name, rootCallingFile);
+      const { fnOpts, fn } = task as unknown as { fnOpts?: FnOptions; fn: Fn };
+      task.fn = async function __codspeed_root_frame__() {
+        return await task.run();
+      };
+
+      await fnOpts?.beforeAll?.call(task, "run");
 
       // run the warmup of the task right before its actual run
       if (bench.opts.warmup) {
