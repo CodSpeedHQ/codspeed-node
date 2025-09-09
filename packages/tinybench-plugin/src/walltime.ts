@@ -21,8 +21,12 @@ class CodspeedFrame {
   }
 
   // Make the instance callable by delegating to the dynamic method
-  call() {
-    return this.task.run();
+  async __codspeed_root_frame__() {
+    InstrumentHooks.startBenchmark();
+    const result = await this.task.run();
+    InstrumentHooks.stopBenchmark();
+
+    return result;
   }
 }
 
@@ -54,8 +58,8 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
         await task.warmup();
       }
       await mongoMeasurement.start(uri);
-      const __cosdspeed_root_frame__ = new CodspeedFrame(task);
-      const taskResult = await __cosdspeed_root_frame__.call();
+      const frame = new CodspeedFrame(task);
+      const taskResult = await frame.__codspeed_root_frame__();
       await mongoMeasurement.stop(uri);
       results.push(taskResult);
 
