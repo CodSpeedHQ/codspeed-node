@@ -35,8 +35,8 @@ bench
   });
 
 (async () => {
-  await bench.run();
-  console.table(bench.table());
+  // await bench.run();
+  // console.table(bench.table());
 
   const timingBench = withCodSpeed(
     new Bench({ name: "timing", iterations: 5, warmup: false })
