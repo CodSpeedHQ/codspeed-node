@@ -8,63 +8,21 @@ import {
   type Benchmark,
   type BenchmarkStats,
 } from "@codspeed/core";
-import { Bench, TaskResult } from "tinybench";
+import { Bench, Task, TaskResult } from "tinybench";
 import { getTaskUri } from "./uri";
 
 declare const __VERSION__: string;
 
-class CodespeedFrame {
-  public readonly suffix: string;
-  public readonly id: number;
-  public readonly timestamp: number;
-  public readonly methodName: string;
+class CodspeedFrame {
+  private task: Task;
 
-  constructor(suffix: string) {
-    this.suffix = this.sanitizeIdentifier(suffix);
-    this.id = Math.random();
-    this.timestamp = Date.now();
-
-    const methodName = `__codspeed_root_frame__${this.suffix}`;
-    this.methodName = methodName;
-
-    // Create a named function dynamically using eval
-    const functionBody = `
-      async function ${methodName}() {
-        InstrumentHooks.startBenchmark();
-        const result = await task.run();
-        InstrumentHooks.stopBenchmark();
-        return result;
-      }
-      return ${methodName};
-    `;
-
-    // Type assertion to tell TypeScript about the dynamic method
-    (this as any)[methodName] = eval(`(${functionBody})`);
+  constructor(task: Task) {
+    this.task = task;
   }
 
-  private sanitizeIdentifier(input: string): string {
-    return (
-      input
-        // Replace invalid characters with underscores
-        .replace(/[^a-zA-Z0-9_$]/g, "_")
-        // Ensure it doesn't start with a number
-        .replace(/^[0-9]/, "_$&")
-        // Collapse multiple underscores
-        .replace(/_+/g, "_")
-        // Remove trailing underscores
-        .replace(/_+$/, "") ||
-      // Ensure it's not empty
-      "_default"
-    );
-  }
-
-  async call(): Promise<any> {
-    return await (this as any)[this.methodName]();
-  }
-
-  // Get the actual function for direct calling
-  getFunction(): () => Promise<any> {
-    return (this as any)[this.methodName];
+  // Make the instance callable by delegating to the dynamic method
+  call() {
+    return this.task.run();
   }
 }
 
@@ -96,8 +54,8 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
         await task.warmup();
       }
       await mongoMeasurement.start(uri);
-      const frame = new CodespeedFrame(uri);
-      const taskResult = await frame.call();
+      const __cosdspeed_root_frame__ = new CodspeedFrame(task);
+      const taskResult = await __cosdspeed_root_frame__.call();
       await mongoMeasurement.stop(uri);
       results.push(taskResult);
 
