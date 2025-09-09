@@ -3,6 +3,7 @@ import {
   getGitDir,
   InstrumentHooks,
   mongoMeasurement,
+  setupCore,
   SetupInstrumentsRequestBody,
   SetupInstrumentsResponse,
   tryIntrospect,
@@ -22,6 +23,7 @@ export function withCodSpeed(bench: Bench): Bench {
   if (codspeedRunnerMode === "disabled") {
     return bench;
   }
+  setupCore();
 
   const rootCallingFile = getCallingFile();
 
