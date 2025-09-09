@@ -1,0 +1,87 @@
+{
+  "creator": {
+    "name": "codspeed-node",
+    "version": "5.0.0",
+    "pid": 790993
+  },
+  "instrument": {
+    "type": "walltime"
+  },
+  "benchmarks": [
+    {
+      "name": "wait 1ms",
+      "uri": "packages/tinybench-plugin/benches/timing.ts::timing::wait 1ms",
+      "config": {
+        "max_rounds": 5,
+        "max_time_ns": 1000000000,
+        "min_round_time_ns": null,
+        "warmup_time_ns": null
+      },
+      "stats": {
+        "min_ns": 1000690.9966468811,
+        "max_ns": 2450336.0018134117,
+        "mean_ns": 1005672.0714323483,
+        "stdev_ns": 52734.24662520825,
+        "q1_ns": 1001002.4979710579,
+        "median_ns": 1001158.9974164963,
+        "q3_ns": 1001621.4996576309,
+        "total_time": 1.0006437110751867,
+        "iter_per_round": 1,
+        "rounds": 995,
+        "iqr_outlier_rounds": 116,
+        "stdev_outlier_rounds": 8,
+        "warmup_iters": 0
+      }
+    },
+    {
+      "name": "wait 500ms",
+      "uri": "packages/tinybench-plugin/benches/timing.ts::timing::wait 500ms",
+      "config": {
+        "max_rounds": 5,
+        "max_time_ns": 1000000000,
+        "min_round_time_ns": null,
+        "warmup_time_ns": null
+      },
+      "stats": {
+        "min_ns": 500020049.99667406,
+        "max_ns": 500102591.00049734,
+        "mean_ns": 500043849.00033474,
+        "stdev_ns": 35165.44941106815,
+        "q1_ns": 500021753.0056834,
+        "median_ns": 500024034.0009332,
+        "q3_ns": 500050816.9978857,
+        "total_time": 2.5002192450016736,
+        "iter_per_round": 1,
+        "rounds": 5,
+        "iqr_outlier_rounds": 1,
+        "stdev_outlier_rounds": 0,
+        "warmup_iters": 0
+      }
+    },
+    {
+      "name": "wait 1sec",
+      "uri": "packages/tinybench-plugin/benches/timing.ts::timing::wait 1sec",
+      "config": {
+        "max_rounds": 5,
+        "max_time_ns": 1000000000,
+        "min_round_time_ns": null,
+        "warmup_time_ns": null
+      },
+      "stats": {
+        "min_ns": 1000018837.0049,
+        "max_ns": 1000211498.9981055,
+        "mean_ns": 1000060515.6004429,
+        "stdev_ns": 84467.09125338246,
+        "q1_ns": 1000020247.9958534,
+        "median_ns": 1000025248.9969134,
+        "q3_ns": 1000026745.0064421,
+        "total_time": 5.000302578002215,
+        "iter_per_round": 1,
+        "rounds": 5,
+        "iqr_outlier_rounds": 1,
+        "stdev_outlier_rounds": 0,
+        "warmup_iters": 0
+      }
+    }
+  ]
+}
