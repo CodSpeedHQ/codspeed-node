@@ -25,9 +25,10 @@ export const getV8Flags = () => {
   if (nodeVersionMajor < 20) {
     flags.push("--no-scavenge-task");
   }
-  // if (codspeedRunnerMode === "walltime") {
-  //   flags.push("--perf-basic-prof");
-  // }
+  if (codspeedRunnerMode === "walltime") {
+    flags.push("--perf-prof");
+    flags.push("--perf-prof-unwinding-info");
+  }
   return flags;
 };
 
