@@ -8,27 +8,10 @@ import {
   type Benchmark,
   type BenchmarkStats,
 } from "@codspeed/core";
-import { Bench, Task, TaskResult } from "tinybench";
+import { Bench, TaskResult } from "tinybench";
 import { getTaskUri } from "./uri";
 
 declare const __VERSION__: string;
-
-class CodspeedFrame {
-  private task: Task;
-
-  constructor(task: Task) {
-    this.task = task;
-  }
-
-  // Make the instance callable by delegating to the dynamic method
-  async __codspeed_root_frame__() {
-    InstrumentHooks.startBenchmark();
-    const result = await this.task.run();
-    InstrumentHooks.stopBenchmark();
-
-    return result;
-  }
-}
 
 export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
   bench.run = async () => {
@@ -58,8 +41,15 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
         await task.warmup();
       }
       await mongoMeasurement.start(uri);
-      const frame = new CodspeedFrame(task);
-      const taskResult = await frame.__codspeed_root_frame__();
+      const taskResult = await (async function __codspeed_root_frame__() {
+        InstrumentHooks.startBenchmark();
+        for (let i = 0; i < 100; i++) {
+          console.log("Hello world I am stalling");
+        }
+        const result = await task.run();
+        InstrumentHooks.stopBenchmark();
+        return result;
+      })();
       await mongoMeasurement.stop(uri);
       results.push(taskResult);
 

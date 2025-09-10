@@ -8,27 +8,27 @@ export const getV8Flags = () => {
   const codspeedRunnerMode = getCodspeedRunnerMode();
 
   const flags = [
-    "--hash-seed=1",
-    "--random-seed=1",
-    "--no-opt",
-    "--predictable",
-    "--predictable-gc-schedule",
+    // "--hash-seed=1",
+    // "--random-seed=1",
+    // "--no-opt",
+    // "--predictable",
+    // "--predictable-gc-schedule",
     "--interpreted-frames-native-stack",
     "--allow-natives-syntax",
-    "--expose-gc",
-    "--no-concurrent-sweeping",
-    "--max-old-space-size=4096",
+    // "--expose-gc",
+    // "--no-concurrent-sweeping",
+    // "--max-old-space-size=4096",
   ];
   if (nodeVersionMajor < 18) {
-    flags.push("--no-randomize-hashes");
+    // flags.push("--no-randomize-hashes");
   }
   if (nodeVersionMajor < 20) {
-    flags.push("--no-scavenge-task");
+    // flags.push("--no-scavenge-task");
   }
-  // if (codspeedRunnerMode === "walltime") {
-  //   flags.push("--perf-prof");
-  //   flags.push("--perf-prof-unwinding-info");
-  // }
+  if (codspeedRunnerMode === "walltime") {
+    flags.push("--perf-prof");
+    flags.push("--perf-prof-unwinding-info");
+  }
   return flags;
 };
 
