@@ -41,15 +41,12 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
         await task.warmup();
       }
       await mongoMeasurement.start(uri);
+      InstrumentHooks.startBenchmark();
       const taskResult = await (async function __codspeed_root_frame__() {
-        InstrumentHooks.startBenchmark();
-        for (let i = 0; i < 100; i++) {
-          console.log("Hello world I am stalling");
-        }
         const result = await task.run();
-        InstrumentHooks.stopBenchmark();
         return result;
       })();
+      InstrumentHooks.stopBenchmark();
       await mongoMeasurement.stop(uri);
       results.push(taskResult);
 
