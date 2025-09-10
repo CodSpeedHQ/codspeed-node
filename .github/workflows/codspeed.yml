@@ -57,6 +57,6 @@ jobs:
           mode: walltime
           # Only tinybench supports walltime for now
           run: |
-            pnpm moon run --concurrency 1 :bench
+            pnpm moon run --concurrency 1 tinybench-plugin:bench
             pnpm --workspace-concurrency 1 -r bench-tinybench
             pnpm --workspace-concurrency 1 -r bench-vitest
