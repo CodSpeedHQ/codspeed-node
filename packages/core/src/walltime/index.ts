@@ -8,19 +8,34 @@ export function getProfileFolder(): string | null {
   return process.env.CODSPEED_PROFILE_FOLDER || null;
 }
 
-export function writeWalltimeResults(benchmarks: Benchmark[]) {
+export function writeWalltimeResults(
+  benchmarks: Benchmark[],
+  asyncWarning = false
+): void {
   const profileFolder = getProfileFolder();
-  let resultPath: string;
 
-  if (profileFolder) {
-    const resultsDir = path.join(profileFolder, "results");
-    fs.mkdirSync(resultsDir, { recursive: true });
-    resultPath = path.join(resultsDir, `${process.pid}.json`);
-  } else {
-    // Fallback: write to .codspeed in current working directory
-    const codspeedDir = path.join(process.cwd(), ".codspeed");
-    fs.mkdirSync(codspeedDir, { recursive: true });
-    resultPath = path.join(codspeedDir, `results_${Date.now()}.json`);
+  const resultDir = (() => {
+    if (profileFolder) {
+      return path.join(profileFolder, "results");
+    } else {
+      // Fallback: write to .codspeed in current working directory
+      return path.join(process.cwd(), ".codspeed");
+    }
+  })();
+  fs.mkdirSync(resultDir, { recursive: true });
+  const resultPath = path.join(resultDir, `${process.pid}.json`);
+
+  // Check if file already exists and merge benchmarks
+  let existingBenchmarks: Benchmark[] = [];
+  if (fs.existsSync(resultPath)) {
+    try {
+      const existingData = JSON.parse(
+        fs.readFileSync(resultPath, "utf-8")
+      ) as ResultData;
+      existingBenchmarks = existingData.benchmarks || [];
+    } catch (error) {
+      console.warn(`[CodSpeed] Failed to read existing results file: ${error}`);
+    }
   }
 
   const data: ResultData = {
@@ -30,11 +45,18 @@ export function writeWalltimeResults(benchmarks: Benchmark[]) {
       pid: process.pid,
     },
     instrument: { type: "walltime" },
-    benchmarks: benchmarks,
+    benchmarks: [...existingBenchmarks, ...benchmarks],
+    metadata: asyncWarning
+      ? {
+          async_warning: "Profiling is inaccurate due to async operations",
+        }
+      : undefined,
   };
 
   fs.writeFileSync(resultPath, JSON.stringify(data, null, 2));
-  console.log(`[CodSpeed] Results written to ${resultPath}`);
+  console.log(
+    `[CodSpeed] Results written to ${resultPath} (${data.benchmarks.length} total benchmarks)`
+  );
 }
 
 export * from "./interfaces";
