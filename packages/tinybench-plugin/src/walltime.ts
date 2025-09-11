@@ -83,7 +83,7 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
 
     // Write results to JSON file using core function
     if (benchmarks.length > 0) {
-      writeWalltimeResults(benchmarks);
+      writeWalltimeResults(benchmarks, true);
     }
 
     console.log(
