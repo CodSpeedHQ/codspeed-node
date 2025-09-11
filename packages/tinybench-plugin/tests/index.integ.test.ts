@@ -205,7 +205,7 @@ describe("Benchmark.Suite", () => {
     expect(afterAll).toHaveBeenCalledTimes(2);
   });
 
-  it("should call setupCore and teardownCore only once after run()", async () => {
+  it("should call setupCore and teardownCore only once", async () => {
     mockCore.InstrumentHooks.isInstrumented.mockReturnValue(true);
     const bench = withCodSpeed(new Bench())
       .add("RegExp", function () {
@@ -215,7 +215,7 @@ describe("Benchmark.Suite", () => {
         /o/.test("Hello World!");
       });
 
-    expect(mockCore.setupCore).not.toHaveBeenCalled();
+    expect(mockCore.setupCore).toHaveBeenCalledTimes(1);
     expect(mockCore.teardownCore).not.toHaveBeenCalled();
 
     await bench.run();

@@ -2,7 +2,6 @@ import {
   InstrumentHooks,
   mongoMeasurement,
   optimizeFunction,
-  setupCore,
   teardownCore,
 } from "@codspeed/core";
 import { Bench, Fn, FnOptions } from "tinybench";
@@ -18,7 +17,6 @@ export function runInstrumentedBench(
     console.log(
       `[CodSpeed] running with @codspeed/tinybench v${__VERSION__} (instrumented mode)`
     );
-    setupCore();
 
     for (const task of bench.tasks) {
       const uri = getTaskUri(bench, task.name, rootCallingFile);
