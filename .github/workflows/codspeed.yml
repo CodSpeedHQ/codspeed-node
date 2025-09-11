@@ -55,8 +55,9 @@ jobs:
         uses: CodSpeedHQ/action@main
         with:
           mode: walltime
-          # Only tinybench supports walltime for now
           run: |
-            pnpm moon run --concurrency 1 :bench
+            pnpm moon run tinybench-plugin:bench
+            pnpm moon run vitest-plugin:bench
+            pnpm moon run benchmark.js-plugin:bench
             pnpm --workspace-concurrency 1 -r bench-tinybench
             pnpm --workspace-concurrency 1 -r bench-vitest
