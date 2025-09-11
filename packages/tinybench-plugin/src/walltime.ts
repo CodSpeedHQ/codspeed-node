@@ -10,6 +10,7 @@ import {
 } from "@codspeed/core";
 import { Bench, TaskResult } from "tinybench";
 import { getTaskUri } from "./uri";
+import { invariant, isPromiseLike } from "./utils";
 
 declare const __VERSION__: string;
 
@@ -28,99 +29,6 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
     bench.run = prototypeRun;
 
     const benchmarks: Benchmark[] = [];
-
-    // Override the Task benchmark method for walltime mode
-    // if (bench.tasks.length > 0) {
-    //   const TaskClass = bench.tasks[0].constructor as any;
-    //   const originalBenchmark = TaskClass.prototype.benchmark;
-    //
-    //   TaskClass.prototype.benchmark = async function (
-    //     mode: string,
-    //     time: number,
-    //     iterations: number
-    //   ) {
-    //     return InstrumentHooks.__codspeed_root_frame__(async () => {
-    //       console.trace();
-    //       if (this.fnOpts.beforeAll != null) {
-    //         try {
-    //           await this.fnOpts.beforeAll.call(this, mode);
-    //         } catch (error) {
-    //           return { error };
-    //         }
-    //       }
-    //
-    //       // TODO: factor out
-    //       let totalTime = 0; // ms
-    //       const samples: number[] = [];
-    //       const benchmarkTask = async () => {
-    //         if (this.fnOpts.beforeEach != null) {
-    //           await this.fnOpts.beforeEach.call(this, mode);
-    //         }
-    //
-    //         let taskTime = 0; // ms;
-    //         if (this.async) {
-    //           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    //           const taskStart = this.bench.opts.now!();
-    //           // eslint-disable-next-line no-useless-call
-    //           await this.fn.call(this);
-    //           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    //           taskTime = this.bench.opts.now!() - taskStart;
-    //         } else {
-    //           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    //           const taskStart = this.bench.opts.now!();
-    //           // eslint-disable-next-line no-useless-call
-    //           this.fn.call(this);
-    //           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    //           taskTime = this.bench.opts.now!() - taskStart;
-    //         }
-    //
-    //         samples.push(taskTime);
-    //         totalTime += taskTime;
-    //
-    //         if (this.fnOpts.afterEach != null) {
-    //           await this.fnOpts.afterEach.call(this, mode);
-    //         }
-    //       };
-    //
-    //       if (mode === "run") {
-    //         InstrumentHooks.startBenchmark();
-    //       }
-    //       try {
-    //         // const limit = pLimit(this.bench.threshold); // only for task level concurrency
-    //         const promises: Promise<void>[] = []; // only for task level concurrency
-    //         console.log(iterations);
-    //         while (
-    //           // eslint-disable-next-line no-unmodified-loop-condition
-    //           (totalTime < time || samples.length < iterations) &&
-    //           !this.bench.opts.signal?.aborted
-    //         ) {
-    //           if (this.bench.concurrency === "task") {
-    //             // promises.push(limit(benchmarkTask));
-    //           } else {
-    //             await benchmarkTask();
-    //           }
-    //         }
-    //         if (!this.bench.opts.signal?.aborted && promises.length > 0) {
-    //           await Promise.all(promises);
-    //         }
-    //       } catch (error) {
-    //         return { error };
-    //       }
-    //       if (mode === "run") {
-    //         InstrumentHooks.stopBenchmark();
-    //       }
-    //
-    //       if (this.fnOpts.afterAll != null) {
-    //         try {
-    //           await this.fnOpts.afterAll.call(this, mode);
-    //         } catch (error) {
-    //           return { error };
-    //         }
-    //       }
-    //       return { samples };
-    //     });
-    //   };
-    // }
 
     // Run the bench naturally to collect TaskResult data
     const results = [];
@@ -203,97 +111,99 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
     const benchmarks: Benchmark[] = [];
 
     // Override the Task benchmark method for walltime mode
-    // if (bench.tasks.length > 0) {
-    //   const TaskClass = bench.tasks[0].constructor as any;
-    //   const originalBenchmark = TaskClass.prototype.benchmark;
-    //
-    //   TaskClass.prototype.benchmark = async function (
-    //     mode: string,
-    //     time: number,
-    //     iterations: number
-    //   ) {
-    //     return InstrumentHooks.__codspeed_root_frame__(async () => {
-    //       console.trace();
-    //       if (this.fnOpts.beforeAll != null) {
-    //         try {
-    //           await this.fnOpts.beforeAll.call(this, mode);
-    //         } catch (error) {
-    //           return { error };
-    //         }
-    //       }
-    //
-    //       // TODO: factor out
-    //       let totalTime = 0; // ms
-    //       const samples: number[] = [];
-    //       const benchmarkTask = async () => {
-    //         if (this.fnOpts.beforeEach != null) {
-    //           await this.fnOpts.beforeEach.call(this, mode);
-    //         }
-    //
-    //         let taskTime = 0; // ms;
-    //         if (this.async) {
-    //           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    //           const taskStart = this.bench.opts.now!();
-    //           // eslint-disable-next-line no-useless-call
-    //           await this.fn.call(this);
-    //           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    //           taskTime = this.bench.opts.now!() - taskStart;
-    //         } else {
-    //           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    //           const taskStart = this.bench.opts.now!();
-    //           // eslint-disable-next-line no-useless-call
-    //           this.fn.call(this);
-    //           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    //           taskTime = this.bench.opts.now!() - taskStart;
-    //         }
-    //
-    //         samples.push(taskTime);
-    //         totalTime += taskTime;
-    //
-    //         if (this.fnOpts.afterEach != null) {
-    //           await this.fnOpts.afterEach.call(this, mode);
-    //         }
-    //       };
-    //
-    //       if (mode === "run") {
-    //         InstrumentHooks.startBenchmark();
-    //       }
-    //       try {
-    //         // const limit = pLimit(this.bench.threshold); // only for task level concurrency
-    //         const promises: Promise<void>[] = []; // only for task level concurrency
-    //         console.log(iterations);
-    //         while (
-    //           // eslint-disable-next-line no-unmodified-loop-condition
-    //           (totalTime < time || samples.length < iterations) &&
-    //           !this.bench.opts.signal?.aborted
-    //         ) {
-    //           if (this.bench.concurrency === "task") {
-    //             // promises.push(limit(benchmarkTask));
-    //           } else {
-    //             await benchmarkTask();
-    //           }
-    //         }
-    //         if (!this.bench.opts.signal?.aborted && promises.length > 0) {
-    //           await Promise.all(promises);
-    //         }
-    //       } catch (error) {
-    //         return { error };
-    //       }
-    //       if (mode === "run") {
-    //         InstrumentHooks.stopBenchmark();
-    //       }
-    //
-    //       if (this.fnOpts.afterAll != null) {
-    //         try {
-    //           await this.fnOpts.afterAll.call(this, mode);
-    //         } catch (error) {
-    //           return { error };
-    //         }
-    //       }
-    //       return { samples };
-    //     });
-    //   };
-    // }
+    if (bench.tasks.length > 0) {
+      const TaskClass = bench.tasks[0].constructor as any;
+      // const originalBenchmark = TaskClass.prototype.benchmark;
+
+      TaskClass.prototype.benchmarkSync = function (
+        mode: string,
+        time: number,
+        iterations: number
+      ) {
+        if (this.fnOpts.beforeAll != null) {
+          try {
+            const beforeAllResult = this.fnOpts.beforeAll.call(this, mode);
+            invariant(
+              !isPromiseLike(beforeAllResult),
+              "`beforeAll` function must be sync when using `runSync()`"
+            );
+          } catch (error) {
+            return { error };
+          }
+        }
+
+        // TODO: factor out
+        let totalTime = 0; // ms
+        const samples: number[] = [];
+        const benchmarkTask = () => {
+          if (this.fnOpts.beforeEach != null) {
+            const beforeEachResult = this.fnOpts.beforeEach.call(this, mode);
+            invariant(
+              !isPromiseLike(beforeEachResult),
+              "`beforeEach` function must be sync when using `runSync()`"
+            );
+          }
+
+          let taskTime = 0; // ms;
+
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          const taskStart = this.bench.opts.now!();
+          // eslint-disable-next-line no-useless-call
+          const result = this.fn.call(this);
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          taskTime = this.bench.opts.now!() - taskStart;
+
+          invariant(
+            !isPromiseLike(result),
+            "task function must be sync when using `runSync()`"
+          );
+
+          samples.push(taskTime);
+          totalTime += taskTime;
+
+          if (this.fnOpts.afterEach != null) {
+            const afterEachResult = this.fnOpts.afterEach.call(this, mode);
+            invariant(
+              !isPromiseLike(afterEachResult),
+              "`afterEach` function must be sync when using `runSync()`"
+            );
+          }
+        };
+
+        try {
+          if (mode === "run") {
+            InstrumentHooks.startBenchmark();
+          }
+          InstrumentHooks.__codspeed_root_frame__(() => {
+            while (
+              // eslint-disable-next-line no-unmodified-loop-condition
+              totalTime < time ||
+              samples.length < iterations
+            ) {
+              benchmarkTask();
+            }
+          });
+          if (mode === "run") {
+            InstrumentHooks.stopBenchmark();
+          }
+        } catch (error) {
+          return { error };
+        }
+
+        if (this.fnOpts.afterAll != null) {
+          try {
+            const afterAllResult = this.fnOpts.afterAll.call(this, mode);
+            invariant(
+              !isPromiseLike(afterAllResult),
+              "`afterAll` function must be sync when using `runSync()`"
+            );
+          } catch (error) {
+            return { error };
+          }
+        }
+        return { samples };
+      };
+    }
 
     // Run the bench naturally to collect TaskResult data
     const results = [];
@@ -307,8 +217,7 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
         task.warmup();
       }
       // await mongoMeasurement.start(uri);
-      InstrumentHooks.startBenchmark();
-      InstrumentHooks.__codspeed_root_frame__(() => task.runSync());
+      task.runSync();
       // const taskResult = await task.run();
       InstrumentHooks.stopBenchmark();
       // await mongoMeasurement.stop(uri);
