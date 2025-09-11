@@ -93,13 +93,13 @@ describe("codSpeedPlugin", () => {
         poolOptions: {
           forks: {
             execArgv: [
+              "--interpreted-frames-native-stack",
+              "--allow-natives-syntax",
               "--hash-seed=1",
               "--random-seed=1",
               "--no-opt",
               "--predictable",
               "--predictable-gc-schedule",
-              "--interpreted-frames-native-stack",
-              "--allow-natives-syntax",
               "--expose-gc",
               "--no-concurrent-sweeping",
               "--max-old-space-size=4096",

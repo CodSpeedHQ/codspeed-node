@@ -1,5 +1,6 @@
 import {
   calculateQuantiles,
+  InstrumentHooks,
   mongoMeasurement,
   msToNs,
   msToS,
@@ -7,7 +8,7 @@ import {
   type Benchmark,
   type BenchmarkStats,
 } from "@codspeed/core";
-import { Bench, TaskResult } from "tinybench";
+import { Bench, Fn, TaskResult } from "tinybench";
 import { getTaskUri } from "./uri";
 
 declare const __VERSION__: string;
@@ -28,21 +29,27 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
 
     const benchmarks: Benchmark[] = [];
 
-    // Run the bench naturally to collect TaskResult data
-    const results = [];
-
     // Collect and report walltime data
     for (const task of bench.tasks) {
       const uri = getTaskUri(bench, task.name, rootCallingFile);
+
+      // Override the function under test to add a static frame
+      const { fn } = task as unknown as { fn: Fn };
+      async function __codspeed_root_frame__() {
+        await fn();
+      }
+      (task as any).fn = __codspeed_root_frame__;
 
       // run the warmup of the task right before its actual run
       if (bench.opts.warmup) {
         await task.warmup();
       }
+
       await mongoMeasurement.start(uri);
-      const taskResult = await task.run();
+      InstrumentHooks.startBenchmark();
+      await task.run();
+      InstrumentHooks.stopBenchmark();
       await mongoMeasurement.stop(uri);
-      results.push(taskResult);
 
       if (task.result) {
         // Convert tinybench result to BenchmarkStats format
@@ -67,8 +74,8 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
         };
 
         benchmarks.push(benchmark);
-
         console.log(`    ✔ Collected walltime data for ${uri}`);
+        InstrumentHooks.setExecutedBenchmark(process.pid, uri);
       } else {
         console.warn(`    ⚠ No result data available for ${uri}`);
       }
@@ -85,7 +92,86 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
     // Restore our custom run method
     bench.run = originalRun;
 
-    return results;
+    return bench.tasks;
+  };
+
+  bench.runSync = () => {
+    console.log(
+      `[CodSpeed] running with @codspeed/tinybench v${__VERSION__} (walltime mode)`
+    );
+
+    // Store the original run method before we override it
+    const originalRun = bench.run;
+
+    // Temporarily restore the original run to get actual benchmark results
+    const benchProto = Object.getPrototypeOf(bench);
+    const prototypeRun = benchProto.run;
+    bench.run = prototypeRun;
+
+    const benchmarks: Benchmark[] = [];
+
+    // Collect and report walltime data
+    for (const task of bench.tasks) {
+      const uri = getTaskUri(bench, task.name, rootCallingFile);
+
+      // run the warmup of the task right before its actual run
+      if (bench.opts.warmup) {
+        task.warmup();
+      }
+
+      // Override the function under test to add a static frame
+      const { fn } = task as unknown as { fn: Fn };
+      function __codspeed_root_frame__() {
+        fn();
+      }
+      (task as any).fn = __codspeed_root_frame__;
+
+      InstrumentHooks.startBenchmark();
+      task.runSync();
+      InstrumentHooks.stopBenchmark();
+
+      if (task.result) {
+        // Convert tinybench result to BenchmarkStats format
+        const stats = convertTinybenchResultToBenchmarkStats(
+          task.result,
+          bench.opts.warmup ? bench.opts.warmupIterations ?? 0 : 0
+        );
+
+        const benchmark: Benchmark = {
+          name: task.name,
+          uri,
+          config: {
+            max_rounds: bench.opts.iterations ?? null,
+            max_time_ns: bench.opts.time ? msToNs(bench.opts.time) : null,
+            min_round_time_ns: null, // tinybench does not have an option for this
+            warmup_time_ns:
+              bench.opts.warmup && bench.opts.warmupTime
+                ? msToNs(bench.opts.warmupTime)
+                : null,
+          },
+          stats,
+        };
+
+        benchmarks.push(benchmark);
+        console.log(`    ✔ Collected walltime data for ${uri}`);
+        InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+      } else {
+        console.warn(`    ⚠ No result data available for ${uri}`);
+      }
+    }
+
+    // Write results to JSON file using core function
+    if (benchmarks.length > 0) {
+      writeWalltimeResults(benchmarks);
+    }
+
+    console.log(
+      `[CodSpeed] Done collecting walltime data for ${bench.tasks.length} benches.`
+    );
+    // Restore our custom run method
+    bench.run = originalRun;
+
+    return bench.tasks;
   };
 }
 
