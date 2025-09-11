@@ -36,5 +36,5 @@ export interface InstrumentHooks {
    * Execute a callback function with __codspeed_root_frame__ in its stack trace
    * @param callback Function to execute
    */
-  __codspeed_root_frame__(callback: () => void): void;
+  __codspeed_root_frame__<T>(callback: () => T): T;
 }

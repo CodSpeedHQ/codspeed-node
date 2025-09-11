@@ -81,23 +81,26 @@ Napi::Number SetIntegration(const Napi::CallbackInfo &info) {
   return Napi::Number::New(env, result);
 }
 
-void __codspeed_root_frame__(const Napi::CallbackInfo &info) {
+Napi::Value __codspeed_root_frame__(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
 
   if (info.Length() != 1) {
     Napi::TypeError::New(env, "Expected 1 argument: callback function")
         .ThrowAsJavaScriptException();
-    return;
+    return env.Undefined();
   }
 
   if (!info[0].IsFunction()) {
     Napi::TypeError::New(env, "Expected function argument")
         .ThrowAsJavaScriptException();
-    return;
+    return env.Undefined();
   }
 
   Napi::Function callback = info[0].As<Napi::Function>();
-  callback.Call(env.Global(), {});
+  Napi::Value result = callback.Call(env.Global(), {});
+  
+  // Return whatever the callback returned (Promise or sync value)
+  return result;
 }
 
 Napi::Object Initialize(Napi::Env env, Napi::Object exports) {

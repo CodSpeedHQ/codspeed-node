@@ -28,6 +28,8 @@ export const getV8Flags = () => {
   if (codspeedRunnerMode === "walltime") {
     flags.push("--perf-prof");
     flags.push("--perf-prof-unwinding-info");
+    // flags.push("--trace-opt");
+    // flags.push("--trace-deopt");
   }
   return flags;
 };
