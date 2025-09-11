@@ -13,7 +13,8 @@
         "-Wno-unused-variable",
         "-Wno-unused-parameter",
         "-Wno-unused-but-set-variable",
-        "-Wno-type-limits"
+        "-Wno-type-limits",
+        "-g"
       ],
       "cflags_cc": [
         "-Wno-maybe-uninitialized",

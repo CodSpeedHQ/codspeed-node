@@ -1,6 +1,9 @@
 #include "hooks_wrapper.h"
 #include "hooks/includes/core.h"
 #include <memory>
+#include <unistd.h>
+#include <iostream>
+
 
 namespace codspeed_native {
 namespace instruments {
@@ -81,7 +84,7 @@ Napi::Number SetIntegration(const Napi::CallbackInfo &info) {
   return Napi::Number::New(env, result);
 }
 
-Napi::Value __codspeed_root_frame__(const Napi::CallbackInfo &info) {
+Napi::Value __attribute__ ((noinline)) __codspeed_root_frame__(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
 
   if (info.Length() != 1) {
@@ -99,7 +102,6 @@ Napi::Value __codspeed_root_frame__(const Napi::CallbackInfo &info) {
   Napi::Function callback = info[0].As<Napi::Function>();
   Napi::Value result = callback.Call(env.Global(), {});
   
-  // Return whatever the callback returned (Promise or sync value)
   return result;
 }
 

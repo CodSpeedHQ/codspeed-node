@@ -135,10 +135,183 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
       }
       await mongoMeasurement.start(uri);
       InstrumentHooks.startBenchmark();
-      InstrumentHooks.__codspeed_root_frame__(() => task.runSync());
+      const taskResult = await InstrumentHooks.__codspeed_root_frame__(() =>
+        task.run()
+      );
       // const taskResult = await task.run();
       InstrumentHooks.stopBenchmark();
       await mongoMeasurement.stop(uri);
+      results.push(taskResult);
+
+      if (task.result) {
+        // Convert tinybench result to BenchmarkStats format
+        const stats = convertTinybenchResultToBenchmarkStats(
+          task.result,
+          bench.opts.warmup ? bench.opts.warmupIterations ?? 0 : 0
+        );
+
+        const benchmark: Benchmark = {
+          name: task.name,
+          uri,
+          config: {
+            max_rounds: bench.opts.iterations ?? null,
+            max_time_ns: bench.opts.time ? msToNs(bench.opts.time) : null,
+            min_round_time_ns: null, // tinybench does not have an option for this
+            warmup_time_ns:
+              bench.opts.warmup && bench.opts.warmupTime
+                ? msToNs(bench.opts.warmupTime)
+                : null,
+          },
+          stats,
+        };
+
+        benchmarks.push(benchmark);
+        console.log(`    ✔ Collected walltime data for ${uri}`);
+        InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+      } else {
+        console.warn(`    ⚠ No result data available for ${uri}`);
+      }
+    }
+
+    // Write results to JSON file using core function
+    if (benchmarks.length > 0) {
+      writeWalltimeResults(benchmarks);
+    }
+
+    console.log(
+      `[CodSpeed] Done collecting walltime data for ${bench.tasks.length} benches.`
+    );
+    // Restore our custom run method
+    bench.run = originalRun;
+
+    return results;
+  };
+
+  bench.runSync = () => {
+    console.log(
+      `[CodSpeed] running with @codspeed/tinybench v${__VERSION__} (walltime mode)`
+    );
+
+    // Store the original run method before we override it
+    const originalRun = bench.run;
+
+    // Temporarily restore the original run to get actual benchmark results
+    const benchProto = Object.getPrototypeOf(bench);
+    const prototypeRun = benchProto.run;
+    bench.run = prototypeRun;
+
+    const benchmarks: Benchmark[] = [];
+
+    // Override the Task benchmark method for walltime mode
+    // if (bench.tasks.length > 0) {
+    //   const TaskClass = bench.tasks[0].constructor as any;
+    //   const originalBenchmark = TaskClass.prototype.benchmark;
+    //
+    //   TaskClass.prototype.benchmark = async function (
+    //     mode: string,
+    //     time: number,
+    //     iterations: number
+    //   ) {
+    //     return InstrumentHooks.__codspeed_root_frame__(async () => {
+    //       console.trace();
+    //       if (this.fnOpts.beforeAll != null) {
+    //         try {
+    //           await this.fnOpts.beforeAll.call(this, mode);
+    //         } catch (error) {
+    //           return { error };
+    //         }
+    //       }
+    //
+    //       // TODO: factor out
+    //       let totalTime = 0; // ms
+    //       const samples: number[] = [];
+    //       const benchmarkTask = async () => {
+    //         if (this.fnOpts.beforeEach != null) {
+    //           await this.fnOpts.beforeEach.call(this, mode);
+    //         }
+    //
+    //         let taskTime = 0; // ms;
+    //         if (this.async) {
+    //           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    //           const taskStart = this.bench.opts.now!();
+    //           // eslint-disable-next-line no-useless-call
+    //           await this.fn.call(this);
+    //           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    //           taskTime = this.bench.opts.now!() - taskStart;
+    //         } else {
+    //           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    //           const taskStart = this.bench.opts.now!();
+    //           // eslint-disable-next-line no-useless-call
+    //           this.fn.call(this);
+    //           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    //           taskTime = this.bench.opts.now!() - taskStart;
+    //         }
+    //
+    //         samples.push(taskTime);
+    //         totalTime += taskTime;
+    //
+    //         if (this.fnOpts.afterEach != null) {
+    //           await this.fnOpts.afterEach.call(this, mode);
+    //         }
+    //       };
+    //
+    //       if (mode === "run") {
+    //         InstrumentHooks.startBenchmark();
+    //       }
+    //       try {
+    //         // const limit = pLimit(this.bench.threshold); // only for task level concurrency
+    //         const promises: Promise<void>[] = []; // only for task level concurrency
+    //         console.log(iterations);
+    //         while (
+    //           // eslint-disable-next-line no-unmodified-loop-condition
+    //           (totalTime < time || samples.length < iterations) &&
+    //           !this.bench.opts.signal?.aborted
+    //         ) {
+    //           if (this.bench.concurrency === "task") {
+    //             // promises.push(limit(benchmarkTask));
+    //           } else {
+    //             await benchmarkTask();
+    //           }
+    //         }
+    //         if (!this.bench.opts.signal?.aborted && promises.length > 0) {
+    //           await Promise.all(promises);
+    //         }
+    //       } catch (error) {
+    //         return { error };
+    //       }
+    //       if (mode === "run") {
+    //         InstrumentHooks.stopBenchmark();
+    //       }
+    //
+    //       if (this.fnOpts.afterAll != null) {
+    //         try {
+    //           await this.fnOpts.afterAll.call(this, mode);
+    //         } catch (error) {
+    //           return { error };
+    //         }
+    //       }
+    //       return { samples };
+    //     });
+    //   };
+    // }
+
+    // Run the bench naturally to collect TaskResult data
+    const results = [];
+
+    // Collect and report walltime data
+    for (const task of bench.tasks) {
+      const uri = getTaskUri(bench, task.name, rootCallingFile);
+
+      // run the warmup of the task right before its actual run
+      if (bench.opts.warmup) {
+        task.warmup();
+      }
+      // await mongoMeasurement.start(uri);
+      InstrumentHooks.startBenchmark();
+      InstrumentHooks.__codspeed_root_frame__(() => task.runSync());
+      // const taskResult = await task.run();
+      InstrumentHooks.stopBenchmark();
+      // await mongoMeasurement.stop(uri);
       results.push(task);
 
       if (task.result) {
