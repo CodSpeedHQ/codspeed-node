@@ -35,9 +35,11 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
 
       // Override the function under test to add a static frame
       const { fn } = task as unknown as { fn: Fn };
+      // eslint-disable-next-line no-inner-declarations
       async function __codspeed_root_frame__() {
         await fn();
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (task as any).fn = __codspeed_root_frame__;
 
       // run the warmup of the task right before its actual run
@@ -121,9 +123,11 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
 
       // Override the function under test to add a static frame
       const { fn } = task as unknown as { fn: Fn };
+      // eslint-disable-next-line no-inner-declarations
       function __codspeed_root_frame__() {
         fn();
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (task as any).fn = __codspeed_root_frame__;
 
       InstrumentHooks.startBenchmark();
