@@ -63,4 +63,55 @@ export function runInstrumentedBench(
     console.log(`[CodSpeed] Done running ${bench.tasks.length} benches.`);
     return bench.tasks;
   };
+
+  bench.runSync = () => {
+    console.log(
+      `[CodSpeed] running with @codspeed/tinybench v${__VERSION__} (instrumented mode)`
+    );
+
+    for (const task of bench.tasks) {
+      const uri = getTaskUri(bench, task.name, rootCallingFile);
+
+      // Access private fields
+      const { fnOpts, fn } = task as unknown as { fnOpts?: FnOptions; fn: Fn };
+
+      // Call beforeAll hook if it exists
+      fnOpts?.beforeAll?.call(task, "run");
+
+      // run optimizations
+      optimizeFunction(async () => {
+        fnOpts?.beforeEach?.call(task, "run");
+        fn();
+        fnOpts?.afterEach?.call(task, "run");
+      });
+
+      // run instrumented benchmark
+      fnOpts?.beforeEach?.call(task, "run");
+
+      // await mongoMeasurement.start(uri);
+      global.gc?.();
+      (function __codspeed_root_frame__() {
+        InstrumentHooks.startBenchmark();
+        fn();
+        InstrumentHooks.stopBenchmark();
+        InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+      })();
+      mongoMeasurement.stop(uri);
+
+      fnOpts?.afterEach?.call(task, "run");
+
+      fnOpts?.afterAll?.call(task, "run");
+
+      // print results
+      console.log(
+        `    ✔ ${
+          InstrumentHooks.isInstrumented() ? "Measured" : "Checked"
+        } ${uri}`
+      );
+    }
+
+    teardownCore();
+    console.log(`[CodSpeed] Done running ${bench.tasks.length} benches.`);
+    return bench.tasks;
+  };
 }
