@@ -9,6 +9,6 @@ export const bench = withCodSpeed(new Bench());
   registerFiboBenchmarks(bench);
   registerFoobarbazBenchmarks(bench);
 
-  await bench.run();
+  bench.runSync();
   console.table(bench.table());
 })();
