@@ -299,6 +299,9 @@ importers:
       '@codspeed/core':
         specifier: workspace:^5.0.0
         version: link:../core
+      tinybench:
+        specifier: ^2.9.0
+        version: 2.9.0
     devDependencies:
       '@total-typescript/shoehorn':
         specifier: ^0.1.1
