@@ -27,7 +27,7 @@ export default defineConfig([
     external: ["@codspeed/core", /^vitest/],
   },
   {
-    input: "src/walltime.ts",
+    input: "src/walltime/index.ts",
     output: { file: "dist/walltime.mjs", format: "es" },
     plugins: jsPlugins(pkg.version),
     external: ["@codspeed/core", /^vitest/],
