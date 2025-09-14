@@ -306,6 +306,9 @@ importers:
       execa:
         specifier: ^8.0.1
         version: 8.0.1
+      tinybench:
+        specifier: ^2.9.0
+        version: 2.9.0
       vite:
         specifier: ^7.0.0
         version: 7.1.3(@types/node@20.19.11)
