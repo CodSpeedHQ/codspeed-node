@@ -1,6 +1,7 @@
 import { checkV8Flags } from "./introspection";
 import { MongoMeasurement } from "./mongoMeasurement";
 import native_core from "./native_core";
+import { logDebug } from "./utils";
 
 declare const __VERSION__: string;
 
@@ -33,6 +34,7 @@ export function getCodspeedRunnerMode(): CodSpeedRunnerMode {
 }
 
 export const setupCore = () => {
+  logDebug(`Native core is ${native_core.isBound ? "bound" : "not bound"}`);
   native_core.InstrumentHooks.setIntegration("codspeed-node", __VERSION__);
   linuxPerf.start();
   checkV8Flags();
