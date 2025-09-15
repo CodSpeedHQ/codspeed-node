@@ -14,5 +14,6 @@
     "esbuild-register": "^3.4.2",
     "tinybench": "^4.0.1",
     "typescript": "^5.1.3"
-  }
+  },
+  "version": "5.0.0-alpha.1"
 }
