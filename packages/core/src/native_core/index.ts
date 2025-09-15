@@ -1,4 +1,5 @@
 import path from "path";
+import { logDebug } from "../utils";
 import { InstrumentHooks } from "./instruments/hooks";
 import { LinuxPerf } from "./linux_perf/linux_perf";
 interface NativeCore {
@@ -21,6 +22,8 @@ try {
     isBound: true,
   };
 } catch (e) {
+  logDebug("Failed to bind native core, instruments will not work.");
+  logDebug(e);
   native_core = {
     LinuxPerf: class LinuxPerf {
       start() {
