@@ -78,3 +78,19 @@ jobs:
         env:
           CODSPEED_SKIP_UPLOAD: true
           CODSPEED_DEBUG: true
+
+  build-native-arm:
+    runs-on: codspeedhq-arm64-ubuntu-22.04
+    steps:
+      - uses: "actions/checkout@v4"
+        with:
+          fetch-depth: 0
+          submodules: true
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v3
+        with:
+          cache: pnpm
+          node-version-file: .nvmrc
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Build native core on ARM
+        run: pnpm moon core:build-native-addon
