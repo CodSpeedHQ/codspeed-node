@@ -1,6 +1,6 @@
 {
   "name": "@codspeed/vitest-plugin",
-  "version": "5.0.0-alpha.3",
+  "version": "5.0.0-alpha.4",
   "description": "vitest plugin for CodSpeed",
   "keywords": [
     "codspeed",
@@ -28,7 +28,7 @@
     "bench": "vitest bench"
   },
   "dependencies": {
-    "@codspeed/core": "workspace:^5.0.0-alpha.3",
+    "@codspeed/core": "workspace:^5.0.0-alpha.4",
     "tinybench": "^2.9.0"
   },
   "peerDependencies": {

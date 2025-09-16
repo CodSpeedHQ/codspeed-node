@@ -12,5 +12,5 @@
     "benchmark": "^2.1.4",
     "tinybench": "^4.0.1"
   },
-  "version": "5.0.0-alpha.3"
+  "version": "5.0.0-alpha.4"
 }
