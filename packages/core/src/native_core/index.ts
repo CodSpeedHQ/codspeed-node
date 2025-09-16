@@ -13,7 +13,6 @@ interface NativeCoreWithBindingStatus extends NativeCore {
 
 let native_core: NativeCoreWithBindingStatus;
 try {
-  console.log("Binding native core");
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const nativeCore = require("node-gyp-build")(
     path.dirname(__dirname)
@@ -22,9 +21,8 @@ try {
     ...nativeCore,
     isBound: true,
   };
-  console.log("Native core bound successfully");
 } catch (e) {
-  console.error("Failed to load native core, using stubs");
+  logDebug("Failed to bind native core, instruments will not work.");
   logDebug(e);
   native_core = {
     LinuxPerf: class LinuxPerf {

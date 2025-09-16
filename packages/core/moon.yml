@@ -9,7 +9,7 @@ tasks:
       - build-tracer-client
 
   build-native-addon:
-    command: prebuildify --napi --strip
+    command: prebuildify --napi --strip --arch x64+arm64
     inputs:
       - "src/native_core/**/*.cc"
       - "src/native_core/**/*.c"
