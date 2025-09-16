@@ -1,6 +1,6 @@
 {
   "name": "@codspeed/benchmark.js-plugin",
-  "version": "5.0.0",
+  "version": "5.0.0-alpha.5",
   "description": "Benchmark.js compatibility layer for CodSpeed",
   "keywords": [
     "codspeed",
@@ -27,7 +27,7 @@
     "jest-mock-extended": "^3.0.4"
   },
   "dependencies": {
-    "@codspeed/core": "workspace:^5.0.0",
+    "@codspeed/core": "workspace:^5.0.0-alpha.5",
     "lodash": "^4.17.10",
     "stack-trace": "1.0.0-pre2"
   },
