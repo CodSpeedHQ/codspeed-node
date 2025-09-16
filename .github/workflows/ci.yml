@@ -8,7 +8,10 @@ on:
 
 jobs:
   check:
-    runs-on: "ubuntu-latest"
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "codspeedhq-arm64-ubuntu-22.04"]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: "actions/checkout@v4"
         with:
