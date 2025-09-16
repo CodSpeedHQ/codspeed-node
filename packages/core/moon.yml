@@ -8,8 +8,17 @@ tasks:
       - build-native-addon
       - build-tracer-client
 
+  build-native-addon-x64:
+    command: prebuildify --napi --strip --arch x64
+
+  build-native-addon-arm64:
+    command: prebuildify --napi --strip --arch arm64
+
   build-native-addon:
-    command: prebuildify --napi --strip --arch x64+arm64
+    deps:
+      - build-native-addon-x64
+      - build-native-addon-arm64
+    command: noop
     inputs:
       - "src/native_core/**/*.cc"
       - "src/native_core/**/*.c"
@@ -17,6 +26,9 @@ tasks:
       - "binding.gyp"
     outputs:
       - "prebuilds"
+    options:
+      # Prebuildify can only build one target at a time
+      runDepsInParallel: false
 
   build-tracer-client:
     inputs:
