@@ -35,7 +35,7 @@ jobs:
       # list the directories in ./examples and output them to a github action workflow variables as a JSON array
       - run: |
           examples=$(find ./examples -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | jq -R -s -c 'split("\n") | map(select(length > 0))')
-          echo "::set-output name=examples::$examples"
+          echo "examples=$examples" >> $GITHUB_OUTPUT
         id: list-examples
 
   node-versions:
