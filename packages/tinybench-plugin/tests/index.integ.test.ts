@@ -215,7 +215,7 @@ describe("Benchmark.Suite", () => {
         /o/.test("Hello World!");
       });
 
-    expect(mockCore.setupCore).toHaveBeenCalledTimes(1);
+    expect(mockCore.setupCore).not.toHaveBeenCalled();
     expect(mockCore.teardownCore).not.toHaveBeenCalled();
 
     await bench.run();

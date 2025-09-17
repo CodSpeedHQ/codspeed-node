@@ -1,6 +1,5 @@
 import {
   calculateQuantiles,
-  InstrumentHooks,
   mongoMeasurement,
   msToNs,
   msToS,
@@ -9,154 +8,127 @@ import {
   type BenchmarkStats,
 } from "@codspeed/core";
 import { Bench, Fn, Task, TaskResult } from "tinybench";
-import { getTaskUri } from "./uri";
+import { BaseBenchRunner } from "./shared";
 
-declare const __VERSION__: string;
-
-export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
-  bench.run = async () => {
-    logStart();
-    const codspeedBenchmarks: CodspeedBenchmark[] = [];
-
-    // Collect and report walltime data
-    for (const task of bench.tasks) {
-      const uri = getTaskUri(bench, task.name, rootCallingFile);
-
-      // Override the function under test to add a static frame
-      wrapTaskFunction(task, true);
-
-      // run the warmup of the task right before its actual run
-      if (bench.opts.warmup) {
-        await task.warmup();
-      }
-
-      await mongoMeasurement.start(uri);
-      InstrumentHooks.startBenchmark();
-      await task.run();
-      InstrumentHooks.stopBenchmark();
-      await mongoMeasurement.stop(uri);
-
-      registerCodspeedBenchmarkFromTask(
-        codspeedBenchmarks,
-        task,
-        bench,
-        rootCallingFile
-      );
-    }
-
-    return finalizeWalltimeRun(bench, codspeedBenchmarks, true);
-  };
-
-  bench.runSync = () => {
-    logStart();
-    const codspeedBenchmarks: CodspeedBenchmark[] = [];
-
-    for (const task of bench.tasks) {
-      // Override the function under test to add a static frame
-      wrapTaskFunction(task, false);
-
-      if (bench.opts.warmup) {
-        task.warmup();
-      }
-
-      InstrumentHooks.startBenchmark();
-      task.runSync();
-      InstrumentHooks.stopBenchmark();
-
-      registerCodspeedBenchmarkFromTask(
-        codspeedBenchmarks,
-        task,
-        bench,
-        rootCallingFile
-      );
-    }
-
-    return finalizeWalltimeRun(bench, codspeedBenchmarks, false);
-  };
-}
-
-function logStart() {
-  console.log(
-    `[CodSpeed] running with @codspeed/tinybench v${__VERSION__} (walltime mode)`
-  );
-}
-
-const TINYBENCH_WARMUP_DEFAULT = 16;
-
-function registerCodspeedBenchmarkFromTask(
-  codspeedBenchmarks: CodspeedBenchmark[],
-  task: Task,
+export function setupCodspeedWalltimeBench(
   bench: Bench,
   rootCallingFile: string
 ): void {
-  const uri = getTaskUri(bench, task.name, rootCallingFile);
-
-  if (!task.result) {
-    console.warn(`    ⚠ No result data available for ${uri}`);
-    return;
-  }
-
-  const warmupIterations = bench.opts.warmup
-    ? bench.opts.warmupIterations ?? TINYBENCH_WARMUP_DEFAULT
-    : 0;
-  const stats = convertTinybenchResultToBenchmarkStats(
-    task.result,
-    warmupIterations
-  );
-
-  codspeedBenchmarks.push({
-    name: task.name,
-    uri,
-    config: {
-      max_rounds: bench.opts.iterations ?? null,
-      max_time_ns: bench.opts.time ? msToNs(bench.opts.time) : null,
-      min_round_time_ns: null, // tinybench does not have an option for this
-      warmup_time_ns:
-        bench.opts.warmup && bench.opts.warmupTime
-          ? msToNs(bench.opts.warmupTime)
-          : null,
-    },
-    stats,
-  });
-
-  console.log(`    ✔ Collected walltime data for ${uri}`);
-  InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+  const runner = new WalltimeBenchRunner(bench, rootCallingFile);
+  runner.setupBenchMethods();
 }
 
-function wrapTaskFunction(task: Task, isAsync: boolean): void {
-  const { fn } = task as unknown as { fn: Fn };
-  if (isAsync) {
-    // eslint-disable-next-line no-inner-declarations
-    async function __codspeed_root_frame__() {
-      await fn();
+class WalltimeBenchRunner extends BaseBenchRunner {
+  private codspeedBenchmarks: CodspeedBenchmark[] = [];
+
+  protected getModeName(): string {
+    return "walltime mode";
+  }
+
+  protected async runTaskAsync(task: Task, uri: string): Promise<void> {
+    // Override the function under test to add a static frame
+    this.wrapTaskFunction(task, true);
+
+    // run the warmup of the task right before its actual run
+    if (this.bench.opts.warmup) {
+      await task.warmup();
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (task as any).fn = __codspeed_root_frame__;
-  } else {
-    // eslint-disable-next-line no-inner-declarations
-    function __codspeed_root_frame__() {
-      fn();
+
+    await mongoMeasurement.start(uri);
+    await this.wrapWithInstrumentHooksAsync(() => task.run(), uri);
+    await mongoMeasurement.stop(uri);
+
+    this.registerCodspeedBenchmarkFromTask(task);
+  }
+
+  protected runTaskSync(task: Task, uri: string): void {
+    // Override the function under test to add a static frame
+    this.wrapTaskFunction(task, false);
+
+    if (this.bench.opts.warmup) {
+      task.warmup();
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (task as any).fn = __codspeed_root_frame__;
+
+    this.wrapWithInstrumentHooks(() => task.runSync(), uri);
+
+    this.registerCodspeedBenchmarkFromTask(task);
+  }
+
+  protected finalizeAsyncRun(): Task[] {
+    return this.finalizeWalltimeRun(true);
+  }
+
+  protected finalizeSyncRun(): Task[] {
+    return this.finalizeWalltimeRun(false);
+  }
+
+  private wrapTaskFunction(task: Task, isAsync: boolean): void {
+    const { fn } = task as unknown as { fn: Fn };
+    if (isAsync) {
+      // eslint-disable-next-line no-inner-declarations
+      async function __codspeed_root_frame__() {
+        await fn();
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (task as any).fn = __codspeed_root_frame__;
+    } else {
+      // eslint-disable-next-line no-inner-declarations
+      function __codspeed_root_frame__() {
+        fn();
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (task as any).fn = __codspeed_root_frame__;
+    }
+  }
+
+  private registerCodspeedBenchmarkFromTask(task: Task): void {
+    const uri = this.getTaskUri(task);
+
+    if (!task.result) {
+      console.warn(`    ⚠ No result data available for ${uri}`);
+      return;
+    }
+
+    const warmupIterations = this.bench.opts.warmup
+      ? this.bench.opts.warmupIterations ?? TINYBENCH_WARMUP_DEFAULT
+      : 0;
+    const stats = convertTinybenchResultToBenchmarkStats(
+      task.result,
+      warmupIterations
+    );
+
+    this.codspeedBenchmarks.push({
+      name: task.name,
+      uri,
+      config: {
+        max_rounds: this.bench.opts.iterations ?? null,
+        max_time_ns: this.bench.opts.time ? msToNs(this.bench.opts.time) : null,
+        min_round_time_ns: null, // tinybench does not have an option for this
+        warmup_time_ns:
+          this.bench.opts.warmup && this.bench.opts.warmupTime
+            ? msToNs(this.bench.opts.warmupTime)
+            : null,
+      },
+      stats,
+    });
+
+    this.logTaskCompletion(uri, "Collected walltime data for");
+  }
+
+  private finalizeWalltimeRun(isAsync: boolean): Task[] {
+    // Write results to JSON file using core function
+    if (this.codspeedBenchmarks.length > 0) {
+      writeWalltimeResults(this.codspeedBenchmarks, isAsync);
+    }
+
+    console.log(
+      `[CodSpeed] Done collecting walltime data for ${this.bench.tasks.length} benches.`
+    );
+    return this.bench.tasks;
   }
 }
 
-function finalizeWalltimeRun(
-  bench: Bench,
-  benchmarks: CodspeedBenchmark[],
-  isAsync: boolean
-) {
-  // Write results to JSON file using core function
-  if (benchmarks.length > 0) {
-    writeWalltimeResults(benchmarks, isAsync);
-  }
-
-  console.log(
-    `[CodSpeed] Done collecting walltime data for ${bench.tasks.length} benches.`
-  );
-  return bench.tasks;
-}
+const TINYBENCH_WARMUP_DEFAULT = 16;
 
 function convertTinybenchResultToBenchmarkStats(
   result: TaskResult,

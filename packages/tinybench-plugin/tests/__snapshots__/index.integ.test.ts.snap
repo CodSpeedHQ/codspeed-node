@@ -7,10 +7,10 @@ exports[`Benchmark.Suite > check console output(instrumented=%p)  false 1`] = `
       "[CodSpeed] running with @codspeed/tinybench v1.0.0 (instrumented mode)",
     ],
     [
-      "    ✔ Checked packages/tinybench-plugin/tests/index.integ.test.ts::RegExp",
+      "[CodSpeed] Checked packages/tinybench-plugin/tests/index.integ.test.ts::RegExp",
     ],
     [
-      "    ✔ Checked packages/tinybench-plugin/tests/index.integ.test.ts::RegExp2",
+      "[CodSpeed] Checked packages/tinybench-plugin/tests/index.integ.test.ts::RegExp2",
     ],
     [
       "[CodSpeed] Done running 2 benches.",
@@ -24,10 +24,10 @@ exports[`Benchmark.Suite > check console output(instrumented=%p)  true 1`] = `
 {
   "log": [
     [
-      "    ✔ Measured packages/tinybench-plugin/tests/index.integ.test.ts::RegExp",
+      "[CodSpeed] Measured packages/tinybench-plugin/tests/index.integ.test.ts::RegExp",
     ],
     [
-      "    ✔ Measured packages/tinybench-plugin/tests/index.integ.test.ts::RegExp2",
+      "[CodSpeed] Measured packages/tinybench-plugin/tests/index.integ.test.ts::RegExp2",
     ],
     [
       "[CodSpeed] Done running 2 benches.",
