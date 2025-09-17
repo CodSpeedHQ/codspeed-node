@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { withCodSpeed } from ".";
 
 const mockInstrumented = vi.hoisted(() => ({
-  runInstrumentedBench: vi.fn(),
+  setupCodspeedInstrumentedBench: vi.fn(),
 }));
 
 vi.mock("./instrumented", () => ({
@@ -11,7 +11,7 @@ vi.mock("./instrumented", () => ({
 }));
 
 const mockWalltime = vi.hoisted(() => ({
-  runWalltimeBench: vi.fn(),
+  setupCodspeedWalltimeBench: vi.fn(),
 }));
 
 vi.mock("./walltime", () => ({
@@ -44,8 +44,8 @@ describe("withCodSpeed behavior without different codspeed modes", () => {
 
     withCodSpeed(new Bench());
 
-    expect(mockInstrumented.runInstrumentedBench).toHaveBeenCalled();
-    expect(mockWalltime.runWalltimeBench).not.toHaveBeenCalled();
+    expect(mockInstrumented.setupCodspeedInstrumentedBench).toHaveBeenCalled();
+    expect(mockWalltime.setupCodspeedWalltimeBench).not.toHaveBeenCalled();
   });
 
   it("should run in walltime mode when CODSPEED_RUNNER_MODE=walltime", async () => {
@@ -54,7 +54,9 @@ describe("withCodSpeed behavior without different codspeed modes", () => {
 
     withCodSpeed(new Bench());
 
-    expect(mockInstrumented.runInstrumentedBench).not.toHaveBeenCalled();
-    expect(mockWalltime.runWalltimeBench).toHaveBeenCalled();
+    expect(
+      mockInstrumented.setupCodspeedInstrumentedBench
+    ).not.toHaveBeenCalled();
+    expect(mockWalltime.setupCodspeedWalltimeBench).toHaveBeenCalled();
   });
 });
