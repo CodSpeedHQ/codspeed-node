@@ -25,10 +25,12 @@ jobs:
 
       - name: Run benchmarks
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
-        uses: CodSpeedHQ/action@main
+        uses: CodSpeedHQ/action@v3
         with:
           run: |
-            pnpm moon run --concurrency 1 :bench
+            pnpm moon run tinybench-plugin:bench
+            pnpm moon run vitest-plugin:bench
+            pnpm moon run benchmark.js-plugin:bench
             pnpm --workspace-concurrency 1 -r bench-tinybench
             pnpm --workspace-concurrency 1 -r bench-benchmark-js
             pnpm --workspace-concurrency 1 -r bench-vitest
@@ -51,10 +53,11 @@ jobs:
 
       - name: Run benchmarks
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
-        uses: CodSpeedHQ/action@main
+        uses: CodSpeedHQ/action@v3
         with:
-          # Only tinybench supports walltime for now
           run: |
-            pnpm moon run --concurrency 1 :bench
+            pnpm moon run tinybench-plugin:bench
+            pnpm moon run vitest-plugin:bench
+            pnpm moon run benchmark.js-plugin:bench
             pnpm --workspace-concurrency 1 -r bench-tinybench
             pnpm --workspace-concurrency 1 -r bench-vitest
