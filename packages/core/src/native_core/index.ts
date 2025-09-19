@@ -40,11 +40,16 @@ try {
       stopBenchmark: () => {
         return 0;
       },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       setExecutedBenchmark: (_pid: number, _uri: string) => {
         return 0;
       },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       setIntegration: (_name: string, _version: string) => {
         return 0;
+      },
+      __codspeed_root_frame__: <T>(callback: () => T): T => {
+        return callback();
       },
     },
     isBound: false,

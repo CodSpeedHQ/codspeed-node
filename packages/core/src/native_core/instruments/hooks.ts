@@ -31,4 +31,10 @@ export interface InstrumentHooks {
    * @returns 0 on success, non-zero on error
    */
   setIntegration(name: string, version: string): number;
+
+  /**
+   * Execute a callback function with __codspeed_root_frame__ in its stack trace
+   * @param callback Function to execute
+   */
+  __codspeed_root_frame__<T>(callback: () => T): T;
 }

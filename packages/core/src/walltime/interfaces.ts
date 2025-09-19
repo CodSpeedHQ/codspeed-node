@@ -40,4 +40,5 @@ export interface ResultData {
   };
   instrument: { type: "walltime" };
   benchmarks: Benchmark[];
+  metadata?: Record<string, unknown>;
 }

@@ -35,7 +35,7 @@ bench
   });
 
 (async () => {
-  await bench.run();
+  bench.runSync();
   console.table(bench.table());
 
   const timingBench = withCodSpeed(
@@ -44,6 +44,6 @@ bench
 
   registerTimingBenchmarks(timingBench);
 
-  await timingBench.run();
+  timingBench.runSync();
   console.table(timingBench.table());
 })();

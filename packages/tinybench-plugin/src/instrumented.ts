@@ -2,67 +2,83 @@ import {
   InstrumentHooks,
   mongoMeasurement,
   optimizeFunction,
-  setupCore,
-  teardownCore,
 } from "@codspeed/core";
-import { Bench, Fn, FnOptions } from "tinybench";
-import { getTaskUri } from "./uri";
+import { Bench, Fn, FnOptions, Task } from "tinybench";
+import { BaseBenchRunner } from "./shared";
 
-declare const __VERSION__: string;
-
-export function runInstrumentedBench(
+export function setupCodspeedInstrumentedBench(
   bench: Bench,
   rootCallingFile: string
 ): void {
-  bench.run = async () => {
-    console.log(
-      `[CodSpeed] running with @codspeed/tinybench v${__VERSION__} (instrumented mode)`
-    );
-    setupCore();
+  const runner = new InstrumentedBenchRunner(bench, rootCallingFile);
+  runner.setupBenchMethods();
+}
 
-    for (const task of bench.tasks) {
-      const uri = getTaskUri(bench, task.name, rootCallingFile);
+class InstrumentedBenchRunner extends BaseBenchRunner {
+  protected getModeName(): string {
+    return "instrumented mode";
+  }
 
-      // Access private fields
-      const { fnOpts, fn } = task as unknown as { fnOpts?: FnOptions; fn: Fn };
+  private taskCompletionMessage() {
+    return InstrumentHooks.isInstrumented() ? "Measured" : "Checked";
+  }
 
-      // Call beforeAll hook if it exists
-      await fnOpts?.beforeAll?.call(task, "run");
-
-      // run optimizations
-      await optimizeFunction(async () => {
-        await fnOpts?.beforeEach?.call(task, "run");
+  private wrapFunctionWithFrame(fn: Fn, isAsync: boolean): Fn {
+    if (isAsync) {
+      return async function __codspeed_root_frame__() {
         await fn();
-        await fnOpts?.afterEach?.call(task, "run");
-      });
-
-      // run instrumented benchmark
-      await fnOpts?.beforeEach?.call(task, "run");
-
-      await mongoMeasurement.start(uri);
-      global.gc?.();
-      await (async function __codspeed_root_frame__() {
-        InstrumentHooks.startBenchmark();
-        await fn();
-        InstrumentHooks.stopBenchmark();
-        InstrumentHooks.setExecutedBenchmark(process.pid, uri);
-      })();
-      await mongoMeasurement.stop(uri);
-
-      await fnOpts?.afterEach?.call(task, "run");
-
-      await fnOpts?.afterAll?.call(task, "run");
-
-      // print results
-      console.log(
-        `    ✔ ${
-          InstrumentHooks.isInstrumented() ? "Measured" : "Checked"
-        } ${uri}`
-      );
+      };
+    } else {
+      return function __codspeed_root_frame__() {
+        fn();
+      };
     }
+  }
 
-    teardownCore();
-    console.log(`[CodSpeed] Done running ${bench.tasks.length} benches.`);
-    return bench.tasks;
-  };
+  protected async runTaskAsync(task: Task, uri: string): Promise<void> {
+    const { fnOpts, fn } = task as unknown as { fnOpts?: FnOptions; fn: Fn };
+
+    await fnOpts?.beforeAll?.call(task, "run");
+    await optimizeFunction(async () => {
+      await fnOpts?.beforeEach?.call(task, "run");
+      await fn();
+      await fnOpts?.afterEach?.call(task, "run");
+    });
+    await fnOpts?.beforeEach?.call(task, "run");
+    await mongoMeasurement.start(uri);
+
+    global.gc?.();
+    await this.wrapWithInstrumentHooksAsync(
+      this.wrapFunctionWithFrame(fn, true),
+      uri
+    );
+
+    await mongoMeasurement.stop(uri);
+    await fnOpts?.afterEach?.call(task, "run");
+    await fnOpts?.afterAll?.call(task, "run");
+
+    this.logTaskCompletion(uri, this.taskCompletionMessage());
+  }
+
+  protected runTaskSync(task: Task, uri: string): void {
+    const { fnOpts, fn } = task as unknown as { fnOpts?: FnOptions; fn: Fn };
+
+    fnOpts?.beforeAll?.call(task, "run");
+    fnOpts?.beforeEach?.call(task, "run");
+
+    this.wrapWithInstrumentHooks(this.wrapFunctionWithFrame(fn, false), uri);
+
+    fnOpts?.afterEach?.call(task, "run");
+    fnOpts?.afterAll?.call(task, "run");
+
+    this.logTaskCompletion(uri, this.taskCompletionMessage());
+  }
+
+  protected finalizeAsyncRun(): Task[] {
+    return this.finalizeBenchRun();
+  }
+
+  protected finalizeSyncRun(): Task[] {
+    return this.finalizeBenchRun();
+  }
 }

@@ -9,6 +9,7 @@
         "-fno-exceptions"
       ],
       "cflags": [
+        "-g",
         "-Wno-maybe-uninitialized",
         "-Wno-unused-variable",
         "-Wno-unused-parameter",

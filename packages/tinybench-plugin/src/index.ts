@@ -11,9 +11,9 @@ import path from "path";
 import { get as getStackTrace } from "stack-trace";
 import { Bench } from "tinybench";
 import { fileURLToPath } from "url";
-import { runInstrumentedBench } from "./instrumented";
+import { setupCodspeedInstrumentedBench } from "./instrumented";
 import { getOrCreateUriMap } from "./uri";
-import { runWalltimeBench } from "./walltime";
+import { setupCodspeedWalltimeBench } from "./walltime";
 
 tryIntrospect();
 
@@ -40,9 +40,9 @@ export function withCodSpeed(bench: Bench): Bench {
   };
 
   if (codspeedRunnerMode === "instrumented") {
-    runInstrumentedBench(bench, rootCallingFile);
+    setupCodspeedInstrumentedBench(bench, rootCallingFile);
   } else if (codspeedRunnerMode === "walltime") {
-    runWalltimeBench(bench, rootCallingFile);
+    setupCodspeedWalltimeBench(bench, rootCallingFile);
   }
 
   return bench;
