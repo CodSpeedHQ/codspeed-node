@@ -1,28 +1,35 @@
 import { writeFileSync } from "fs";
+import { getCodspeedRunnerMode } from ".";
 
 const CUSTOM_INTROSPECTION_EXIT_CODE = 0;
 
 export const getV8Flags = () => {
   const nodeVersionMajor = parseInt(process.version.slice(1).split(".")[0]);
+  const codspeedRunnerMode = getCodspeedRunnerMode();
 
-  const flags = [
-    "--hash-seed=1",
-    "--random-seed=1",
-    "--no-opt",
-    "--predictable",
-    "--predictable-gc-schedule",
-    "--interpreted-frames-native-stack",
-    "--allow-natives-syntax",
-    "--expose-gc",
-    "--no-concurrent-sweeping",
-    "--max-old-space-size=4096",
-  ];
-  if (nodeVersionMajor < 18) {
-    flags.push("--no-randomize-hashes");
+  const flags = ["--interpreted-frames-native-stack", "--allow-natives-syntax"];
+
+  if (codspeedRunnerMode === "instrumented") {
+    flags.push(
+      ...[
+        "--hash-seed=1",
+        "--random-seed=1",
+        "--no-opt",
+        "--predictable",
+        "--predictable-gc-schedule",
+        "--expose-gc",
+        "--no-concurrent-sweeping",
+        "--max-old-space-size=4096",
+      ]
+    );
+    if (nodeVersionMajor < 18) {
+      flags.push("--no-randomize-hashes");
+    }
+    if (nodeVersionMajor < 20) {
+      flags.push("--no-scavenge-task");
+    }
   }
-  if (nodeVersionMajor < 20) {
-    flags.push("--no-scavenge-task");
-  }
+
   return flags;
 };
 
