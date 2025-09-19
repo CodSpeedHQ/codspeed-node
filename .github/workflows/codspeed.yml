@@ -25,8 +25,9 @@ jobs:
 
       - name: Run benchmarks
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
-        uses: CodSpeedHQ/action@v3
+        uses: CodSpeedHQ/action@main
         with:
+          mode: instrumentation
           run: |
             pnpm moon run tinybench-plugin:bench
             pnpm moon run vitest-plugin:bench
@@ -53,8 +54,9 @@ jobs:
 
       - name: Run benchmarks
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
-        uses: CodSpeedHQ/action@v3
+        uses: CodSpeedHQ/action@main
         with:
+          mode: walltime
           run: |
             pnpm moon run tinybench-plugin:bench
             pnpm moon run vitest-plugin:bench
