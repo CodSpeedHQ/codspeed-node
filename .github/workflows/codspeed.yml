@@ -54,9 +54,10 @@ jobs:
 
       - name: Run benchmarks
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
-        uses: CodSpeedHQ/action@main
+        # uses: CodSpeedHQ/action@main
+        uses: CodSpeedHQ/action@chore/runner-branch
         with:
-          runner-branch: cod-1344-investigate-benchmark-time-in-drop_in_place-and-perf
+          runner-branch: cod-1366-investigate-self-call-of-busysleep-in-node-flamegraph
           mode: walltime
           run: |
             pnpm moon run tinybench-plugin:bench
