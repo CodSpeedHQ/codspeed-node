@@ -13,13 +13,13 @@ const timingBenchOptions: BenchOptions = {
 };
 
 describe("timing tests", () => {
-  bench(
-    "wait 1ms",
-    async () => {
-      busySleep(1);
-    },
-    timingBenchOptions
-  );
+  // bench(
+  //   "wait 1ms",
+  //   async () => {
+  //     busySleep(1);
+  //   },
+  //   timingBenchOptions
+  // );
 
   bench(
     "wait 500ms",
@@ -29,11 +29,11 @@ describe("timing tests", () => {
     timingBenchOptions
   );
 
-  bench(
-    "wait 1sec",
-    async () => {
-      busySleep(1_000);
-    },
-    timingBenchOptions
-  );
+  // bench(
+  //   "wait 1sec",
+  //   async () => {
+  //     busySleep(1_000);
+  //   },
+  //   timingBenchOptions
+  // );
 });

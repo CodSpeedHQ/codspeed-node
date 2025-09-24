@@ -13,21 +13,21 @@ describe("parsePr", () => {
     parsePr({ body: "fixes #123", title: "test-1", number: 1 });
   });
 
-  bench("long body", () => {
-    parsePr({ body: LONG_BODY, title: "test-2", number: 2 });
-  });
+  // bench("long body", () => {
+  //   parsePr({ body: LONG_BODY, title: "test-2", number: 2 });
+  // });
 });
 
-function fibo(n: number): number {
-  if (n < 2) return 1;
-  return fibo(n - 1) + fibo(n - 2);
-}
-
-describe("fibo", () => {
-  bench("fibo 10", () => {
-    fibo(10);
-  });
-  bench("fibo 15", () => {
-    fibo(15);
-  });
-});
+// function fibo(n: number): number {
+//   if (n < 2) return 1;
+//   return fibo(n - 1) + fibo(n - 2);
+// }
+//
+// describe("fibo", () => {
+//   bench("fibo 10", () => {
+//     fibo(10);
+//   });
+//   bench("fibo 15", () => {
+//     fibo(15);
+//   });
+// });

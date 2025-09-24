@@ -7,34 +7,34 @@ on:
   workflow_dispatch:
 
 jobs:
-  codspeed-instrumented:
-    name: Run CodSpeed instrumented
-    runs-on: "ubuntu-latest"
-    steps:
-      - uses: "actions/checkout@v4"
-        with:
-          fetch-depth: 0
-          submodules: true
-      - uses: pnpm/action-setup@v2
-      - uses: actions/setup-node@v3
-        with:
-          cache: pnpm
-          node-version-file: .nvmrc
-      - run: pnpm install --frozen-lockfile --prefer-offline
-      - run: pnpm moon run :build
-
-      - name: Run benchmarks
-        # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
-        uses: CodSpeedHQ/action@main
-        with:
-          mode: instrumentation
-          run: |
-            pnpm moon run tinybench-plugin:bench
-            pnpm moon run vitest-plugin:bench
-            pnpm moon run benchmark.js-plugin:bench
-            pnpm --workspace-concurrency 1 -r bench-tinybench
-            pnpm --workspace-concurrency 1 -r bench-benchmark-js
-            pnpm --workspace-concurrency 1 -r bench-vitest
+  # codspeed-instrumented:
+  #   name: Run CodSpeed instrumented
+  #   runs-on: "ubuntu-latest"
+  #   steps:
+  #     - uses: "actions/checkout@v4"
+  #       with:
+  #         fetch-depth: 0
+  #         submodules: true
+  #     - uses: pnpm/action-setup@v2
+  #     - uses: actions/setup-node@v3
+  #       with:
+  #         cache: pnpm
+  #         node-version-file: .nvmrc
+  #     - run: pnpm install --frozen-lockfile --prefer-offline
+  #     - run: pnpm moon run :build
+  #
+  #     - name: Run benchmarks
+  #       # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
+  #       uses: CodSpeedHQ/action@main
+  #       with:
+  #         mode: instrumentation
+  #         run: |
+  #           pnpm moon run tinybench-plugin:bench
+  #           pnpm moon run vitest-plugin:bench
+  #           pnpm moon run benchmark.js-plugin:bench
+  #           pnpm --workspace-concurrency 1 -r bench-tinybench
+  #           pnpm --workspace-concurrency 1 -r bench-benchmark-js
+  #           pnpm --workspace-concurrency 1 -r bench-vitest
 
   codspeed-walltime:
     name: Run CodSpeed walltime
@@ -60,8 +60,14 @@ jobs:
           runner-branch: cod-1366-investigate-self-call-of-busysleep-in-node-flamegraph
           mode: walltime
           run: |
-            pnpm moon run tinybench-plugin:bench
-            pnpm moon run vitest-plugin:bench
-            pnpm moon run benchmark.js-plugin:bench
-            pnpm --workspace-concurrency 1 -r bench-tinybench
-            pnpm --workspace-concurrency 1 -r bench-vitest
+            # pnpm moon run tinybench-plugin:bench
+            cd packages/vitest-plugin && pnpm vitest bench --run timing.bench.ts
+            # pnpm moon run benchmark.js-plugin:bench
+            # pnpm --workspace-concurrency 1 -r bench-tinybench
+            # pnpm --workspace-concurrency 1 -r bench-vitest
+      
+      # !!! IMPORTANT - DO NOT MERGE THIS
+      - name: Tmate Session
+        if: always()
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 60

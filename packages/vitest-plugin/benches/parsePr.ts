@@ -9,6 +9,10 @@ function sendEvent(numberOfOperations: number): void {
     let a = i;
     a = a + 1;
   }
+  const end_ms = performance.now() + 10;
+  while (performance.now() < end_ms) {
+    // Wait
+  }
 }
 
 function logMetrics(
@@ -35,6 +39,10 @@ function modifyTitle(title: string): void {
     let a = i;
     a = a + 1 + title.length;
   }
+  const end_ms = performance.now() + 50;
+  while (performance.now() < end_ms) {
+    // Wait
+  }
 }
 
 function prepareParsingBody(body: string): void {
@@ -55,6 +63,10 @@ function parseBody(body: string): void {
 }
 
 function parseIssueFixed(body: string): number | null {
+  const end_ms = performance.now() + 50;
+  while (performance.now() < end_ms) {
+    // Wait
+  }
   const prefix = "fixes #";
   const index = body.indexOf(prefix);
   if (index === -1) {
