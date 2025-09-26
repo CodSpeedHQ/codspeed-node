@@ -33,6 +33,12 @@ export function getCodspeedRunnerMode(): CodSpeedRunnerMode {
 }
 
 export const setupCore = () => {
+  if (!native_core.isBound) {
+    throw new Error(
+      "Native core module is not bound, CodSpeed integration will not work properly"
+    );
+  }
+
   native_core.InstrumentHooks.setIntegration("codspeed-node", __VERSION__);
   linuxPerf.start();
   checkV8Flags();
