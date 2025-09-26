@@ -7,7 +7,7 @@ import {
   type Benchmark,
   type BenchmarkStats,
 } from "@codspeed/core";
-import { Bench, TaskResult } from "tinybench";
+import { Bench, Fn, TaskResult } from "tinybench";
 import { getTaskUri } from "./uri";
 
 declare const __VERSION__: string;
@@ -34,6 +34,14 @@ export function runWalltimeBench(bench: Bench, rootCallingFile: string): void {
     // Collect and report walltime data
     for (const task of bench.tasks) {
       const uri = getTaskUri(bench, task.name, rootCallingFile);
+
+      const { fn } = task as unknown as { fn: Fn };
+      // eslint-disable-next-line no-inner-declarations
+      async function __codspeed_root_frame__() {
+        await fn();
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (task as any).fn = __codspeed_root_frame__;
 
       // run the warmup of the task right before its actual run
       if (bench.opts.warmup) {
