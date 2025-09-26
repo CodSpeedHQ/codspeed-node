@@ -24,4 +24,9 @@ describe("without bindings", () => {
     const isBound = require("..").isBound as boolean;
     expect(isBound).toBe(false);
   });
+
+  it("should throw when calling setupCore", () => {
+    const setupCore = require("..").setupCore as () => unknown;
+    expect(setupCore).toThrowError("Native core module is not bound");
+  });
 });
