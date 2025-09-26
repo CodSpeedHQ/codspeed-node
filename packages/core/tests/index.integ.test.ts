@@ -16,6 +16,8 @@ describe("without bindings", () => {
   const initialEnv = process.env;
   beforeAll(() => {
     process.env.npm_config_arch = "unknown";
+    // Prevent node-gyp from falling back to a local version of the native core in packages/core/build
+    process.env.PREBUILDS_ONLY = "1";
   });
   afterAll(() => {
     process.env = initialEnv;
