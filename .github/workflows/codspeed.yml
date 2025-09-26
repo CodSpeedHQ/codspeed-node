@@ -28,6 +28,7 @@ jobs:
         uses: CodSpeedHQ/action@main
         with:
           mode: instrumentation
+          upload-url: ${{ secrets.STAGING_CODSPEED_UPLOAD_URL }}
           run: |
             pnpm moon run tinybench-plugin:bench
             pnpm moon run vitest-plugin:bench
@@ -57,6 +58,7 @@ jobs:
         uses: CodSpeedHQ/action@main
         with:
           mode: walltime
+          upload-url: ${{ secrets.STAGING_CODSPEED_UPLOAD_URL }}
           run: |
             pnpm moon run tinybench-plugin:bench
             pnpm moon run vitest-plugin:bench
