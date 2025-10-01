@@ -35,6 +35,6 @@
     "stack-trace": "1.0.0-pre2"
   },
   "peerDependencies": {
-    "tinybench": "^4.0.1"
+    "tinybench": ">=4.0.1"
   }
 }
