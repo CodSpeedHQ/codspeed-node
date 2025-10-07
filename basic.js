@@ -54,10 +54,10 @@ function root_function() {
   parent_2();
 }
 
-%PrepareFunctionForOptimization(root_function);
-root_function();
-%OptimizeFunctionOnNextCall(root_function);
-root_function();
-
-waterMark();
+// %PrepareFunctionForOptimization(root_function);
+// root_function();
+// %OptimizeFunctionOnNextCall(root_function);
+// root_function();
+//
+// waterMark();
 root_function();
