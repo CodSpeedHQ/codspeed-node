@@ -35,6 +35,8 @@ jobs:
             pnpm --workspace-concurrency 1 -r bench-tinybench
             pnpm --workspace-concurrency 1 -r bench-benchmark-js
             pnpm --workspace-concurrency 1 -r bench-vitest
+          runner-version: v4.3.0-beta.0
+          upload-url: https://api.staging.preview.codspeed.io/upload
 
   codspeed-walltime:
     name: Run CodSpeed walltime
@@ -63,3 +65,5 @@ jobs:
             pnpm moon run benchmark.js-plugin:bench
             pnpm --workspace-concurrency 1 -r bench-tinybench
             pnpm --workspace-concurrency 1 -r bench-vitest
+          runner-version: v4.3.0-beta.0
+          upload-url: https://api.staging.preview.codspeed.io/upload
