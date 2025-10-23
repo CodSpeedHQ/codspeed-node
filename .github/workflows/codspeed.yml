@@ -22,7 +22,7 @@ jobs:
           node-version-file: .nvmrc
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm moon run :build
-
+      - uses: dtolnay/rust-toolchain@stable
       - name: Run benchmarks
         # use version from `main` branch to almainways test the latest version, in real projects, use a tag, like `@v2`
         uses: CodSpeedHQ/action@chore/runner-branch
@@ -54,6 +54,7 @@ jobs:
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm moon run :build
 
+      - uses: dtolnay/rust-toolchain@stable
       - name: Run benchmarks
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
         uses: CodSpeedHQ/action@chore/runner-branch
