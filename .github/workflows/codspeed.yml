@@ -24,8 +24,8 @@ jobs:
       - run: pnpm moon run :build
 
       - name: Run benchmarks
-        # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
-        uses: CodSpeedHQ/action@main
+        # use version from `main` branch to almainways test the latest version, in real projects, use a tag, like `@v2`
+        uses: CodSpeedHQ/action@chore/runner-branch
         with:
           mode: instrumentation
           run: |
@@ -35,8 +35,8 @@ jobs:
             pnpm --workspace-concurrency 1 -r bench-tinybench
             pnpm --workspace-concurrency 1 -r bench-benchmark-js
             pnpm --workspace-concurrency 1 -r bench-vitest
-          runner-version: v4.3.0-beta.0
           upload-url: https://api.staging.preview.codspeed.io/upload
+          runner-branch: add-valgrind-args
 
   codspeed-walltime:
     name: Run CodSpeed walltime
@@ -56,7 +56,7 @@ jobs:
 
       - name: Run benchmarks
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
-        uses: CodSpeedHQ/action@main
+        uses: CodSpeedHQ/action@chore/runner-branch
         with:
           mode: walltime
           run: |
@@ -65,5 +65,5 @@ jobs:
             pnpm moon run benchmark.js-plugin:bench
             pnpm --workspace-concurrency 1 -r bench-tinybench
             pnpm --workspace-concurrency 1 -r bench-vitest
-          runner-version: v4.3.0-beta.0
+          runner-branch: add-valgrind-args
           upload-url: https://api.staging.preview.codspeed.io/upload
