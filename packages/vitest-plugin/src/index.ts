@@ -37,7 +37,7 @@ export default function codspeedPlugin(): Plugin {
         return false;
       }
       if (
-        getCodspeedRunnerMode() == "instrumented" &&
+        getCodspeedRunnerMode() == "simulation" &&
         !InstrumentHooks.isInstrumented()
       ) {
         console.warn("[CodSpeed] bench detected but no instrumentation found");

@@ -10,7 +10,7 @@ export const isBound = native_core.isBound;
 
 export const mongoMeasurement = new MongoMeasurement();
 
-type CodSpeedRunnerMode = "disabled" | "instrumented" | "walltime";
+type CodSpeedRunnerMode = "disabled" | "simulation" | "walltime";
 
 export function getCodspeedRunnerMode(): CodSpeedRunnerMode {
   const isCodSpeedEnabled = process.env.CODSPEED_ENV !== undefined;
@@ -20,8 +20,11 @@ export function getCodspeedRunnerMode(): CodSpeedRunnerMode {
 
   // If CODSPEED_ENV is set, check CODSPEED_RUNNER_MODE
   const codspeedRunnerMode = process.env.CODSPEED_RUNNER_MODE;
-  if (codspeedRunnerMode === "instrumentation") {
-    return "instrumented";
+  if (
+    codspeedRunnerMode === "instrumentation" ||
+    codspeedRunnerMode === "simulation"
+  ) {
+    return "simulation";
   } else if (codspeedRunnerMode === "walltime") {
     return "walltime";
   }

@@ -9,7 +9,7 @@ export const getV8Flags = () => {
 
   const flags = ["--interpreted-frames-native-stack", "--allow-natives-syntax"];
 
-  if (codspeedRunnerMode === "instrumented") {
+  if (codspeedRunnerMode === "simulation") {
     flags.push(
       ...[
         "--hash-seed=1",

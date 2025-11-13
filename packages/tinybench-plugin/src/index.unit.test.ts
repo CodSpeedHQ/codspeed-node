@@ -2,12 +2,12 @@ import { Bench } from "tinybench";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { withCodSpeed } from ".";
 
-const mockInstrumented = vi.hoisted(() => ({
-  setupCodspeedInstrumentedBench: vi.fn(),
+const mockSimulation = vi.hoisted(() => ({
+  setupCodspeedSimulationBench: vi.fn(),
 }));
 
-vi.mock("./instrumented", () => ({
-  ...mockInstrumented,
+vi.mock("./simulation", () => ({
+  ...mockSimulation,
 }));
 
 const mockWalltime = vi.hoisted(() => ({
@@ -38,13 +38,23 @@ describe("withCodSpeed behavior without different codspeed modes", () => {
     expect(shouldBeCalled.mock.calls.length).toBeGreaterThan(1000);
   });
 
-  it("should run in instrumented mode when CODSPEED_RUNNER_MODE=instrumentation", async () => {
+  it("should run in simulation mode when CODSPEED_RUNNER_MODE=instrumentation", async () => {
     process.env.CODSPEED_ENV = "true";
     process.env.CODSPEED_RUNNER_MODE = "instrumentation";
 
     withCodSpeed(new Bench());
 
-    expect(mockInstrumented.setupCodspeedInstrumentedBench).toHaveBeenCalled();
+    expect(mockSimulation.setupCodspeedSimulationBench).toHaveBeenCalled();
+    expect(mockWalltime.setupCodspeedWalltimeBench).not.toHaveBeenCalled();
+  });
+
+  it("should run in simulation mode when CODSPEED_RUNNER_MODE=simulation", async () => {
+    process.env.CODSPEED_ENV = "true";
+    process.env.CODSPEED_RUNNER_MODE = "simulation";
+
+    withCodSpeed(new Bench());
+
+    expect(mockSimulation.setupCodspeedSimulationBench).toHaveBeenCalled();
     expect(mockWalltime.setupCodspeedWalltimeBench).not.toHaveBeenCalled();
   });
 
@@ -54,9 +64,7 @@ describe("withCodSpeed behavior without different codspeed modes", () => {
 
     withCodSpeed(new Bench());
 
-    expect(
-      mockInstrumented.setupCodspeedInstrumentedBench
-    ).not.toHaveBeenCalled();
+    expect(mockSimulation.setupCodspeedSimulationBench).not.toHaveBeenCalled();
     expect(mockWalltime.setupCodspeedWalltimeBench).toHaveBeenCalled();
   });
 });

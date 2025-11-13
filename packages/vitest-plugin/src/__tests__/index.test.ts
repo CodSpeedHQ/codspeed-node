@@ -107,7 +107,7 @@ describe("codSpeedPlugin", () => {
           },
         },
         runner: expect.stringContaining(
-          "packages/vitest-plugin/src/instrumented.ts"
+          "packages/vitest-plugin/src/simulation.ts"
         ),
       },
     });

@@ -1,7 +1,7 @@
 import { fromPartial } from "@total-typescript/shoehorn";
 import { describe, expect, it, vi, type RunnerTestSuite } from "vitest";
 import { getBenchFn } from "vitest/suite";
-import { InstrumentedRunner as CodSpeedRunner } from "../instrumented";
+import { SimulationRunner as CodSpeedRunner } from "../simulation";
 
 const coreMocks = vi.hoisted(() => {
   return {

@@ -6,17 +6,17 @@ import {
 import { Bench, Fn, FnOptions, Task } from "tinybench";
 import { BaseBenchRunner } from "./shared";
 
-export function setupCodspeedInstrumentedBench(
+export function setupCodspeedSimulationBench(
   bench: Bench,
   rootCallingFile: string
 ): void {
-  const runner = new InstrumentedBenchRunner(bench, rootCallingFile);
+  const runner = new SimulationBenchRunner(bench, rootCallingFile);
   runner.setupBenchMethods();
 }
 
-class InstrumentedBenchRunner extends BaseBenchRunner {
+class SimulationBenchRunner extends BaseBenchRunner {
   protected getModeName(): string {
-    return "instrumented mode";
+    return "simulation mode";
   }
 
   private taskCompletionMessage() {

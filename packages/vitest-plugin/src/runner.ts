@@ -1,3 +1,3 @@
-import { InstrumentedRunner } from "./instrumented";
+import { SimulationRunner } from "./simulation";
 
-export default InstrumentedRunner;
+export default SimulationRunner;
