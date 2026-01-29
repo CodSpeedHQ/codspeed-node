@@ -18,7 +18,7 @@ import {
 const currentFileName =
   typeof __filename === "string"
     ? __filename
-    : new URL("simulation.mjs", import.meta.url).pathname;
+    : new URL("analysis.mjs", import.meta.url).pathname;
 
 /**
  * @deprecated
@@ -29,7 +29,7 @@ function logCodSpeed(message: string) {
   console.log(`[CodSpeed] ${message}`);
 }
 
-async function runSimulationBench(
+async function runAnalysisBench(
   benchmark: Benchmark,
   suite: RunnerTestSuite,
   currentSuiteName: string
@@ -60,7 +60,7 @@ async function runSimulationBench(
   logCodSpeed(`${uri} done`);
 }
 
-async function runSimulationBenchmarkSuite(
+async function runAnalysisBenchmarkSuite(
   suite: RunnerTestSuite,
   parentSuiteName?: string
 ) {
@@ -74,16 +74,16 @@ async function runSimulationBenchmarkSuite(
     if (task.mode !== "run") continue;
 
     if (isVitestTaskBenchmark(task)) {
-      await runSimulationBench(task, suite, currentSuiteName);
+      await runAnalysisBench(task, suite, currentSuiteName);
     } else if (task.type === "suite") {
-      await runSimulationBenchmarkSuite(task, currentSuiteName);
+      await runAnalysisBenchmarkSuite(task, currentSuiteName);
     }
   }
 
   await callSuiteHook(suite, suite, "afterAll");
 }
 
-export class SimulationRunner extends NodeBenchmarkRunner {
+export class AnalysisRunner extends NodeBenchmarkRunner {
   async runSuite(suite: RunnerTestSuite): Promise<void> {
     logDebug(`PROCESS PID: ${process.pid} in ${currentFileName}`);
     setupCore();
@@ -91,11 +91,11 @@ export class SimulationRunner extends NodeBenchmarkRunner {
     patchRootSuiteWithFullFilePath(suite);
 
     logCodSpeed(`running suite ${suite.name}`);
-    await runSimulationBenchmarkSuite(suite);
+    await runAnalysisBenchmarkSuite(suite);
     logCodSpeed(`running suite ${suite.name} done`);
 
     teardownCore();
   }
 }
 
-export default SimulationRunner;
+export default AnalysisRunner;

@@ -21,8 +21,8 @@ export default defineConfig([
     external: ["@codspeed/core", /^vitest/],
   },
   {
-    input: "src/simulation.ts",
-    output: { file: "dist/simulation.mjs", format: "es" },
+    input: "src/analysis.ts",
+    output: { file: "dist/analysis.mjs", format: "es" },
     plugins: jsPlugins(pkg.version),
     external: ["@codspeed/core", /^vitest/],
   },
