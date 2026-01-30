@@ -48,13 +48,17 @@ export default function codspeedPlugin(): Plugin {
     config(): ViteUserConfig {
       const runnerFile = getRunnerFile();
       const runnerMode = getCodspeedRunnerMode();
+      const v8Flags = getV8Flags();
 
       const config: ViteUserConfig = {
         test: {
           pool: "forks",
+          execArgv: v8Flags,
+          // @ts-expect-error Compat with Vitest v3
+          // See: https://vitest.dev/guide/migration.html#pool-rework
           poolOptions: {
             forks: {
-              execArgv: getV8Flags(),
+              execArgv: v8Flags,
             },
           },
           globalSetup: [getCodSpeedFileFromName("globalSetup")],
