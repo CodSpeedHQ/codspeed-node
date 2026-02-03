@@ -16,4 +16,4 @@ fi
 # Fail if there are any unstaged changes left
 git diff --exit-code
 
-pnpm lerna version $1 --force-publish --no-private
+pnpm lerna version "$1" --force-publish --no-private --sign-git-tag
