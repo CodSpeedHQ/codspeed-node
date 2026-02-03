@@ -3,3 +3,4 @@ node_modules
 dist
 generated
 packages/core/src/native_core/instruments/hooks
+**/pnpm-lock.yaml
