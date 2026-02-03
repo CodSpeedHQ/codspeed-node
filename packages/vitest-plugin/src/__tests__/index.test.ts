@@ -10,6 +10,21 @@ const coreMocks = vi.hoisted(() => {
   };
 });
 
+const fsMocks = vi.hoisted(() => {
+  let mockVersion = "4.0.18"; // default to v4
+  return {
+    readFileSync: vi.fn((path: string) => {
+      if (path.includes("vitest/package.json")) {
+        return JSON.stringify({ version: mockVersion });
+      }
+      throw new Error(`File not found: ${path}`);
+    }),
+    setMockVersion: (version: string) => {
+      mockVersion = version;
+    },
+  };
+});
+
 const resolvedCodSpeedPlugin = codspeedPlugin();
 const applyPluginFunction = resolvedCodSpeedPlugin.apply;
 if (typeof applyPluginFunction !== "function")
@@ -18,6 +33,12 @@ if (typeof applyPluginFunction !== "function")
 vi.mock("@codspeed/core", async (importOriginal) => {
   const mod = await importOriginal<typeof import("@codspeed/core")>();
   return { ...mod, ...coreMocks };
+});
+
+vi.mock("fs", () => {
+  return {
+    readFileSync: fsMocks.readFileSync,
+  };
 });
 
 console.warn = vi.fn();
@@ -79,12 +100,51 @@ describe("codSpeedPlugin", () => {
     });
   });
 
-  it("should apply the codspeed config", async () => {
+  it("should apply the codspeed config for v4", () => {
     const config = resolvedCodSpeedPlugin.config;
     if (typeof config !== "function")
       throw new Error("config is not a function");
 
-    expect(config.call({} as never, {}, fromPartial({}))).toStrictEqual({
+    const result = config.call({} as never, {}, fromPartial({}));
+
+    expect(result).toStrictEqual({
+      test: {
+        globalSetup: [
+          expect.stringContaining("packages/vitest-plugin/src/globalSetup.ts"),
+        ],
+        pool: "forks",
+        execArgv: [
+          "--interpreted-frames-native-stack",
+          "--allow-natives-syntax",
+          "--hash-seed=1",
+          "--random-seed=1",
+          "--no-opt",
+          "--predictable",
+          "--predictable-gc-schedule",
+          "--expose-gc",
+          "--no-concurrent-sweeping",
+          "--max-old-space-size=4096",
+        ],
+        runner: expect.stringContaining(
+          "packages/vitest-plugin/src/simulation.ts"
+        ),
+      },
+    });
+  });
+
+  it("should apply the codspeed config for v3 with poolOptions", () => {
+    // Set mock version to v3
+    fsMocks.setMockVersion("3.2.0");
+
+    // Create a new plugin instance to pick up the mocked version
+    const v3Plugin = codspeedPlugin();
+    const config = v3Plugin.config;
+    if (typeof config !== "function")
+      throw new Error("config is not a function");
+
+    const result = config.call({} as never, {}, fromPartial({}));
+
+    expect(result).toStrictEqual({
       test: {
         globalSetup: [
           expect.stringContaining("packages/vitest-plugin/src/globalSetup.ts"),
@@ -111,5 +171,8 @@ describe("codSpeedPlugin", () => {
         ),
       },
     });
+
+    // Reset mock version back to v4
+    fsMocks.setMockVersion("4.0.18");
   });
 });
