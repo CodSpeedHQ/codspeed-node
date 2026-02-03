@@ -1,0 +1,13 @@
+{
+  "name": "with-vitest-v3",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bench-vitest": "vitest bench --run"
+  },
+  "devDependencies": {
+    "@codspeed/vitest-plugin": "workspace:*",
+    "typescript": "^5.1.3",
+    "vitest": "^3.2.4"
+  }
+}
