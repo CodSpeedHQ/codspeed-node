@@ -1,3 +1,3 @@
-import { SimulationRunner } from "./simulation";
+import { AnalysisRunner } from "./analysis";
 
-export default SimulationRunner;
+export default AnalysisRunner;

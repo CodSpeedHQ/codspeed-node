@@ -1,5 +1,6 @@
 import {
   getCodspeedRunnerMode,
+  getInstrumentMode,
   getV8Flags,
   InstrumentHooks,
   mongoMeasurement,
@@ -36,12 +37,12 @@ function getVitestMajorVersion(): number | null {
 }
 
 function getRunnerFile(): string | undefined {
-  const codspeedRunnerMode = getCodspeedRunnerMode();
-  if (codspeedRunnerMode === "disabled") {
+  const instrumentMode = getInstrumentMode();
+  if (instrumentMode === "disabled") {
     return undefined;
   }
 
-  return getCodSpeedFileFromName(codspeedRunnerMode);
+  return getCodSpeedFileFromName(instrumentMode);
 }
 
 export default function codspeedPlugin(): Plugin {
@@ -52,7 +53,7 @@ export default function codspeedPlugin(): Plugin {
         return false;
       }
       if (
-        getCodspeedRunnerMode() == "simulation" &&
+        getInstrumentMode() == "analysis" &&
         !InstrumentHooks.isInstrumented()
       ) {
         console.warn("[CodSpeed] bench detected but no instrumentation found");

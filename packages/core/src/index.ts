@@ -10,7 +10,9 @@ export const isBound = native_core.isBound;
 
 export const mongoMeasurement = new MongoMeasurement();
 
-type CodSpeedRunnerMode = "disabled" | "simulation" | "walltime";
+type CodSpeedRunnerMode = "disabled" | "simulation" | "memory" | "walltime";
+
+type InstrumentMode = "disabled" | "analysis" | "walltime";
 
 export function getCodspeedRunnerMode(): CodSpeedRunnerMode {
   const isCodSpeedEnabled = process.env.CODSPEED_ENV !== undefined;
@@ -25,6 +27,8 @@ export function getCodspeedRunnerMode(): CodSpeedRunnerMode {
     codspeedRunnerMode === "simulation"
   ) {
     return "simulation";
+  } else if (codspeedRunnerMode === "memory") {
+    return "memory";
   } else if (codspeedRunnerMode === "walltime") {
     return "walltime";
   }
@@ -33,6 +37,15 @@ export function getCodspeedRunnerMode(): CodSpeedRunnerMode {
     `Unknown codspeed runner mode: ${codspeedRunnerMode}, defaulting to disabled`
   );
   return "disabled";
+}
+
+export function getInstrumentMode(): InstrumentMode {
+  const runnerMode = getCodspeedRunnerMode();
+  // Both "simulation" and "memory" map to "analysis" instrument mode
+  if (runnerMode === "simulation" || runnerMode === "memory") {
+    return "analysis";
+  }
+  return runnerMode; // "disabled" or "walltime"
 }
 
 export const setupCore = () => {
@@ -59,4 +72,5 @@ export { getV8Flags, tryIntrospect } from "./introspection";
 export { optimizeFunction, optimizeFunctionSync } from "./optimization";
 export * from "./utils";
 export * from "./walltime";
+export type { InstrumentMode };
 export const InstrumentHooks = native_core.InstrumentHooks;

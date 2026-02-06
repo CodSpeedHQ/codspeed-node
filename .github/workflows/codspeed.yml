@@ -23,11 +23,22 @@ jobs:
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm moon run :build
 
-      - name: Run benchmarks
-        # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
+      - name: Run simulation benchmarks
         uses: CodSpeedHQ/action@main
         with:
-          mode: instrumentation
+          mode: simulation
+          run: |
+            pnpm moon run tinybench-plugin:bench
+            pnpm moon run vitest-plugin:bench
+            pnpm moon run benchmark.js-plugin:bench
+            pnpm --workspace-concurrency 1 -r bench-tinybench
+            pnpm --workspace-concurrency 1 -r bench-benchmark-js
+            pnpm --workspace-concurrency 1 -r bench-vitest
+
+      - name: Run memory benchmarks
+        uses: CodSpeedHQ/action@main
+        with:
+          mode: memory
           run: |
             pnpm moon run tinybench-plugin:bench
             pnpm moon run vitest-plugin:bench
