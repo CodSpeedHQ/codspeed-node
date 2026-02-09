@@ -1,6 +1,7 @@
 import {
   getCodspeedRunnerMode,
   getGitDir,
+  getInstrumentMode,
   InstrumentHooks,
   mongoMeasurement,
   SetupInstrumentsRequestBody,
@@ -11,7 +12,7 @@ import path from "path";
 import { get as getStackTrace } from "stack-trace";
 import { Bench } from "tinybench";
 import { fileURLToPath } from "url";
-import { setupCodspeedSimulationBench } from "./simulation";
+import { setupCodspeedAnalysisBench } from "./analysis";
 import { getOrCreateUriMap } from "./uri";
 import { setupCodspeedWalltimeBench } from "./walltime";
 
@@ -39,9 +40,10 @@ export function withCodSpeed(bench: Bench): Bench {
     return rawAdd.bind(bench)(name, fn, opts);
   };
 
-  if (codspeedRunnerMode === "simulation") {
-    setupCodspeedSimulationBench(bench, rootCallingFile);
-  } else if (codspeedRunnerMode === "walltime") {
+  const instrumentMode = getInstrumentMode();
+  if (instrumentMode === "analysis") {
+    setupCodspeedAnalysisBench(bench, rootCallingFile);
+  } else if (instrumentMode === "walltime") {
     setupCodspeedWalltimeBench(bench, rootCallingFile);
   }
 

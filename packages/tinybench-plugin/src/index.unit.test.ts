@@ -2,12 +2,12 @@ import { Bench } from "tinybench";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { withCodSpeed } from ".";
 
-const mockSimulation = vi.hoisted(() => ({
-  setupCodspeedSimulationBench: vi.fn(),
+const mockAnalysis = vi.hoisted(() => ({
+  setupCodspeedAnalysisBench: vi.fn(),
 }));
 
-vi.mock("./simulation", () => ({
-  ...mockSimulation,
+vi.mock("./analysis", () => ({
+  ...mockAnalysis,
 }));
 
 const mockWalltime = vi.hoisted(() => ({
@@ -38,23 +38,33 @@ describe("withCodSpeed behavior without different codspeed modes", () => {
     expect(shouldBeCalled.mock.calls.length).toBeGreaterThan(1000);
   });
 
-  it("should run in simulation mode when CODSPEED_RUNNER_MODE=instrumentation", async () => {
+  it("should run in analysis mode when CODSPEED_RUNNER_MODE=instrumentation", async () => {
     process.env.CODSPEED_ENV = "true";
     process.env.CODSPEED_RUNNER_MODE = "instrumentation";
 
     withCodSpeed(new Bench());
 
-    expect(mockSimulation.setupCodspeedSimulationBench).toHaveBeenCalled();
+    expect(mockAnalysis.setupCodspeedAnalysisBench).toHaveBeenCalled();
     expect(mockWalltime.setupCodspeedWalltimeBench).not.toHaveBeenCalled();
   });
 
-  it("should run in simulation mode when CODSPEED_RUNNER_MODE=simulation", async () => {
+  it("should run in analysis mode when CODSPEED_RUNNER_MODE=simulation", async () => {
     process.env.CODSPEED_ENV = "true";
     process.env.CODSPEED_RUNNER_MODE = "simulation";
 
     withCodSpeed(new Bench());
 
-    expect(mockSimulation.setupCodspeedSimulationBench).toHaveBeenCalled();
+    expect(mockAnalysis.setupCodspeedAnalysisBench).toHaveBeenCalled();
+    expect(mockWalltime.setupCodspeedWalltimeBench).not.toHaveBeenCalled();
+  });
+
+  it("should run in analysis mode when CODSPEED_RUNNER_MODE=memory", async () => {
+    process.env.CODSPEED_ENV = "true";
+    process.env.CODSPEED_RUNNER_MODE = "memory";
+
+    withCodSpeed(new Bench());
+
+    expect(mockAnalysis.setupCodspeedAnalysisBench).toHaveBeenCalled();
     expect(mockWalltime.setupCodspeedWalltimeBench).not.toHaveBeenCalled();
   });
 
@@ -64,7 +74,7 @@ describe("withCodSpeed behavior without different codspeed modes", () => {
 
     withCodSpeed(new Bench());
 
-    expect(mockSimulation.setupCodspeedSimulationBench).not.toHaveBeenCalled();
+    expect(mockAnalysis.setupCodspeedAnalysisBench).not.toHaveBeenCalled();
     expect(mockWalltime.setupCodspeedWalltimeBench).toHaveBeenCalled();
   });
 });

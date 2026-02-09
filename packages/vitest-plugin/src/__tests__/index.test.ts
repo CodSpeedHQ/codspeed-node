@@ -126,7 +126,7 @@ describe("codSpeedPlugin", () => {
           "--max-old-space-size=4096",
         ],
         runner: expect.stringContaining(
-          "packages/vitest-plugin/src/simulation.ts"
+          "packages/vitest-plugin/src/analysis.ts"
         ),
       },
     });
@@ -167,7 +167,7 @@ describe("codSpeedPlugin", () => {
           },
         },
         runner: expect.stringContaining(
-          "packages/vitest-plugin/src/simulation.ts"
+          "packages/vitest-plugin/src/analysis.ts"
         ),
       },
     });

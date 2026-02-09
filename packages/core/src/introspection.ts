@@ -1,15 +1,15 @@
 import { writeFileSync } from "fs";
-import { getCodspeedRunnerMode } from ".";
+import { getInstrumentMode } from ".";
 
 const CUSTOM_INTROSPECTION_EXIT_CODE = 0;
 
 export const getV8Flags = () => {
   const nodeVersionMajor = parseInt(process.version.slice(1).split(".")[0]);
-  const codspeedRunnerMode = getCodspeedRunnerMode();
+  const instrumentMode = getInstrumentMode();
 
   const flags = ["--interpreted-frames-native-stack", "--allow-natives-syntax"];
 
-  if (codspeedRunnerMode === "simulation") {
+  if (instrumentMode === "analysis") {
     flags.push(
       ...[
         "--hash-seed=1",

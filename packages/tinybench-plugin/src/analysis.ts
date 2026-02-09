@@ -1,4 +1,5 @@
 import {
+  getCodspeedRunnerMode,
   InstrumentHooks,
   mongoMeasurement,
   optimizeFunction,
@@ -6,17 +7,18 @@ import {
 import { Bench, Fn, FnOptions, Task } from "tinybench";
 import { BaseBenchRunner } from "./shared";
 
-export function setupCodspeedSimulationBench(
+export function setupCodspeedAnalysisBench(
   bench: Bench,
   rootCallingFile: string
 ): void {
-  const runner = new SimulationBenchRunner(bench, rootCallingFile);
+  const runner = new AnalysisBenchRunner(bench, rootCallingFile);
   runner.setupBenchMethods();
 }
 
-class SimulationBenchRunner extends BaseBenchRunner {
+class AnalysisBenchRunner extends BaseBenchRunner {
   protected getModeName(): string {
-    return "simulation mode";
+    const runnerMode = getCodspeedRunnerMode();
+    return `${runnerMode} mode`;
   }
 
   private taskCompletionMessage() {

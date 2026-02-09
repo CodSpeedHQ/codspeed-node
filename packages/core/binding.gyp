@@ -14,7 +14,9 @@
         "-Wno-unused-variable",
         "-Wno-unused-parameter",
         "-Wno-unused-but-set-variable",
-        "-Wno-type-limits"
+        "-Wno-type-limits",
+        "-Wno-format",
+        "-Wno-format-security"
       ],
       "cflags_cc": [
         "-Wno-maybe-uninitialized",
