@@ -1,6 +1,6 @@
 {
   "name": "@codspeed/tinybench-plugin",
-  "version": "5.1.0",
+  "version": "5.2.0",
   "description": "tinybench compatibility layer for CodSpeed",
   "keywords": [
     "codspeed",
@@ -31,7 +31,7 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@codspeed/core": "workspace:^5.1.0",
+    "@codspeed/core": "workspace:^5.2.0",
     "stack-trace": "1.0.0-pre2"
   },
   "peerDependencies": {
