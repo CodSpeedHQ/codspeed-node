@@ -9,7 +9,7 @@ import {
   RunnerTaskResultPack,
   type RunnerTestSuite,
 } from "vitest";
-import { NodeBenchmarkRunner } from "vitest/runners";
+import { NodeBenchmarkRunner } from "../compat";
 import { patchRootSuiteWithFullFilePath } from "../common";
 import { extractBenchmarkResults } from "./utils";
 

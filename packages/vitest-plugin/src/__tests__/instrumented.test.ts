@@ -1,6 +1,6 @@
 import { fromPartial } from "@total-typescript/shoehorn";
 import { describe, expect, it, vi, type RunnerTestSuite } from "vitest";
-import { getBenchFn } from "vitest/suite";
+import { getBenchFn } from "../compat";
 import { AnalysisRunner as CodSpeedRunner } from "../analysis";
 
 const coreMocks = vi.hoisted(() => {
@@ -28,8 +28,8 @@ vi.mock("@codspeed/core", async (importOriginal) => {
 
 console.log = vi.fn();
 
-vi.mock("vitest/suite", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("vitest/suite")>();
+vi.mock("../compat", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../compat")>();
   return {
     ...actual,
     getBenchFn: vi.fn(),
