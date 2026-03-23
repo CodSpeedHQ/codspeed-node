@@ -38,9 +38,8 @@
   "devDependencies": {
     "@total-typescript/shoehorn": "^0.1.1",
     "execa": "^8.0.1",
-    "rolldown": "1.0.0-rc.11",
     "tinybench": "^2.9.0",
-    "vite": "^8.0.0",
-    "vitest": "^4.0.18"
+    "vite": "^7.0.0",
+    "vitest": "^4.1.1"
   }
 }

@@ -10,7 +10,7 @@ import {
   type RunnerTaskResult,
   type RunnerTestSuite,
 } from "vitest";
-import { getBenchOptions } from "vitest/suite";
+import { getBenchOptions } from "../compat";
 import { isVitestTaskBenchmark } from "../common";
 
 export async function extractBenchmarkResults(

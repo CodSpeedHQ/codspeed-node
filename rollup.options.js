@@ -23,3 +23,15 @@ export const jsPlugins = (version) => [
   commonjs(),
   resolve(),
 ];
+
+export const jsPluginsWithTarget = (version, target) => [
+  json(),
+  esbuild({
+    target,
+    define: {
+      __VERSION__: '"' + version + '"',
+    },
+  }),
+  commonjs(),
+  resolve(),
+];

@@ -7,8 +7,7 @@ import {
   teardownCore,
 } from "@codspeed/core";
 import { Benchmark, type RunnerTestSuite } from "vitest";
-import { NodeBenchmarkRunner } from "vitest/runners";
-import { getBenchFn } from "vitest/suite";
+import { getBenchFn, NodeBenchmarkRunner } from "./compat";
 import {
   callSuiteHook,
   isVitestTaskBenchmark,
@@ -39,7 +38,6 @@ async function runAnalysisBench(
 
   await optimizeFunction(async () => {
     await callSuiteHook(suite, benchmark, "beforeEach");
-    // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench
     await fn();
     await callSuiteHook(suite, benchmark, "afterEach");
   });
@@ -49,7 +47,6 @@ async function runAnalysisBench(
   global.gc?.();
   await (async function __codspeed_root_frame__() {
     InstrumentHooks.startBenchmark();
-    // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench
     await fn();
     InstrumentHooks.stopBenchmark();
     InstrumentHooks.setExecutedBenchmark(process.pid, uri);

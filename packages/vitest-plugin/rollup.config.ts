@@ -1,5 +1,9 @@
 import { defineConfig } from "rollup";
-import { declarationsPlugin, jsPlugins } from "../../rollup.options";
+import {
+  declarationsPlugin,
+  jsPlugins,
+  jsPluginsWithTarget,
+} from "../../rollup.options";
 import pkg from "./package.json" assert { type: "json" };
 
 export default defineConfig([
@@ -23,13 +27,13 @@ export default defineConfig([
   {
     input: "src/analysis.ts",
     output: { file: "dist/analysis.mjs", format: "es" },
-    plugins: jsPlugins(pkg.version),
+    plugins: jsPluginsWithTarget(pkg.version, "esnext"),
     external: ["@codspeed/core", /^vitest/],
   },
   {
     input: "src/walltime/index.ts",
     output: { file: "dist/walltime.mjs", format: "es" },
-    plugins: jsPlugins(pkg.version),
+    plugins: jsPluginsWithTarget(pkg.version, "esnext"),
     external: ["@codspeed/core", /^vitest/],
   },
 ]);

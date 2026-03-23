@@ -1,8 +1,10 @@
 import { getGitDir } from "@codspeed/core";
 import path from "path";
 import { Benchmark, type RunnerTask, type RunnerTestSuite } from "vitest";
-import { getHooks } from "vitest/suite";
-type SuiteHooks = ReturnType<typeof getHooks>;
+import { getHooks } from "./compat";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SuiteHooks = Record<string, any[]>;
 
 function getSuiteHooks(suite: RunnerTestSuite, name: keyof SuiteHooks) {
   return getHooks(suite)?.[name] ?? [];
