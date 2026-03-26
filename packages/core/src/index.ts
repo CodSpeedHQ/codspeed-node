@@ -58,6 +58,13 @@ export const setupCore = () => {
   native_core.InstrumentHooks.setIntegration("codspeed-node", __VERSION__);
   linuxPerf.start();
   checkV8Flags();
+
+  // Collect Node.js runtime environment to detect changes that could
+  // cause performance differences across runs
+  const hooks = native_core.InstrumentHooks;
+  hooks.setEnvironment("nodejs", "version", process.versions.node);
+  hooks.setEnvironment("nodejs", "v8", process.versions.v8);
+  hooks.writeEnvironment(process.pid);
 };
 
 export const teardownCore = () => {

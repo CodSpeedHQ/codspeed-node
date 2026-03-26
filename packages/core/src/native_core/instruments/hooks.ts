@@ -33,6 +33,22 @@ export interface InstrumentHooks {
   setIntegration(name: string, version: string): number;
 
   /**
+   * Register a key-value pair under a named environment section.
+   * @param sectionName Section name (e.g. "Node.js")
+   * @param key Key name (e.g. "version")
+   * @param value Value (e.g. "22.0.0")
+   * @returns 0 on success, non-zero on error
+   */
+  setEnvironment(sectionName: string, key: string, value: string): number;
+
+  /**
+   * Flush all registered environment sections to disk.
+   * @param pid Process ID
+   * @returns 0 on success, non-zero on error
+   */
+  writeEnvironment(pid: number): number;
+
+  /**
    * Execute a callback function with __codspeed_root_frame__ in its stack trace
    * @param callback Function to execute
    */

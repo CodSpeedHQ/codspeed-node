@@ -81,6 +81,54 @@ Napi::Number SetIntegration(const Napi::CallbackInfo &info) {
   return Napi::Number::New(env, result);
 }
 
+Napi::Number SetEnvironment(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+
+  if (info.Length() != 3) {
+    Napi::TypeError::New(
+        env, "Expected 3 arguments: sectionName, key, and value")
+        .ThrowAsJavaScriptException();
+    return Napi::Number::New(env, 1);
+  }
+
+  if (!info[0].IsString() || !info[1].IsString() || !info[2].IsString()) {
+    Napi::TypeError::New(
+        env,
+        "Expected string (sectionName), string (key), and string (value)")
+        .ThrowAsJavaScriptException();
+    return Napi::Number::New(env, 1);
+  }
+
+  std::string section_name = info[0].As<Napi::String>().Utf8Value();
+  std::string key = info[1].As<Napi::String>().Utf8Value();
+  std::string value = info[2].As<Napi::String>().Utf8Value();
+
+  uint8_t result = instrument_hooks_set_environment(
+      hooks, section_name.c_str(), key.c_str(), value.c_str());
+  return Napi::Number::New(env, result);
+}
+
+Napi::Number WriteEnvironment(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+
+  if (info.Length() != 1) {
+    Napi::TypeError::New(env, "Expected 1 argument: pid")
+        .ThrowAsJavaScriptException();
+    return Napi::Number::New(env, 1);
+  }
+
+  if (!info[0].IsNumber()) {
+    Napi::TypeError::New(env, "Expected number (pid)")
+        .ThrowAsJavaScriptException();
+    return Napi::Number::New(env, 1);
+  }
+
+  uint32_t pid = info[0].As<Napi::Number>().Uint32Value();
+
+  uint8_t result = instrument_hooks_write_environment(hooks, pid);
+  return Napi::Number::New(env, result);
+}
+
 Napi::Value __attribute__ ((noinline)) __codspeed_root_frame__(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
 
@@ -117,6 +165,10 @@ Napi::Object Initialize(Napi::Env env, Napi::Object exports) {
                          Napi::Function::New(env, SetExecutedBenchmark));
   instrumentHooksObj.Set(Napi::String::New(env, "setIntegration"),
                          Napi::Function::New(env, SetIntegration));
+  instrumentHooksObj.Set(Napi::String::New(env, "setEnvironment"),
+                         Napi::Function::New(env, SetEnvironment));
+  instrumentHooksObj.Set(Napi::String::New(env, "writeEnvironment"),
+                         Napi::Function::New(env, WriteEnvironment));
   instrumentHooksObj.Set(Napi::String::New(env, "__codspeed_root_frame__"),
                          Napi::Function::New(env, __codspeed_root_frame__));
 

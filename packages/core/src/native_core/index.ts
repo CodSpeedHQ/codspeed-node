@@ -51,6 +51,14 @@ try {
       setIntegration: (_name: string, _version: string) => {
         return 0;
       },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      setEnvironment: (_sectionName: string, _key: string, _value: string) => {
+        return 0;
+      },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      writeEnvironment: (_pid: number) => {
+        return 0;
+      },
       __codspeed_root_frame__: <T>(callback: () => T): T => {
         return callback();
       },
