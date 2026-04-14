@@ -81,3 +81,28 @@ jobs:
         env:
           CODSPEED_SKIP_UPLOAD: true
           CODSPEED_DEBUG: true
+
+  walltime-macos-test:
+    runs-on: macos-latest
+    steps:
+      - uses: "actions/checkout@v4"
+        with:
+          fetch-depth: 0
+          submodules: true
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v3
+        with:
+          cache: pnpm
+          node-version-file: .nvmrc
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm moon run :build
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@main
+        env:
+          CODSPEED_SKIP_UPLOAD: "true"
+        with:
+          run: pnpm moon run vitest-plugin:bench
+          mode: walltime
+          # TODO: Remove this once the runner has been released with macos support
+          runner-version: branch:main
