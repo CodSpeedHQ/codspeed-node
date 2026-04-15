@@ -50,7 +50,7 @@ Napi::Number SetExecutedBenchmark(const Napi::CallbackInfo &info) {
     return Napi::Number::New(env, 1);
   }
 
-  uint32_t pid = info[0].As<Napi::Number>().Uint32Value();
+  int32_t pid = info[0].As<Napi::Number>().Int32Value();
   std::string uri = info[1].As<Napi::String>().Utf8Value();
 
   uint8_t result =
@@ -123,7 +123,7 @@ Napi::Number WriteEnvironment(const Napi::CallbackInfo &info) {
     return Napi::Number::New(env, 1);
   }
 
-  uint32_t pid = info[0].As<Napi::Number>().Uint32Value();
+  int32_t pid = info[0].As<Napi::Number>().Int32Value();
 
   uint8_t result = instrument_hooks_write_environment(hooks, pid);
   return Napi::Number::New(env, result);
