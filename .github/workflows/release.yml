@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 permissions:
   id-token: write
@@ -67,7 +68,8 @@ jobs:
           merge-multiple: true
           path: packages/core/prebuilds
 
-      - name: Publish the libraries
+      - if: github.event_name == 'push'
+        name: Publish the libraries
         run: |
           if [[ "${{ github.ref }}" == *"-alpha"* ]]; then
             pnpm publish -r --access=public --no-git-checks --tag=alpha
@@ -78,7 +80,8 @@ jobs:
           NPM_CONFIG_PROVENANCE: true
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Create a draft release
+      - if: github.event_name == 'push'
+        name: Create a draft release
         run: |
           NEW_VERSION=$(pnpm lerna list --json | jq -r '.[] | select(.name == "@codspeed/core") | .version')
           gh release create v$NEW_VERSION --title "v$NEW_VERSION" --generate-notes -d
