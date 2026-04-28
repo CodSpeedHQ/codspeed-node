@@ -3,7 +3,11 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "typeRoots": ["node_modules/@types", "../../node_modules/@types"]
+    "baseUrl": ".",
+    "typeRoots": ["node_modules/@types", "../../node_modules/@types"],
+    "paths": {
+      "vite": ["node_modules/vite/dist/node"]
+    }
   },
   "references": [{ "path": "../core" }],
   "include": ["src/**/*.ts"]
