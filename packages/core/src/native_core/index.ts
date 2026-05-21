@@ -59,6 +59,13 @@ try {
       writeEnvironment: (_pid: number) => {
         return 0;
       },
+      currentTimestamp: () => {
+        return 0n;
+      },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      addMarker: (_pid: number, _markerType: number, _timestamp: bigint) => {
+        return 0;
+      },
       __codspeed_root_frame__: <T>(callback: () => T): T => {
         return callback();
       },

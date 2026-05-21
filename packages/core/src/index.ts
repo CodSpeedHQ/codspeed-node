@@ -81,3 +81,9 @@ export * from "./utils";
 export * from "./walltime";
 export type { InstrumentMode };
 export const InstrumentHooks = native_core.InstrumentHooks;
+export {
+  MARKER_TYPE_SAMPLE_START,
+  MARKER_TYPE_SAMPLE_END,
+  MARKER_TYPE_BENCHMARK_START,
+  MARKER_TYPE_BENCHMARK_END,
+} from "./native_core/instruments/hooks";

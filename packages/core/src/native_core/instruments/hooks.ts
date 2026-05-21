@@ -49,8 +49,28 @@ export interface InstrumentHooks {
   writeEnvironment(pid: number): number;
 
   /**
+   * Returns a high-resolution timestamp (nanoseconds) suitable for marker
+   * emission. Mirrors `instrument_hooks_current_timestamp` in the C API.
+   */
+  currentTimestamp(): bigint;
+
+  /**
+   * Emit a marker for the given pid at the given timestamp.
+   * @param pid Process ID
+   * @param markerType One of MARKER_TYPE_*
+   * @param timestamp Timestamp (typically obtained from `currentTimestamp()`)
+   * @returns 0 on success, non-zero on error
+   */
+  addMarker(pid: number, markerType: number, timestamp: bigint): number;
+
+  /**
    * Execute a callback function with __codspeed_root_frame__ in its stack trace
    * @param callback Function to execute
    */
   __codspeed_root_frame__<T>(callback: () => T): T;
 }
+
+export const MARKER_TYPE_SAMPLE_START = 0;
+export const MARKER_TYPE_SAMPLE_END = 1;
+export const MARKER_TYPE_BENCHMARK_START = 2;
+export const MARKER_TYPE_BENCHMARK_END = 3;
