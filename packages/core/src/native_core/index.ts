@@ -59,9 +59,21 @@ try {
       writeEnvironment: (_pid: number) => {
         return 0;
       },
+      currentTimestamp: () => {
+        return 0n;
+      },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      addMarker: (_pid: number, _markerType: number, _timestamp: bigint) => {
+        return 0;
+      },
       __codspeed_root_frame__: <T>(callback: () => T): T => {
         return callback();
       },
+      // Mirror of core.h's marker types for the no-native-binding fallback.
+      MARKER_TYPE_SAMPLE_START: 0,
+      MARKER_TYPE_SAMPLE_END: 1,
+      MARKER_TYPE_BENCHMARK_START: 2,
+      MARKER_TYPE_BENCHMARK_END: 3,
     },
     isBound: false,
   };

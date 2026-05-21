@@ -34,7 +34,7 @@ export function getCodspeedRunnerMode(): CodSpeedRunnerMode {
   }
 
   console.warn(
-    `Unknown codspeed runner mode: ${codspeedRunnerMode}, defaulting to disabled`
+    `Unknown codspeed runner mode: ${codspeedRunnerMode}, defaulting to disabled`,
   );
   return "disabled";
 }
@@ -51,7 +51,7 @@ export function getInstrumentMode(): InstrumentMode {
 export const setupCore = () => {
   if (!native_core.isBound) {
     throw new Error(
-      "Native core module is not bound, CodSpeed integration will not work properly"
+      "Native core module is not bound, CodSpeed integration will not work properly",
     );
   }
 
@@ -81,3 +81,14 @@ export * from "./utils";
 export * from "./walltime";
 export type { InstrumentMode };
 export const InstrumentHooks = native_core.InstrumentHooks;
+
+// Marker type constants, sourced from the native addon (which reads them from
+// core.h) so they never drift from the native definitions.
+export const MARKER_TYPE_SAMPLE_START =
+  native_core.InstrumentHooks.MARKER_TYPE_SAMPLE_START;
+export const MARKER_TYPE_SAMPLE_END =
+  native_core.InstrumentHooks.MARKER_TYPE_SAMPLE_END;
+export const MARKER_TYPE_BENCHMARK_START =
+  native_core.InstrumentHooks.MARKER_TYPE_BENCHMARK_START;
+export const MARKER_TYPE_BENCHMARK_END =
+  native_core.InstrumentHooks.MARKER_TYPE_BENCHMARK_END;

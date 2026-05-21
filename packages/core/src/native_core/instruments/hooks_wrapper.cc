@@ -129,6 +129,48 @@ Napi::Number WriteEnvironment(const Napi::CallbackInfo &info) {
   return Napi::Number::New(env, result);
 }
 
+Napi::BigInt CurrentTimestamp(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+  uint64_t ts = instrument_hooks_current_timestamp();
+  return Napi::BigInt::New(env, ts);
+}
+
+Napi::Number AddMarker(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+
+  if (info.Length() != 3) {
+    Napi::TypeError::New(env,
+                         "Expected 3 arguments: pid, markerType, timestamp")
+        .ThrowAsJavaScriptException();
+    return Napi::Number::New(env, 1);
+  }
+
+  if (!info[0].IsNumber() || !info[1].IsNumber() ||
+      !(info[2].IsBigInt() || info[2].IsNumber())) {
+    Napi::TypeError::New(
+        env,
+        "Expected number (pid), number (markerType), bigint|number (timestamp)")
+        .ThrowAsJavaScriptException();
+    return Napi::Number::New(env, 1);
+  }
+
+  int32_t pid = info[0].As<Napi::Number>().Int32Value();
+  uint8_t marker_type =
+      static_cast<uint8_t>(info[1].As<Napi::Number>().Uint32Value());
+  uint64_t timestamp;
+  if (info[2].IsBigInt()) {
+    bool lossless = false;
+    timestamp = info[2].As<Napi::BigInt>().Uint64Value(&lossless);
+  } else {
+    timestamp =
+        static_cast<uint64_t>(info[2].As<Napi::Number>().DoubleValue());
+  }
+
+  uint8_t result =
+      instrument_hooks_add_marker(hooks, pid, marker_type, timestamp);
+  return Napi::Number::New(env, result);
+}
+
 Napi::Value __attribute__ ((noinline)) __codspeed_root_frame__(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
 
@@ -169,8 +211,23 @@ Napi::Object Initialize(Napi::Env env, Napi::Object exports) {
                          Napi::Function::New(env, SetEnvironment));
   instrumentHooksObj.Set(Napi::String::New(env, "writeEnvironment"),
                          Napi::Function::New(env, WriteEnvironment));
+  instrumentHooksObj.Set(Napi::String::New(env, "currentTimestamp"),
+                         Napi::Function::New(env, CurrentTimestamp));
+  instrumentHooksObj.Set(Napi::String::New(env, "addMarker"),
+                         Napi::Function::New(env, AddMarker));
   instrumentHooksObj.Set(Napi::String::New(env, "__codspeed_root_frame__"),
                          Napi::Function::New(env, __codspeed_root_frame__));
+
+  // Marker type constants, sourced from core.h so they never drift from the
+  // native definitions.
+  instrumentHooksObj.Set(Napi::String::New(env, "MARKER_TYPE_SAMPLE_START"),
+                         Napi::Number::New(env, MARKER_TYPE_SAMPLE_START));
+  instrumentHooksObj.Set(Napi::String::New(env, "MARKER_TYPE_SAMPLE_END"),
+                         Napi::Number::New(env, MARKER_TYPE_SAMPLE_END));
+  instrumentHooksObj.Set(Napi::String::New(env, "MARKER_TYPE_BENCHMARK_START"),
+                         Napi::Number::New(env, MARKER_TYPE_BENCHMARK_START));
+  instrumentHooksObj.Set(Napi::String::New(env, "MARKER_TYPE_BENCHMARK_END"),
+                         Napi::Number::New(env, MARKER_TYPE_BENCHMARK_END));
 
   exports.Set(Napi::String::New(env, "InstrumentHooks"), instrumentHooksObj);
 
