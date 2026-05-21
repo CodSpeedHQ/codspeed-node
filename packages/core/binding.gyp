@@ -16,8 +16,16 @@
         "-Wno-unused-but-set-variable",
         "-Wno-type-limits",
         "-Wno-format",
-        "-Wno-format-security"
+        "-Wno-format-security",
+        "-Wno-error=format-security"
       ],
+      "xcode_settings": {
+        "OTHER_CFLAGS": [
+          "-Wno-format",
+          "-Wno-format-security",
+          "-Wno-error=format-security"
+        ]
+      },
       "cflags_cc": [
         "-Wno-maybe-uninitialized",
         "-Wno-unused-variable",
