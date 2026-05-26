@@ -16,6 +16,7 @@ suite
     /o/.test("Hello World!");
   })
   .add("String#indexOf", function () {
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
     "Hello World!".indexOf("o") > -1;
   })
   .add("short body", () => {

@@ -13,7 +13,7 @@ interface NativeCoreWithBindingStatus extends NativeCore {
 
 let native_core: NativeCoreWithBindingStatus;
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const nativeCore = require("node-gyp-build")(
     path.dirname(__dirname),
   ) as NativeCore;
