@@ -4,15 +4,15 @@ import {
   msToNs,
   msToS,
   writeWalltimeResults,
-  type Benchmark as CodspeedBenchmark,
   type BenchmarkStats,
+  type Benchmark as CodspeedBenchmark,
 } from "@codspeed/core";
 import { Bench, Fn, Task, TaskResult } from "tinybench";
 import { BaseBenchRunner } from "./shared";
 
 export function setupCodspeedWalltimeBench(
   bench: Bench,
-  rootCallingFile: string
+  rootCallingFile: string,
 ): void {
   const runner = new WalltimeBenchRunner(bench, rootCallingFile);
   runner.setupBenchMethods();
@@ -90,11 +90,11 @@ class WalltimeBenchRunner extends BaseBenchRunner {
     }
 
     const warmupIterations = this.bench.opts.warmup
-      ? this.bench.opts.warmupIterations ?? TINYBENCH_WARMUP_DEFAULT
+      ? (this.bench.opts.warmupIterations ?? TINYBENCH_WARMUP_DEFAULT)
       : 0;
     const stats = convertTinybenchResultToBenchmarkStats(
       task.result,
-      warmupIterations
+      warmupIterations,
     );
 
     this.codspeedBenchmarks.push({
@@ -122,7 +122,7 @@ class WalltimeBenchRunner extends BaseBenchRunner {
     }
 
     console.log(
-      `[CodSpeed] Done collecting walltime data for ${this.bench.tasks.length} benches.`
+      `[CodSpeed] Done collecting walltime data for ${this.bench.tasks.length} benches.`,
     );
     return this.bench.tasks;
   }
@@ -132,7 +132,7 @@ const TINYBENCH_WARMUP_DEFAULT = 16;
 
 function convertTinybenchResultToBenchmarkStats(
   result: TaskResult,
-  warmupIterations: number
+  warmupIterations: number,
 ): BenchmarkStats {
   const { min, max, mean, sd, samples } = result.latency;
 

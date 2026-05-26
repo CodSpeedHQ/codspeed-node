@@ -44,13 +44,13 @@ export function calculateQuantiles({
   const iqr_outlier_rounds = sortedTimesNs.filter(
     (t) =>
       t < q1_ns - IQR_OUTLIER_FACTOR * iqr_ns ||
-      t > q3_ns + IQR_OUTLIER_FACTOR * iqr_ns
+      t > q3_ns + IQR_OUTLIER_FACTOR * iqr_ns,
   ).length;
 
   const stdev_outlier_rounds = sortedTimesNs.filter(
     (t) =>
       t < meanNs - STDEV_OUTLIER_FACTOR * stdevNs ||
-      t > meanNs + STDEV_OUTLIER_FACTOR * stdevNs
+      t > meanNs + STDEV_OUTLIER_FACTOR * stdevNs,
   ).length;
 
   return {

@@ -6,7 +6,7 @@ import { registerTimingBenchmarks } from "./timing";
 const LONG_BODY =
   new Array(1_000)
     .fill(
-      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Sunt, earum. Atque architecto vero veniam est tempora fugiat sint quo praesentium quia. Autem, veritatis omnis beatae iste delectus recusandae animi non."
+      "Lorem ipsum dolor sit amet consectetur adipisicing elit. Sunt, earum. Atque architecto vero veniam est tempora fugiat sint quo praesentium quia. Autem, veritatis omnis beatae iste delectus recusandae animi non.",
     )
     .join("\n") + "fixes #123";
 
@@ -39,7 +39,7 @@ bench
   console.table(bench.table());
 
   const timingBench = withCodSpeed(
-    new Bench({ name: "timing", iterations: 5, warmup: false })
+    new Bench({ name: "timing", iterations: 5, warmup: false }),
   );
 
   registerTimingBenchmarks(timingBench);

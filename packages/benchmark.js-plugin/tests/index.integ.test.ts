@@ -30,8 +30,8 @@ describe("Benchmark", () => {
         function () {
           /o/.test("Hello World!");
         },
-        benchOptions
-      )
+        benchOptions,
+      ),
     );
     const onComplete = jest.fn();
     bench.on("complete", onComplete);
@@ -40,7 +40,7 @@ describe("Benchmark", () => {
     expect(mockCore.InstrumentHooks.startBenchmark).not.toHaveBeenCalled();
     expect(mockCore.InstrumentHooks.stopBenchmark).not.toHaveBeenCalled();
     expect(
-      mockCore.InstrumentHooks.setExecutedBenchmark
+      mockCore.InstrumentHooks.setExecutedBenchmark,
     ).not.toHaveBeenCalled();
   });
   it("check core methods are called", async () => {
@@ -52,8 +52,8 @@ describe("Benchmark", () => {
         function () {
           /o/.test("Hello World!");
         },
-        benchOptions
-      )
+        benchOptions,
+      ),
     );
     const onComplete = jest.fn();
     bench.on("complete", onComplete);
@@ -63,7 +63,7 @@ describe("Benchmark", () => {
     expect(mockCore.InstrumentHooks.stopBenchmark).toHaveBeenCalled();
     expect(mockCore.InstrumentHooks.setExecutedBenchmark).toHaveBeenCalledWith(
       process.pid,
-      "packages/benchmark.js-plugin/tests/index.integ.test.ts::RegExpSingle"
+      "packages/benchmark.js-plugin/tests/index.integ.test.ts::RegExpSingle",
     );
   });
   it("check error handling", async () => {
@@ -74,8 +74,8 @@ describe("Benchmark", () => {
         () => {
           throw new Error("test");
         },
-        benchOptions
-      )
+        benchOptions,
+      ),
     );
     await expect(bench.run()).rejects.toThrowError("test");
   });
@@ -91,14 +91,14 @@ describe("Benchmark", () => {
           function () {
             /o/.test("Hello World!");
           },
-          benchOptions
-        )
+          benchOptions,
+        ),
       ).run();
       if (instrumented) {
         expect(logSpy).toHaveBeenCalledWith(
           expect.stringContaining(
-            "[CodSpeed] running with @codspeed/benchmark.js v"
-          )
+            "[CodSpeed] running with @codspeed/benchmark.js v",
+          ),
         );
         expect({
           log: logSpy.mock.calls.slice(1),
@@ -110,7 +110,7 @@ describe("Benchmark", () => {
           warn: warnSpy.mock.calls,
         }).toMatchSnapshot();
       }
-    }
+    },
   );
   it("should call setup and teardown", async () => {
     mockCore.InstrumentHooks.isInstrumented.mockReturnValue(true);
@@ -122,8 +122,8 @@ describe("Benchmark", () => {
         function () {
           /o/.test("Hello World!");
         },
-        { ...benchOptions, setup, teardown }
-      )
+        { ...benchOptions, setup, teardown },
+      ),
     );
     await bench.run();
     expect(setup).toHaveBeenCalled();
@@ -140,7 +140,7 @@ describe("Benchmark.Suite", () => {
       function () {
         /o/.test("Hello World!");
       },
-      benchOptions
+      benchOptions,
     );
     const onComplete = jest.fn();
     suite.on("complete", onComplete);
@@ -149,7 +149,7 @@ describe("Benchmark.Suite", () => {
     expect(mockCore.InstrumentHooks.startBenchmark).not.toHaveBeenCalled();
     expect(mockCore.InstrumentHooks.stopBenchmark).not.toHaveBeenCalled();
     expect(
-      mockCore.InstrumentHooks.setExecutedBenchmark
+      mockCore.InstrumentHooks.setExecutedBenchmark,
     ).not.toHaveBeenCalled();
   });
   it("check core methods are called", async () => {
@@ -159,7 +159,7 @@ describe("Benchmark.Suite", () => {
       function () {
         /o/.test("Hello World!");
       },
-      benchOptions
+      benchOptions,
     );
     const onComplete = jest.fn();
     suite.on("complete", onComplete);
@@ -168,7 +168,7 @@ describe("Benchmark.Suite", () => {
     expect(mockCore.InstrumentHooks.stopBenchmark).toHaveBeenCalled();
     expect(mockCore.InstrumentHooks.setExecutedBenchmark).toHaveBeenCalledWith(
       process.pid,
-      "packages/benchmark.js-plugin/tests/index.integ.test.ts::RegExp"
+      "packages/benchmark.js-plugin/tests/index.integ.test.ts::RegExp",
     );
   });
   it("check suite name is in the uri", async () => {
@@ -179,7 +179,7 @@ describe("Benchmark.Suite", () => {
         function () {
           /o/.test("Hello World!");
         },
-        benchOptions
+        benchOptions,
       )
       .add(() => {
         /o/.test("Hello World!");
@@ -188,11 +188,11 @@ describe("Benchmark.Suite", () => {
     expect(mockCore.InstrumentHooks.stopBenchmark).toHaveBeenCalledTimes(2);
     expect(mockCore.InstrumentHooks.setExecutedBenchmark).toHaveBeenCalledWith(
       process.pid,
-      "packages/benchmark.js-plugin/tests/index.integ.test.ts::thesuite::RegExp"
+      "packages/benchmark.js-plugin/tests/index.integ.test.ts::thesuite::RegExp",
     );
     expect(mockCore.InstrumentHooks.setExecutedBenchmark).toHaveBeenCalledWith(
       process.pid,
-      "packages/benchmark.js-plugin/tests/index.integ.test.ts::thesuite::unknown_1"
+      "packages/benchmark.js-plugin/tests/index.integ.test.ts::thesuite::unknown_1",
     );
   });
   it("check error handling", async () => {
@@ -201,7 +201,7 @@ describe("Benchmark.Suite", () => {
       "throwing",
       () => {
         throw new Error("test");
-      }
+      },
     );
     await expect(bench.run()).rejects.toThrowError("test");
   });
@@ -217,7 +217,7 @@ describe("Benchmark.Suite", () => {
           function () {
             /o/.test("Hello World!");
           },
-          benchOptions
+          benchOptions,
         )
         .add(() => {
           /o/.test("Hello World!");
@@ -226,8 +226,8 @@ describe("Benchmark.Suite", () => {
       if (instrumented) {
         expect(logSpy).toHaveBeenCalledWith(
           expect.stringContaining(
-            "[CodSpeed] running with @codspeed/benchmark.js v"
-          )
+            "[CodSpeed] running with @codspeed/benchmark.js v",
+          ),
         );
         expect({
           log: logSpy.mock.calls.slice(1),
@@ -239,7 +239,7 @@ describe("Benchmark.Suite", () => {
           warn: warnSpy.mock.calls,
         }).toMatchSnapshot();
       }
-    }
+    },
   );
   it("check nested file path is in the uri when bench is registered in another file", async () => {
     mockCore.InstrumentHooks.isInstrumented.mockReturnValue(true);
@@ -252,7 +252,7 @@ describe("Benchmark.Suite", () => {
     expect(mockCore.InstrumentHooks.stopBenchmark).toHaveBeenCalled();
     expect(mockCore.InstrumentHooks.setExecutedBenchmark).toHaveBeenCalledWith(
       process.pid,
-      "packages/benchmark.js-plugin/tests/registerBenchmarks.ts::thesuite::RegExp"
+      "packages/benchmark.js-plugin/tests/registerBenchmarks.ts::thesuite::RegExp",
     );
   });
   it("check that benchmarks with same name have different URIs when registered in different files", async () => {
@@ -267,11 +267,11 @@ describe("Benchmark.Suite", () => {
     expect(mockCore.InstrumentHooks.stopBenchmark).toHaveBeenCalledTimes(2);
     expect(mockCore.InstrumentHooks.setExecutedBenchmark).toHaveBeenCalledWith(
       process.pid,
-      "packages/benchmark.js-plugin/tests/registerBenchmarks.ts::thesuite::RegExp"
+      "packages/benchmark.js-plugin/tests/registerBenchmarks.ts::thesuite::RegExp",
     );
     expect(mockCore.InstrumentHooks.setExecutedBenchmark).toHaveBeenCalledWith(
       process.pid,
-      "packages/benchmark.js-plugin/tests/registerOtherBenchmarks.ts::thesuite::RegExp"
+      "packages/benchmark.js-plugin/tests/registerOtherBenchmarks.ts::thesuite::RegExp",
     );
   });
   it("should call setupCore and teardownCore only once after run()", async () => {
@@ -298,7 +298,7 @@ describe("Benchmark.Suite", () => {
       function () {
         /o/.test("Hello World!");
       },
-      { ...benchOptions, setup, teardown }
+      { ...benchOptions, setup, teardown },
     );
     await suite.run();
 

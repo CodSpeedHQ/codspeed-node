@@ -2,5 +2,6 @@ node_modules
 .rollup.cache
 dist
 generated
+**/build
 packages/core/src/native_core/instruments/hooks
 **/pnpm-lock.yaml

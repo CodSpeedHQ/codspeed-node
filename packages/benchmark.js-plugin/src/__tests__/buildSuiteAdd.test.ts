@@ -18,8 +18,8 @@ describe("buildSuiteAdd", () => {
     suite.add({ name: "test", fn: emptyBench });
     suite.forEach((bench: CodSpeedBenchmark) =>
       expect(bench.uri).toBe(
-        "packages/benchmark.js-plugin/src/__tests__/buildSuiteAdd.test.ts::test"
-      )
+        "packages/benchmark.js-plugin/src/__tests__/buildSuiteAdd.test.ts::test",
+      ),
     );
   });
 
@@ -28,8 +28,8 @@ describe("buildSuiteAdd", () => {
     suite.add(emptyBench, { name: "test" });
     suite.forEach((bench: CodSpeedBenchmark) =>
       expect(bench.uri).toBe(
-        "packages/benchmark.js-plugin/src/__tests__/buildSuiteAdd.test.ts::test"
-      )
+        "packages/benchmark.js-plugin/src/__tests__/buildSuiteAdd.test.ts::test",
+      ),
     );
   });
 
@@ -38,8 +38,8 @@ describe("buildSuiteAdd", () => {
     suite.add("test", { fn: emptyBench });
     suite.forEach((bench: CodSpeedBenchmark) =>
       expect(bench.uri).toBe(
-        "packages/benchmark.js-plugin/src/__tests__/buildSuiteAdd.test.ts::test"
-      )
+        "packages/benchmark.js-plugin/src/__tests__/buildSuiteAdd.test.ts::test",
+      ),
     );
   });
 
@@ -48,8 +48,8 @@ describe("buildSuiteAdd", () => {
     suite.add("test", emptyBench);
     suite.forEach((bench: CodSpeedBenchmark) =>
       expect(bench.uri).toBe(
-        "packages/benchmark.js-plugin/src/__tests__/buildSuiteAdd.test.ts::test"
-      )
+        "packages/benchmark.js-plugin/src/__tests__/buildSuiteAdd.test.ts::test",
+      ),
     );
   });
 
@@ -59,8 +59,8 @@ describe("buildSuiteAdd", () => {
     suite.add("test", emptyBench);
     suite.forEach((bench: CodSpeedBenchmark) =>
       expect(bench.uri).toBe(
-        "packages/benchmark.js-plugin/src/__tests__/buildSuiteAdd.test.ts::suite::test"
-      )
+        "packages/benchmark.js-plugin/src/__tests__/buildSuiteAdd.test.ts::suite::test",
+      ),
     );
   });
 

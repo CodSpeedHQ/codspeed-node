@@ -20,7 +20,7 @@ export const getV8Flags = () => {
         "--expose-gc",
         "--no-concurrent-sweeping",
         "--max-old-space-size=4096",
-      ]
+      ],
     );
     if (nodeVersionMajor < 18) {
       flags.push("--no-randomize-hashes");
@@ -40,7 +40,7 @@ export const tryIntrospect = () => {
     };
     writeFileSync(
       process.env.__CODSPEED_NODE_CORE_INTROSPECTION_PATH__,
-      JSON.stringify(introspectionMetadata)
+      JSON.stringify(introspectionMetadata),
     );
     process.exit(CUSTOM_INTROSPECTION_EXIT_CODE);
   }
@@ -50,11 +50,11 @@ export const checkV8Flags = () => {
   const requiredFlags = getV8Flags();
   const actualFlags = process.execArgv;
   const missingFlags = requiredFlags.filter(
-    (flag) => !actualFlags.includes(flag)
+    (flag) => !actualFlags.includes(flag),
   );
   if (missingFlags.length > 0) {
     console.warn(
-      `[CodSpeed] missing required flags: ${missingFlags.join(", ")}`
+      `[CodSpeed] missing required flags: ${missingFlags.join(", ")}`,
     );
   }
 };

@@ -6,16 +6,16 @@ import {
   type BenchmarkStats,
 } from "@codspeed/core";
 import {
-  type Benchmark as VitestBenchmark,
   type RunnerTaskResult,
   type RunnerTestSuite,
+  type Benchmark as VitestBenchmark,
 } from "vitest";
 import { getBenchOptions } from "vitest/suite";
 import { isVitestTaskBenchmark } from "../common";
 
 export async function extractBenchmarkResults(
   suite: RunnerTestSuite,
-  parentPath = ""
+  parentPath = "",
 ): Promise<Benchmark[]> {
   const benchmarks: Benchmark[] = [];
   const currentPath = parentPath ? `${parentPath}::${suite.name}` : suite.name;
@@ -37,7 +37,7 @@ export async function extractBenchmarkResults(
 
 async function processBenchmarkTask(
   task: VitestBenchmark,
-  suitePath: string
+  suitePath: string,
 ): Promise<Benchmark | null> {
   const uri = `${suitePath}::${task.name}`;
 
@@ -88,7 +88,7 @@ function convertVitestResultToBenchmarkStats(
     warmupTime?: number;
     warmupIterations?: number;
     iterations?: number;
-  }
+  },
 ): BenchmarkStats | null {
   const benchmark = result.benchmark;
 

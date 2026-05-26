@@ -67,7 +67,7 @@ function getCallingFile(): string {
  * Dynamically setup the CodSpeed instruments.
  */
 export async function setupInstruments(
-  body: SetupInstrumentsRequestBody
+  body: SetupInstrumentsRequestBody,
 ): Promise<SetupInstrumentsResponse> {
   if (!InstrumentHooks.isInstrumented()) {
     console.warn("[CodSpeed] No instrumentation found, using default mongoUrl");

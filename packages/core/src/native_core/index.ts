@@ -15,7 +15,7 @@ let native_core: NativeCoreWithBindingStatus;
 try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const nativeCore = require("node-gyp-build")(
-    path.dirname(__dirname)
+    path.dirname(__dirname),
   ) as NativeCore;
   native_core = {
     ...nativeCore,

@@ -36,11 +36,11 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
     if (benchmarks.length > 0) {
       writeWalltimeResults(benchmarks);
       console.log(
-        `[CodSpeed] Done collecting walltime data for ${benchmarks.length} benches.`
+        `[CodSpeed] Done collecting walltime data for ${benchmarks.length} benches.`,
       );
     } else {
       console.warn(
-        `[CodSpeed] No benchmark results found after suite execution`
+        `[CodSpeed] No benchmark results found after suite execution`,
       );
     }
   }
@@ -57,7 +57,7 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
     }
   }
 
-  async importTinybench(): Promise<typeof import("tinybench")> {
+  async importTinybench() {
     const tinybench = await super.importTinybench();
 
     if (this.isTinybenchHookedWithCodspeed) {
@@ -100,7 +100,7 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
   // Allow tinybench to retrieve the path to the currently running suite
   async onTaskUpdate(
     _: RunnerTaskResultPack[],
-    events: RunnerTaskEventPack[]
+    events: RunnerTaskEventPack[],
   ): Promise<void> {
     events.map((event) => {
       const [id, eventName] = event;

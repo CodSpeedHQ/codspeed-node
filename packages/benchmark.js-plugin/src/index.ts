@@ -18,17 +18,16 @@ declare const __VERSION__: string;
 
 tryIntrospect();
 
-interface WithCodSpeedBenchmark
-  extends Omit<
-    Benchmark,
-    "run" | "abort" | "clone" | "compare" | "emit" | "off" | "on" | "reset"
-  > {
+interface WithCodSpeedBenchmark extends Omit<
+  Benchmark,
+  "run" | "abort" | "clone" | "compare" | "emit" | "off" | "on" | "reset"
+> {
   abort(): WithCodSpeedBenchmark;
   clone(options: Benchmark.Options): WithCodSpeedBenchmark;
   compare(benchmark: Benchmark): number;
   off(
     type?: string,
-    listener?: CallableFunction
+    listener?: CallableFunction,
   ): Benchmark | Promise<Benchmark>;
   off(types: string[]): WithCodSpeedBenchmark;
   on(type?: string, listener?: CallableFunction): WithCodSpeedBenchmark;
@@ -38,31 +37,30 @@ interface WithCodSpeedBenchmark
   run(options?: Benchmark.Options): Benchmark | Promise<Benchmark>;
 }
 
-export interface WithCodSpeedSuite
-  extends Omit<
-    Benchmark.Suite,
-    | "run"
-    | "abort"
-    | "clone"
-    | "compare"
-    | "emit"
-    | "off"
-    | "on"
-    | "reset"
-    | "add"
-    | "filter"
-    | "each"
-    | "forEach"
-  > {
+export interface WithCodSpeedSuite extends Omit<
+  Benchmark.Suite,
+  | "run"
+  | "abort"
+  | "clone"
+  | "compare"
+  | "emit"
+  | "off"
+  | "on"
+  | "reset"
+  | "add"
+  | "filter"
+  | "each"
+  | "forEach"
+> {
   abort(): WithCodSpeedSuite;
   add(
     name: string,
     fn: CallableFunction | string,
-    options?: Benchmark.Options
+    options?: Benchmark.Options,
   ): WithCodSpeedSuite;
   add(
     fn: CallableFunction | string,
-    options?: Benchmark.Options
+    options?: Benchmark.Options,
   ): WithCodSpeedSuite;
   add(name: string, options?: Benchmark.Options): WithCodSpeedSuite;
   add(options: Benchmark.Options): WithCodSpeedSuite;
@@ -94,7 +92,7 @@ function withCodSpeedBenchmark(bench: Benchmark): WithCodSpeedBenchmark {
     const rawRun = bench.run;
     bench.run = (options?: Benchmark.Options) => {
       console.warn(
-        `[CodSpeed] bench detected but no instrumentation found, falling back to benchmark.js`
+        `[CodSpeed] bench detected but no instrumentation found, falling back to benchmark.js`,
       );
       return rawRun.bind(bench)(options);
     };
@@ -124,7 +122,7 @@ function withCodSpeedSuite(suite: Benchmark.Suite): WithCodSpeedSuite {
     const rawRun = suite.run;
     suite.run = (options?: Benchmark.Options) => {
       console.warn(
-        `[CodSpeed] ${suite.length} benches detected but no instrumentation found, falling back to benchmark.js`
+        `[CodSpeed] ${suite.length} benches detected but no instrumentation found, falling back to benchmark.js`,
       );
       return rawRun.bind(suite)(options);
     };
@@ -135,7 +133,7 @@ function withCodSpeedSuite(suite: Benchmark.Suite): WithCodSpeedSuite {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/ban-ts-comment
   // @ts-ignore
   suite.run = async function (
-    options?: Benchmark.Options
+    options?: Benchmark.Options,
   ): Promise<Benchmark.Suite> {
     const suiteName = suite.name;
     const benches = this as unknown as BenchmarkWithOptions[];
@@ -231,7 +229,7 @@ async function runBenchmarks({
  * Dynamically setup the CodSpeed instruments.
  */
 export async function setupInstruments(
-  body: SetupInstrumentsRequestBody
+  body: SetupInstrumentsRequestBody,
 ): Promise<SetupInstrumentsResponse> {
   if (!InstrumentHooks.isInstrumented()) {
     console.warn("[CodSpeed] No instrumentation found, using default mongoUrl");

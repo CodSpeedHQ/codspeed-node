@@ -8,13 +8,13 @@ describe("globalSetup", () => {
     const teardown = globalSetup();
 
     expect(console.log).toHaveBeenCalledWith(
-      "[CodSpeed] @codspeed/vitest-plugin v1.0.0 - setup"
+      "[CodSpeed] @codspeed/vitest-plugin v1.0.0 - setup",
     );
 
     teardown();
 
     expect(console.log).toHaveBeenCalledWith(
-      "[CodSpeed] @codspeed/vitest-plugin v1.0.0 - teardown"
+      "[CodSpeed] @codspeed/vitest-plugin v1.0.0 - teardown",
     );
 
     expect(() => teardown()).toThrowError("teardown called twice");
