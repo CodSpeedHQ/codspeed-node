@@ -8,7 +8,9 @@ import { registerBenchmarks } from "./registerBenchmarks";
 import { registerOtherBenchmarks } from "./registerOtherBenchmarks";
 
 jest.mock("@codspeed/core", () => {
-  mockCore.getGitDir = jest.requireActual("@codspeed/core").getGitDir;
+  const actual = jest.requireActual("@codspeed/core");
+  mockCore.getGitDir = actual.getGitDir;
+  mockCore.getCallingFile = actual.getCallingFile;
   return mockCore;
 });
 

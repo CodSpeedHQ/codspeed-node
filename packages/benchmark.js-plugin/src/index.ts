@@ -1,4 +1,5 @@
 import {
+  getCallingFile,
   InstrumentHooks,
   mongoMeasurement,
   optimizeFunction,
@@ -11,7 +12,6 @@ import {
 } from "@codspeed/core";
 import Benchmark from "benchmark";
 import buildSuiteAdd from "./buildSuiteAdd";
-import getCallingFile from "./getCallingFile";
 import { CodSpeedBenchmark } from "./types";
 
 declare const __VERSION__: string;
