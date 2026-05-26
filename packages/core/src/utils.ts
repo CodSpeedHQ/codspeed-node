@@ -1,4 +1,4 @@
-import { findUpSync, Options as FindupOptions } from "find-up";
+import { Options as FindupOptions, findUpSync } from "find-up";
 import { dirname } from "path";
 
 export function getGitDir(path: string): string | undefined {

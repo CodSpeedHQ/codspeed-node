@@ -6,7 +6,7 @@ export const taskUriMap = new WeakMap<Bench, Map<string, string>>();
 export function getTaskUri(
   bench: Bench,
   taskName: string,
-  rootCallingFile: string
+  rootCallingFile: string,
 ): string {
   const uriMap = taskUriMap.get(bench);
   return uriMap?.get(taskName) || `${rootCallingFile}::${taskName}`;

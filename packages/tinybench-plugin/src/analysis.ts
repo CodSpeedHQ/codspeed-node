@@ -9,7 +9,7 @@ import { BaseBenchRunner } from "./shared";
 
 export function setupCodspeedAnalysisBench(
   bench: Bench,
-  rootCallingFile: string
+  rootCallingFile: string,
 ): void {
   const runner = new AnalysisBenchRunner(bench, rootCallingFile);
   runner.setupBenchMethods();
@@ -52,7 +52,7 @@ class AnalysisBenchRunner extends BaseBenchRunner {
     global.gc?.();
     await this.wrapWithInstrumentHooksAsync(
       this.wrapFunctionWithFrame(fn, true),
-      uri
+      uri,
     );
 
     await mongoMeasurement.stop(uri);

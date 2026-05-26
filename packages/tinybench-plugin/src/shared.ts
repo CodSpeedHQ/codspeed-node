@@ -20,7 +20,7 @@ export abstract class BaseBenchRunner {
 
   private logStart(): void {
     console.log(
-      `[CodSpeed] running with @codspeed/tinybench v${__VERSION__} (${this.getModeName()})`
+      `[CodSpeed] running with @codspeed/tinybench v${__VERSION__} (${this.getModeName()})`,
     );
   }
 
@@ -48,7 +48,7 @@ export abstract class BaseBenchRunner {
 
   protected async wrapWithInstrumentHooksAsync(
     fn: Fn,
-    uri: string
+    uri: string,
   ): Promise<unknown> {
     InstrumentHooks.startBenchmark();
     const result = await fn();

@@ -60,24 +60,24 @@ describe("CodSpeedRunner", () => {
     // setup
     expect(coreMocks.setupCore).toHaveBeenCalledTimes(1);
     expect(console.log).toHaveBeenCalledWith(
-      "[CodSpeed] running suite packages/vitest-plugin/src/__tests__/instrumented.test.ts"
+      "[CodSpeed] running suite packages/vitest-plugin/src/__tests__/instrumented.test.ts",
     );
 
     // run
     expect(coreMocks.mongoMeasurement.start).toHaveBeenCalledWith(
-      "packages/vitest-plugin/src/__tests__/instrumented.test.ts::test bench"
+      "packages/vitest-plugin/src/__tests__/instrumented.test.ts::test bench",
     );
     expect(coreMocks.InstrumentHooks.startBenchmark).toHaveBeenCalledTimes(1);
     expect(benchFn).toHaveBeenCalledTimes(8);
     expect(coreMocks.InstrumentHooks.stopBenchmark).toHaveBeenCalledTimes(1);
     expect(coreMocks.mongoMeasurement.stop).toHaveBeenCalledTimes(1);
     expect(console.log).toHaveBeenCalledWith(
-      "[CodSpeed] packages/vitest-plugin/src/__tests__/instrumented.test.ts::test bench done"
+      "[CodSpeed] packages/vitest-plugin/src/__tests__/instrumented.test.ts::test bench done",
     );
 
     // teardown
     expect(console.log).toHaveBeenCalledWith(
-      "[CodSpeed] running suite packages/vitest-plugin/src/__tests__/instrumented.test.ts done"
+      "[CodSpeed] running suite packages/vitest-plugin/src/__tests__/instrumented.test.ts done",
     );
     expect(coreMocks.teardownCore).toHaveBeenCalledTimes(1);
   });
@@ -112,24 +112,24 @@ describe("CodSpeedRunner", () => {
     // setup
     expect(coreMocks.setupCore).toHaveBeenCalledTimes(1);
     expect(console.log).toHaveBeenCalledWith(
-      "[CodSpeed] running suite packages/vitest-plugin/src/__tests__/instrumented.test.ts"
+      "[CodSpeed] running suite packages/vitest-plugin/src/__tests__/instrumented.test.ts",
     );
 
     // run
     expect(coreMocks.mongoMeasurement.start).toHaveBeenCalledWith(
-      "packages/vitest-plugin/src/__tests__/instrumented.test.ts::nested suite::test bench"
+      "packages/vitest-plugin/src/__tests__/instrumented.test.ts::nested suite::test bench",
     );
     expect(coreMocks.InstrumentHooks.startBenchmark).toHaveBeenCalledTimes(1);
     expect(benchFn).toHaveBeenCalledTimes(8);
     expect(coreMocks.InstrumentHooks.stopBenchmark).toHaveBeenCalledTimes(1);
     expect(coreMocks.mongoMeasurement.stop).toHaveBeenCalledTimes(1);
     expect(console.log).toHaveBeenCalledWith(
-      "[CodSpeed] packages/vitest-plugin/src/__tests__/instrumented.test.ts::nested suite::test bench done"
+      "[CodSpeed] packages/vitest-plugin/src/__tests__/instrumented.test.ts::nested suite::test bench done",
     );
 
     // teardown
     expect(console.log).toHaveBeenCalledWith(
-      "[CodSpeed] running suite packages/vitest-plugin/src/__tests__/instrumented.test.ts done"
+      "[CodSpeed] running suite packages/vitest-plugin/src/__tests__/instrumented.test.ts done",
     );
     expect(coreMocks.teardownCore).toHaveBeenCalledTimes(1);
   });

@@ -11,7 +11,7 @@ function getSuiteHooks(suite: RunnerTestSuite, name: keyof SuiteHooks) {
 export async function callSuiteHook<T extends keyof SuiteHooks>(
   suite: RunnerTestSuite,
   currentTask: RunnerTask,
-  name: T
+  name: T,
 ): Promise<void> {
   if (name === "beforeEach" && suite?.suite) {
     await callSuiteHook(suite.suite, currentTask, name);

@@ -32,7 +32,7 @@ function logCodSpeed(message: string) {
 async function runAnalysisBench(
   benchmark: Benchmark,
   suite: RunnerTestSuite,
-  currentSuiteName: string
+  currentSuiteName: string,
 ) {
   const uri = `${currentSuiteName}::${benchmark.name}`;
   const fn = getBenchFn(benchmark);
@@ -62,7 +62,7 @@ async function runAnalysisBench(
 
 async function runAnalysisBenchmarkSuite(
   suite: RunnerTestSuite,
-  parentSuiteName?: string
+  parentSuiteName?: string,
 ) {
   const currentSuiteName = parentSuiteName
     ? parentSuiteName + "::" + suite.name

@@ -51,14 +51,14 @@ describe("Benchmark.Suite", () => {
       .run();
 
     expect(mockCore.mongoMeasurement.start).toHaveBeenCalledWith(
-      "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp"
+      "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp",
     );
     expect(mockCore.mongoMeasurement.stop).toHaveBeenCalledTimes(1);
     expect(mockCore.InstrumentHooks.startBenchmark).toHaveBeenCalled();
     expect(mockCore.InstrumentHooks.stopBenchmark).toHaveBeenCalled();
     expect(mockCore.InstrumentHooks.setExecutedBenchmark).toHaveBeenCalledWith(
       process.pid,
-      "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp"
+      "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp",
     );
   });
   it("check suite name is in the uri", async () => {
@@ -73,21 +73,21 @@ describe("Benchmark.Suite", () => {
       .run();
 
     expect(mockCore.mongoMeasurement.start).toHaveBeenCalledWith(
-      "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp"
+      "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp",
     );
     expect(mockCore.mongoMeasurement.start).toHaveBeenCalledWith(
-      "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp2"
+      "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp2",
     );
     expect(mockCore.mongoMeasurement.stop).toHaveBeenCalledTimes(2);
     expect(mockCore.InstrumentHooks.startBenchmark).toHaveBeenCalledTimes(2);
     expect(mockCore.InstrumentHooks.stopBenchmark).toHaveBeenCalledTimes(2);
     expect(mockCore.InstrumentHooks.setExecutedBenchmark).toHaveBeenCalledWith(
       process.pid,
-      "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp"
+      "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp",
     );
     expect(mockCore.InstrumentHooks.setExecutedBenchmark).toHaveBeenCalledWith(
       process.pid,
-      "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp2"
+      "packages/tinybench-plugin/tests/index.integ.test.ts::RegExp2",
     );
   });
   it("check error handling", async () => {
@@ -116,8 +116,8 @@ describe("Benchmark.Suite", () => {
       if (instrumented) {
         expect(logSpy).toHaveBeenCalledWith(
           expect.stringContaining(
-            "[CodSpeed] running with @codspeed/tinybench v"
-          )
+            "[CodSpeed] running with @codspeed/tinybench v",
+          ),
         );
         expect({
           log: logSpy.mock.calls.slice(1),
@@ -129,7 +129,7 @@ describe("Benchmark.Suite", () => {
           warn: warnSpy.mock.calls,
         }).toMatchSnapshot();
       }
-    }
+    },
   );
   it("check nested file path is in the uri when bench is registered in another file", async () => {
     mockCore.InstrumentHooks.isInstrumented.mockReturnValue(true);
@@ -140,7 +140,7 @@ describe("Benchmark.Suite", () => {
     expect(mockCore.InstrumentHooks.stopBenchmark).toHaveBeenCalled();
     expect(mockCore.InstrumentHooks.setExecutedBenchmark).toHaveBeenCalledWith(
       process.pid,
-      "packages/tinybench-plugin/tests/registerBenchmarks.ts::RegExp"
+      "packages/tinybench-plugin/tests/registerBenchmarks.ts::RegExp",
     );
   });
   // TODO: this is not supported at the moment as tinybench does not support tasks with same name
@@ -156,18 +156,18 @@ describe("Benchmark.Suite", () => {
       expect(mockCore.InstrumentHooks.startBenchmark).toHaveBeenCalled();
       expect(mockCore.InstrumentHooks.stopBenchmark).toHaveBeenCalled();
       expect(
-        mockCore.InstrumentHooks.setExecutedBenchmark
+        mockCore.InstrumentHooks.setExecutedBenchmark,
       ).toHaveBeenCalledWith(
         process.pid,
-        "packages/tinybench-plugin/tests/registerBenchmarks.ts::RegExp"
+        "packages/tinybench-plugin/tests/registerBenchmarks.ts::RegExp",
       );
       expect(
-        mockCore.InstrumentHooks.setExecutedBenchmark
+        mockCore.InstrumentHooks.setExecutedBenchmark,
       ).toHaveBeenCalledWith(
         process.pid,
-        "packages/tinybench-plugin/tests/registerOtherBenchmarks.ts::RegExp"
+        "packages/tinybench-plugin/tests/registerOtherBenchmarks.ts::RegExp",
       );
-    }
+    },
   );
 
   it("should run before and after hooks", async () => {
@@ -186,14 +186,14 @@ describe("Benchmark.Suite", () => {
         function () {
           /o/.test("Hello World!");
         },
-        { afterAll, afterEach, beforeAll, beforeEach }
+        { afterAll, afterEach, beforeAll, beforeEach },
       )
       .add(
         "RegExp2",
         () => {
           /o/.test("Hello World!");
         },
-        { afterAll, afterEach, beforeAll, beforeEach }
+        { afterAll, afterEach, beforeAll, beforeEach },
       )
       .run();
 

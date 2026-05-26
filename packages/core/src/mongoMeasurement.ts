@@ -20,7 +20,7 @@ export class MongoMeasurement {
   }
 
   public async setupInstruments(
-    body: SetupInstrumentsRequestBody
+    body: SetupInstrumentsRequestBody,
   ): Promise<SetupInstrumentsResponse> {
     if (this.tracerClient === undefined) {
       throw new Error("MongoDB Instrumentation is not enabled");

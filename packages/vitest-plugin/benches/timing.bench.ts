@@ -18,7 +18,7 @@ describe("timing tests", () => {
     async () => {
       busySleep(1);
     },
-    timingBenchOptions
+    timingBenchOptions,
   );
 
   bench(
@@ -26,7 +26,7 @@ describe("timing tests", () => {
     async () => {
       busySleep(500);
     },
-    timingBenchOptions
+    timingBenchOptions,
   );
 
   bench(
@@ -34,6 +34,6 @@ describe("timing tests", () => {
     async () => {
       busySleep(1_000);
     },
-    timingBenchOptions
+    timingBenchOptions,
   );
 });

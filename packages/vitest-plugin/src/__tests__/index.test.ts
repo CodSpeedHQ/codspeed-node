@@ -68,7 +68,7 @@ describe("codSpeedPlugin", () => {
     it("should not apply the plugin when the mode is not benchmark", async () => {
       const applyPlugin = applyPluginFunction(
         {},
-        fromPartial({ mode: "test" })
+        fromPartial({ mode: "test" }),
       );
 
       expect(applyPlugin).toBe(false);
@@ -79,11 +79,11 @@ describe("codSpeedPlugin", () => {
 
       const applyPlugin = applyPluginFunction(
         {},
-        fromPartial({ mode: "benchmark" })
+        fromPartial({ mode: "benchmark" }),
       );
 
       expect(console.warn).toHaveBeenCalledWith(
-        "[CodSpeed] bench detected but no instrumentation found"
+        "[CodSpeed] bench detected but no instrumentation found",
       );
       expect(applyPlugin).toBe(true);
     });
@@ -93,7 +93,7 @@ describe("codSpeedPlugin", () => {
 
       const applyPlugin = applyPluginFunction(
         {},
-        fromPartial({ mode: "benchmark" })
+        fromPartial({ mode: "benchmark" }),
       );
 
       expect(applyPlugin).toBe(true);
@@ -126,7 +126,7 @@ describe("codSpeedPlugin", () => {
           "--max-old-space-size=4096",
         ],
         runner: expect.stringContaining(
-          "packages/vitest-plugin/src/analysis.ts"
+          "packages/vitest-plugin/src/analysis.ts",
         ),
       },
     });
@@ -167,7 +167,7 @@ describe("codSpeedPlugin", () => {
           },
         },
         runner: expect.stringContaining(
-          "packages/vitest-plugin/src/analysis.ts"
+          "packages/vitest-plugin/src/analysis.ts",
         ),
       },
     });

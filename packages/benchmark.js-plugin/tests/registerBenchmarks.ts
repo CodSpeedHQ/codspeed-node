@@ -6,6 +6,6 @@ export function registerBenchmarks(suite: WithCodSpeedSuite) {
     function () {
       /o/.test("Hello World!");
     },
-    { maxTime: 0.1 }
+    { maxTime: 0.1 },
   );
 }

@@ -13,7 +13,7 @@ function sendEvent(numberOfOperations: number): void {
 
 function logMetrics(
   numberOfOperations: number,
-  numberOfDeepOperations: number
+  numberOfDeepOperations: number,
 ): void {
   for (let i = 0; i < numberOfOperations; i++) {
     for (let i = 0; i < numberOfOperations; i++) {

@@ -10,7 +10,7 @@ export function getProfileFolder(): string | null {
 
 export function writeWalltimeResults(
   benchmarks: Benchmark[],
-  asyncWarning = false
+  asyncWarning = false,
 ): void {
   const profileFolder = getProfileFolder();
 
@@ -30,7 +30,7 @@ export function writeWalltimeResults(
   if (fs.existsSync(resultPath)) {
     try {
       const existingData = JSON.parse(
-        fs.readFileSync(resultPath, "utf-8")
+        fs.readFileSync(resultPath, "utf-8"),
       ) as ResultData;
       existingBenchmarks = existingData.benchmarks || [];
     } catch (error) {
@@ -55,7 +55,7 @@ export function writeWalltimeResults(
 
   fs.writeFileSync(resultPath, JSON.stringify(data, null, 2));
   console.log(
-    `[CodSpeed] Results written to ${resultPath} (${data.benchmarks.length} total benchmarks)`
+    `[CodSpeed] Results written to ${resultPath} (${data.benchmarks.length} total benchmarks)`,
   );
 }
 
