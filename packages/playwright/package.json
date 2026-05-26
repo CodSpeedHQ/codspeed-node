@@ -1,0 +1,49 @@
+{
+  "name": "@codspeed/playwright",
+  "version": "5.4.0",
+  "description": "Playwright benchmarking integration for CodSpeed",
+  "keywords": [
+    "codspeed",
+    "benchmark",
+    "playwright",
+    "electron",
+    "performance"
+  ],
+  "main": "dist/index.cjs",
+  "module": "dist/index.es5.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    "types": "./dist/index.d.ts",
+    "import": "./dist/index.es5.js",
+    "require": "./dist/index.cjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "NODE_NO_WARNINGS=1 rollup -c rollup.config.ts --configPlugin typescript",
+    "test": "echo 'no tests'",
+    "test/integ": "echo 'no integ tests'",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit --pretty",
+    "format": "prettier --config ../../.prettierrc.json --ignore-path ../../.prettierignore --check .",
+    "fix-format": "prettier --config ../../.prettierrc.json --ignore-path ../../.prettierignore --write .",
+    "clean": "rm -rf dist"
+  },
+  "author": "Guillaume Lagrange <guillaume@codspeed.io>",
+  "repository": "https://github.com/CodSpeedHQ/codspeed-node",
+  "homepage": "https://codspeed.io",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "playwright": "^1.48.0",
+    "playwright-core": "^1.48.0",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@codspeed/core": "workspace:^5.4.0"
+  },
+  "peerDependencies": {
+    "playwright": ">=1.40.0"
+  }
+}
