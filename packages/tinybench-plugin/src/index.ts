@@ -1,6 +1,6 @@
 import {
+  getCallingFile,
   getCodspeedRunnerMode,
-  getGitDir,
   getInstrumentMode,
   InstrumentHooks,
   mongoMeasurement,
@@ -8,10 +8,7 @@ import {
   SetupInstrumentsResponse,
   tryIntrospect,
 } from "@codspeed/core";
-import path from "path";
-import { get as getStackTrace } from "stack-trace";
 import { Bench } from "tinybench";
-import { fileURLToPath } from "url";
 import { setupCodspeedAnalysisBench } from "./analysis";
 import { getOrCreateUriMap } from "./uri";
 import { setupCodspeedWalltimeBench } from "./walltime";
@@ -24,13 +21,13 @@ export function withCodSpeed(bench: Bench): Bench {
     return bench;
   }
 
-  const rootCallingFile = getCallingFile();
+  const rootCallingFile = getCallingFile(1);
 
   // Compute and register URI for bench
   const uriMap = getOrCreateUriMap(bench);
   const rawAdd = bench.add;
   bench.add = (name, fn, opts?) => {
-    const callingFile = getCallingFile();
+    const callingFile = getCallingFile(1);
     let uri = callingFile;
     if (bench.name !== undefined) {
       uri += `::${bench.name}`;
@@ -48,19 +45,6 @@ export function withCodSpeed(bench: Bench): Bench {
   }
 
   return bench;
-}
-
-function getCallingFile(): string {
-  const stack = getStackTrace();
-  let callingFile = stack[2].getFileName(); // [here, withCodSpeed, actual caller]
-  const gitDir = getGitDir(callingFile);
-  if (gitDir === undefined) {
-    throw new Error("Could not find a git repository");
-  }
-  if (callingFile.startsWith("file://")) {
-    callingFile = fileURLToPath(callingFile);
-  }
-  return path.relative(gitDir, callingFile);
 }
 
 /**

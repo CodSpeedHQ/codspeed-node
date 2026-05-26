@@ -36,14 +36,12 @@
   "homepage": "https://codspeed.io",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/stack-trace": "^0.0.30",
     "esbuild-register": "^3.4.2",
     "tinybench": "^4.0.1",
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@codspeed/core": "workspace:^5.4.0",
-    "stack-trace": "1.0.0-pre2"
+    "@codspeed/core": "workspace:^5.4.0"
   },
   "peerDependencies": {
     "tinybench": ">=4.0.1"

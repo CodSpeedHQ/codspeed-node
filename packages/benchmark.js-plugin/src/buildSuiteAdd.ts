@@ -1,6 +1,6 @@
+import { getCallingFile } from "@codspeed/core";
 import { Options, Suite } from "benchmark";
 import { isFunction, isPlainObject } from "lodash";
-import getCallingFile from "./getCallingFile";
 
 function isOptions(options: unknown): options is Options {
   return isPlainObject(options);
