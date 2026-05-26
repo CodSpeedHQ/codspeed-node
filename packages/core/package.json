@@ -15,6 +15,18 @@
   "module": "dist/index.es5.js",
   "types": "dist/index.d.ts",
   "gypfile": true,
+  "scripts": {
+    "build": "NODE_NO_WARNINGS=1 rollup -c rollup.config.ts --configPlugin typescript",
+    "build-native-addon": "prebuildify --napi --strip",
+    "build-tracer-client": "openapi --client axios --input ./tracer.spec.json --name MongoTracer --output ./src/generated/openapi",
+    "test": "jest --passWithNoTests --silent",
+    "test/integ": "jest --passWithNoTests --silent -c jest.config.integ.js",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit --pretty",
+    "format": "prettier --config ../../.prettierrc.json --ignore-path ../../.prettierignore --check .",
+    "fix-format": "prettier --config ../../.prettierrc.json --ignore-path ../../.prettierignore --write .",
+    "clean": "rm -rf dist build generated/openapi"
+  },
   "author": "Arthur Pastel <arthur@codspeed.io>",
   "repository": "https://github.com/CodSpeedHQ/codspeed-node",
   "homepage": "https://codspeed.io",

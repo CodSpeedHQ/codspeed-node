@@ -1,6 +1,3 @@
 packages:
   - examples/*
   - packages/*
-
-onlyBuiltDependencies:
-  - '@moonrepo/cli'

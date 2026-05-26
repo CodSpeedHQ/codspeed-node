@@ -14,9 +14,6 @@ importers:
       '@commitlint/config-conventional':
         specifier: ^17.4.4
         version: 17.4.4
-      '@moonrepo/cli':
-        specifier: 1.37.3
-        version: 1.37.3
       '@rollup/plugin-commonjs':
         specifier: ^25.0.7
         version: 25.0.7(rollup@4.48.1)
@@ -89,6 +86,9 @@ importers:
       tslib:
         specifier: ^2.5.0
         version: 2.5.0
+      turbo:
+        specifier: ^2.5.6
+        version: 2.9.14
       typescript:
         specifier: 4.9.4
         version: 4.9.4
@@ -1637,45 +1637,6 @@ packages:
     engines: {node: ^14.15.0 || >=16.0.0}
     deprecated: In v9 of lerna, released in September 2025, the `lerna bootstrap`, `lerna add` and `lerna link` commands were finally fully removed after over 2 years of being deprecated. If you are still using these commands, please migrate to using your package manager's long-supported `workspaces` feature. You may find https://lerna.js.org/docs/legacy-package-management useful for this transition.
 
-  '@moonrepo/cli@1.37.3':
-    resolution: {integrity: sha512-VhSI5CzxWc3ppUPT0XaDyoVNPemw+rOGVOH6d115f1XFtJ0SN4P1ciPK7xJgDL4KDW7Ra3PyxT6iRocZVZu4gA==}
-    hasBin: true
-
-  '@moonrepo/core-linux-arm64-gnu@1.37.3':
-    resolution: {integrity: sha512-CqOSW4w4rEc7ZJq/zIMYJUnvxCh4kxJoR5yGaaHJQ2X9UHX6bY4W7NKrSi0R9ckZ3KMmjN4zVg5HlqSsC+eSGg==}
-    cpu: [arm64]
-    os: [linux]
-
-  '@moonrepo/core-linux-arm64-musl@1.37.3':
-    resolution: {integrity: sha512-fX/YmwDSqGHmqR8bvVbPjtBW+nxiHR4b+wx4br8l9ID23MpJ9dPPVOT0+CNZd+75VjqXS1e7LosPvvpbfLgKyg==}
-    cpu: [arm64]
-    os: [linux]
-
-  '@moonrepo/core-linux-x64-gnu@1.37.3':
-    resolution: {integrity: sha512-vCMhQqeoe6UAlJJA6NuXcPFZ2fE5tybR3lowFgqRj9CM9YEwilgxRaMY43q8CQOP0KZxi1bLNnmpe953Og3YaQ==}
-    cpu: [x64]
-    os: [linux]
-
-  '@moonrepo/core-linux-x64-musl@1.37.3':
-    resolution: {integrity: sha512-Ow8Z6PRDq42/lM3cpasISzaupaUGu4xbz3fqmLDTX8+s5/Fj+RCg9vTFbh/waGW9AHAX3KoA55YrALcmQweiJQ==}
-    cpu: [x64]
-    os: [linux]
-
-  '@moonrepo/core-macos-arm64@1.37.3':
-    resolution: {integrity: sha512-m7deylPDULFT3P119wa0my9IcnU894myWxW9q909JUbbRpbr4bYc2KnvZPgx8mru2TDX6jYJuE766bDcs1STTQ==}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@moonrepo/core-macos-x64@1.37.3':
-    resolution: {integrity: sha512-YtwwE7d4+A501j2xmmy3tuMk1Bwp38XpV2IXn/0d/ZkuYL/DnP0pdPlifFwAokMxfzDRe/kOn3D6jcuZ7BqNIA==}
-    cpu: [x64]
-    os: [darwin]
-
-  '@moonrepo/core-windows-x64-msvc@1.37.3':
-    resolution: {integrity: sha512-45drf0imufkSGRJKQtqJwoWmZJ7Gjq/ybpCilCcRMpG9Ceyd13RTNik/FJUQeAzkuNl20cFf1bFKKM4gGLZq1Q==}
-    cpu: [x64]
-    os: [win32]
-
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
     engines: {node: '>= 8'}
@@ -2129,6 +2090,36 @@ packages:
   '@tufjs/models@1.0.2':
     resolution: {integrity: sha512-uxarDtxTIK3f8hJS4yFhW/lvTa3tsiQU5iDCRut+NCnOXvNtEul0Ct58NIIcIx9Rkt7OFEK31Ndpqsd663nsew==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
+
+  '@turbo/darwin-64@2.9.14':
+    resolution: {integrity: sha512-t7QiPflaEyBE4oayeZtSmu4mEfjgIrcNlNNl1z1dmIVPqEdtA7+CfTf8d7KXsOGPh6aNgWjKxyvQg9uGfDQF+A==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@turbo/darwin-arm64@2.9.14':
+    resolution: {integrity: sha512-d23147mC9BsCPA9mJ0h/ubcpbRgcJBXbcG3+Vq7YLhjz3IXuvQsJ1UXH8f4MD76ZjJ4m/E4aRdJV+MW88CDfbw==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@turbo/linux-64@2.9.14':
+    resolution: {integrity: sha512-P3ZKB5tuUDdDQWuAsACGUR1qv9W7BNWxdxqVJ0kZNuNNPRaVYTPPikLcp79+GiEcW3npsR+KyP38lnQiBc5aSA==}
+    cpu: [x64]
+    os: [linux]
+
+  '@turbo/linux-arm64@2.9.14':
+    resolution: {integrity: sha512-ZRTlzcUMrrPv9ZuDzRF9n60Ym13bKeG9jDB8WjxyLhWNzV+AJQN+zdpIk3NJYf2zQsGUm1mNar2P0elRzLw25g==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@turbo/windows-64@2.9.14':
+    resolution: {integrity: sha512-exanwN6sIduZwykYeiTQj8kCmOhazP5WOz3bvXMcYtjhL6Z3iRWLewKrXCBq0bqwSP3iBMb/AerRCnHI4lx46A==}
+    cpu: [x64]
+    os: [win32]
+
+  '@turbo/windows-arm64@2.9.14':
+    resolution: {integrity: sha512-fVdCsnmYoKICsycbWuuGp6Jvi51/3G/UluFWuAUCvR8PIW5IJkAk5BM9UF8PSm0Q2IphWHFZjYEgjHsh3B9y/g==}
+    cpu: [arm64]
+    os: [win32]
 
   '@types/babel__core@7.20.0':
     resolution: {integrity: sha512-+n8dL/9GWblDO0iU6eZAwEIJVr5DWigtle+Q6HLOrh/pdbXOhOtqzq8VPPE2zvNJzSKY4vH/z3iT3tn0A3ypiQ==}
@@ -3090,10 +3081,6 @@ packages:
   detect-indent@5.0.0:
     resolution: {integrity: sha512-rlpvsxUtM0PQvy9iZe640/IWwWYyBsTApREbA1pHOpmOUIl9MkP/U4z7vTtg4Oaojvqhxt7sdufnT0EzGaR31g==}
     engines: {node: '>=4'}
-
-  detect-libc@2.0.4:
-    resolution: {integrity: sha512-3UDv+G9CsCKO1WKMGw9fwq/SWJYbI0c5Y7LU1AXYoDdbhE2AHQ6N6Nb34sG8Fj7T5APy8qXDCKuuIHd1BR0tVA==}
-    engines: {node: '>=8'}
 
   detect-newline@3.1.0:
     resolution: {integrity: sha512-TLz+x/vEXm/Y7P7wn1EJFNLxYpUD4TgMosxY6fAVJUnJMbupHBOncxyWUG9OpTaH9EBD7uFI5LfEgmMOc54DsA==}
@@ -6013,6 +6000,10 @@ packages:
     resolution: {integrity: sha512-jGYi5nG/kqgfTFQSdoN6PW9eIn+XRZqdXku+fSwNk6UpWIsWaV7pzAqPgFr85edOPhoyJDyBqCS+DCnHroMvrw==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
 
+  turbo@2.9.14:
+    resolution: {integrity: sha512-BQqXRr4UoWI3UPFrtznCLykYHxwxWh53iCB57x092jPMjIlW1wnm3N895g5irpiXmnxUhREBB0n6+y8BHhs4nw==}
+    hasBin: true
+
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
@@ -8231,39 +8222,6 @@ snapshots:
       - nx
       - supports-color
 
-  '@moonrepo/cli@1.37.3':
-    dependencies:
-      detect-libc: 2.0.4
-    optionalDependencies:
-      '@moonrepo/core-linux-arm64-gnu': 1.37.3
-      '@moonrepo/core-linux-arm64-musl': 1.37.3
-      '@moonrepo/core-linux-x64-gnu': 1.37.3
-      '@moonrepo/core-linux-x64-musl': 1.37.3
-      '@moonrepo/core-macos-arm64': 1.37.3
-      '@moonrepo/core-macos-x64': 1.37.3
-      '@moonrepo/core-windows-x64-msvc': 1.37.3
-
-  '@moonrepo/core-linux-arm64-gnu@1.37.3':
-    optional: true
-
-  '@moonrepo/core-linux-arm64-musl@1.37.3':
-    optional: true
-
-  '@moonrepo/core-linux-x64-gnu@1.37.3':
-    optional: true
-
-  '@moonrepo/core-linux-x64-musl@1.37.3':
-    optional: true
-
-  '@moonrepo/core-macos-arm64@1.37.3':
-    optional: true
-
-  '@moonrepo/core-macos-x64@1.37.3':
-    optional: true
-
-  '@moonrepo/core-windows-x64-msvc@1.37.3':
-    optional: true
-
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
       '@nodelib/fs.stat': 2.0.5
@@ -8755,6 +8713,24 @@ snapshots:
     dependencies:
       '@tufjs/canonical-json': 1.0.0
       minimatch: 8.0.4
+
+  '@turbo/darwin-64@2.9.14':
+    optional: true
+
+  '@turbo/darwin-arm64@2.9.14':
+    optional: true
+
+  '@turbo/linux-64@2.9.14':
+    optional: true
+
+  '@turbo/linux-arm64@2.9.14':
+    optional: true
+
+  '@turbo/windows-64@2.9.14':
+    optional: true
+
+  '@turbo/windows-arm64@2.9.14':
+    optional: true
 
   '@types/babel__core@7.20.0':
     dependencies:
@@ -9901,8 +9877,6 @@ snapshots:
   deprecation@2.3.1: {}
 
   detect-indent@5.0.0: {}
-
-  detect-libc@2.0.4: {}
 
   detect-newline@3.1.0: {}
 
@@ -13590,6 +13564,15 @@ snapshots:
     transitivePeerDependencies:
       - bluebird
       - supports-color
+
+  turbo@2.9.14:
+    optionalDependencies:
+      '@turbo/darwin-64': 2.9.14
+      '@turbo/darwin-arm64': 2.9.14
+      '@turbo/linux-64': 2.9.14
+      '@turbo/linux-arm64': 2.9.14
+      '@turbo/windows-64': 2.9.14
+      '@turbo/windows-arm64': 2.9.14
 
   type-check@0.4.0:
     dependencies:
