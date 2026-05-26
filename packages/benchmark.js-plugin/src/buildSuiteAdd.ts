@@ -22,10 +22,10 @@ export default function buildSuiteAdd(suite: Suite) {
   }
 
   function add(options: Options): Suite;
-  // eslint-disable-next-line @typescript-eslint/ban-types
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   function add(fn: Function, options?: Options): Suite;
   function add(name: string, options?: Options): Suite;
-  // eslint-disable-next-line @typescript-eslint/ban-types
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   function add(name: string, fn: Function, options?: Options): Suite;
   function add(name: unknown, fn?: unknown, opts?: unknown) {
     // 1 argument: (options: Options)
