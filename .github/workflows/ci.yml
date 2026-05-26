@@ -101,8 +101,8 @@ jobs:
         uses: CodSpeedHQ/action@main
         env:
           CODSPEED_SKIP_UPLOAD: "true"
+          # Samply fails to profile pnpm targets for now
+          CODSPEED_PROFILER_ENABLED: "false"
         with:
           run: pnpm moon run vitest-plugin:bench
           mode: walltime
-          # TODO: Remove this once the runner has been released with macos support
-          runner-version: branch:main
