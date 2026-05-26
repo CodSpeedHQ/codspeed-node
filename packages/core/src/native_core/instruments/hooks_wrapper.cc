@@ -161,6 +161,11 @@ Napi::Number AddMarker(const Napi::CallbackInfo &info) {
   if (info[2].IsBigInt()) {
     bool lossless = false;
     timestamp = info[2].As<Napi::BigInt>().Uint64Value(&lossless);
+    if (!lossless) {
+      Napi::TypeError::New(env, "timestamp BigInt is out of uint64_t range")
+          .ThrowAsJavaScriptException();
+      return Napi::Number::New(env, 1);
+    }
   } else {
     timestamp =
         static_cast<uint64_t>(info[2].As<Napi::Number>().DoubleValue());
