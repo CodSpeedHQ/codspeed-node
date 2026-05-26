@@ -14,6 +14,17 @@
   "files": [
     "dist"
   ],
+  "scripts": {
+    "build": "NODE_NO_WARNINGS=1 rollup -c rollup.config.ts --configPlugin typescript",
+    "test": "jest --passWithNoTests --silent",
+    "test/integ": "jest --passWithNoTests --silent -c jest.config.integ.js",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit --pretty",
+    "format": "prettier --config ../../.prettierrc.json --ignore-path ../../.prettierignore --check .",
+    "fix-format": "prettier --config ../../.prettierrc.json --ignore-path ../../.prettierignore --write .",
+    "bench": "node -r esbuild-register benches/sample.ts",
+    "clean": "rm -rf dist"
+  },
   "author": "Arthur Pastel <arthur@codspeed.io>",
   "repository": "https://github.com/CodSpeedHQ/codspeed-node",
   "homepage": "https://codspeed.io",

@@ -1,0 +1,116 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "stream",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "src/**",
+        "rollup.config.ts",
+        "tsconfig.json",
+        "tsconfig.*.json",
+        "$TURBO_ROOT$/tsconfig.base.json",
+        "$TURBO_ROOT$/rollup.options.js",
+      ],
+      "outputs": ["dist/**"],
+    },
+    "@codspeed/core#build": {
+      "dependsOn": [
+        "@codspeed/core#build-tracer-client",
+        "@codspeed/core#build-native-addon",
+      ],
+      "inputs": [
+        "src/**",
+        "rollup.config.ts",
+        "tsconfig.json",
+        "tsconfig.*.json",
+        "$TURBO_ROOT$/tsconfig.base.json",
+        "$TURBO_ROOT$/rollup.options.js",
+      ],
+      "outputs": ["dist/**"],
+    },
+    "@codspeed/core#build-native-addon": {
+      "inputs": [
+        "src/native_core/**/*.cc",
+        "src/native_core/**/*.c",
+        "src/native_core/**/*.h",
+        "binding.gyp",
+      ],
+      "outputs": ["prebuilds/**"],
+      "env": ["CC", "CXX"],
+    },
+    "@codspeed/core#build-tracer-client": {
+      "inputs": ["tracer.spec.json"],
+      "outputs": ["src/generated/openapi/**"],
+    },
+    "test": {
+      "dependsOn": ["build", "test/integ"],
+      "inputs": [
+        "src/**",
+        "tests/**",
+        "*.config.{js,cjs,mjs,ts}",
+        "tsconfig.json",
+        "tsconfig.*.json",
+        "$TURBO_ROOT$/tsconfig.base.json",
+      ],
+    },
+    "test/integ": {
+      "dependsOn": ["build"],
+      "inputs": [
+        "src/**",
+        "tests/**",
+        "*.config.{js,cjs,mjs,ts}",
+        "tsconfig.json",
+        "tsconfig.*.json",
+        "$TURBO_ROOT$/tsconfig.base.json",
+      ],
+    },
+    "typecheck": {
+      "dependsOn": ["build"],
+      "inputs": [
+        "src/**",
+        "tests/**",
+        "tsconfig.json",
+        "tsconfig.*.json",
+        "$TURBO_ROOT$/tsconfig.base.json",
+      ],
+    },
+    "lint": {
+      "dependsOn": ["build"],
+      "inputs": [
+        "src/**",
+        "tests/**",
+        ".eslintignore",
+        ".eslintrc.js",
+        "tsconfig.json",
+        "tsconfig.*.json",
+        "$TURBO_ROOT$/.eslintrc.json",
+      ],
+    },
+    "format": {
+      "inputs": [
+        "src/**",
+        "tests/**",
+        "*.config.{js,cjs,mjs,ts}",
+        "$TURBO_ROOT$/.prettierrc.json",
+        "$TURBO_ROOT$/.prettierignore",
+      ],
+    },
+    "fix-format": {
+      "cache": false,
+    },
+    "bench": {
+      "dependsOn": ["build"],
+      "inputs": ["benches/**"],
+      "cache": false,
+      "env": [
+        "CODSPEED_ENV",
+        "CODSPEED_RUNNER_MODE",
+        "CODSPEED_PROFILE_FOLDER",
+      ],
+    },
+    "clean": {
+      "cache": false,
+    },
+  },
+}

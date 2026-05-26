@@ -23,7 +23,7 @@ jobs:
           cache: pnpm
           node-version-file: .nvmrc
       - run: pnpm install --frozen-lockfile --prefer-offline
-      - run: pnpm moon check --all
+      - run: pnpm turbo run lint typecheck test
 
   list-examples:
     runs-on: "ubuntu-latest"
@@ -61,7 +61,7 @@ jobs:
           cache: pnpm
           node-version: ${{ matrix.node-version }}
       - run: pnpm install --frozen-lockfile --prefer-offline
-      - run: pnpm moon run :build
+      - run: pnpm turbo run build
 
       - name: Run benchmarks with tinybench-plugin
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
@@ -95,7 +95,7 @@ jobs:
           cache: pnpm
           node-version-file: .nvmrc
       - run: pnpm install --frozen-lockfile --prefer-offline
-      - run: pnpm moon run :build
+      - run: pnpm turbo run build
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@main
@@ -104,5 +104,5 @@ jobs:
           # Samply fails to profile pnpm targets for now
           CODSPEED_PROFILER_ENABLED: "false"
         with:
-          run: pnpm moon run vitest-plugin:bench
+          run: pnpm turbo run bench --filter=@codspeed/vitest-plugin
           mode: walltime

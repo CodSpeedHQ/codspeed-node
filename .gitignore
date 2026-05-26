@@ -129,7 +129,6 @@ packages/app/.env
 .vercel
 .DS_Store
 
-# moon
-.moon/cache
-.moon/docker
+# turbo
+.turbo/
 .rollup.cache/

@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         platform:
-          # The x86_64 Linux prebuild is generated when running pnpm moon run :build in the `build` job
+          # The x86_64 Linux prebuild is generated when running pnpm turbo run build in the `build` job
           - runs-on: codspeedhq-arm64-ubuntu-22.04
             name: linux-arm
           - runs-on: macos-latest
@@ -35,7 +35,7 @@ jobs:
           node-version-file: .nvmrc
       - run: pnpm install --frozen-lockfile --prefer-offline
       - name: Build native addon
-        run: pnpm moon core:build-native-addon
+        run: pnpm turbo run build-native-addon --filter=@codspeed/core
       - name: Upload prebuilds
         uses: actions/upload-artifact@v4
         with:
@@ -59,7 +59,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - run: pnpm install --frozen-lockfile --prefer-offline
       - name: Build the libraries
-        run: pnpm moon run :build
+        run: pnpm turbo run build
 
       - name: Download prebuilds
         uses: actions/download-artifact@v4

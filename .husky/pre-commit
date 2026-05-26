@@ -1,5 +1,5 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-pnpm moon run :lint :format :typecheck --affected --status=staged
+pnpm turbo run lint format typecheck --affected
 

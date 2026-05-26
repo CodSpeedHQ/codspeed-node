@@ -25,7 +25,15 @@
   "homepage": "https://codspeed.io",
   "license": "Apache-2.0",
   "scripts": {
-    "bench": "vitest bench"
+    "build": "NODE_NO_WARNINGS=1 rollup -c rollup.config.ts --configPlugin typescript",
+    "test": "vitest --run",
+    "test/integ": "echo 'no integ tests'",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit --pretty",
+    "format": "prettier --config ../../.prettierrc.json --ignore-path ../../.prettierignore --check .",
+    "fix-format": "prettier --config ../../.prettierrc.json --ignore-path ../../.prettierignore --write .",
+    "bench": "vitest bench --run",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "@codspeed/core": "workspace:^5.4.0"
