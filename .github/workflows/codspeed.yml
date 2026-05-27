@@ -12,8 +12,26 @@ permissions:
 
 jobs:
   codspeed-instrumented:
-    name: Run CodSpeed instrumented
+    name: Run CodSpeed instrumented (${{ matrix.plugin }})
     runs-on: "ubuntu-latest"
+    strategy:
+      fail-fast: false
+      # Shard by plugin so the benchmark groups run in parallel instead of
+      # sequentially. CodSpeed aggregates the per-shard uploads on the commit.
+      matrix:
+        include:
+          - plugin: tinybench
+            bench: |
+              pnpm turbo run bench --filter=@codspeed/tinybench-plugin
+              pnpm --workspace-concurrency 1 -r bench-tinybench
+          - plugin: vitest
+            bench: |
+              pnpm turbo run bench --filter=@codspeed/vitest-plugin
+              pnpm --workspace-concurrency 1 -r bench-vitest
+          - plugin: benchmark.js
+            bench: |
+              pnpm turbo run bench --filter=@codspeed/benchmark.js-plugin
+              pnpm --workspace-concurrency 1 -r bench-benchmark-js
     steps:
       - uses: "actions/checkout@v4"
         with:
@@ -24,6 +42,10 @@ jobs:
         with:
           cache: pnpm
           node-version-file: .nvmrc
+      - name: Restore turbo cache
+        uses: ./.github/actions/turbo-cache
+        with:
+          key-suffix: ${{ matrix.plugin }}
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm turbo run build
 
@@ -31,25 +53,13 @@ jobs:
         uses: CodSpeedHQ/action@main
         with:
           mode: simulation
-          run: |
-            pnpm turbo run bench --filter=@codspeed/tinybench-plugin
-            pnpm turbo run bench --filter=@codspeed/vitest-plugin
-            pnpm turbo run bench --filter=@codspeed/benchmark.js-plugin
-            pnpm --workspace-concurrency 1 -r bench-tinybench
-            pnpm --workspace-concurrency 1 -r bench-benchmark-js
-            pnpm --workspace-concurrency 1 -r bench-vitest
+          run: ${{ matrix.bench }}
 
       - name: Run memory benchmarks
         uses: CodSpeedHQ/action@main
         with:
           mode: memory
-          run: |
-            pnpm turbo run bench --filter=@codspeed/tinybench-plugin
-            pnpm turbo run bench --filter=@codspeed/vitest-plugin
-            pnpm turbo run bench --filter=@codspeed/benchmark.js-plugin
-            pnpm --workspace-concurrency 1 -r bench-tinybench
-            pnpm --workspace-concurrency 1 -r bench-benchmark-js
-            pnpm --workspace-concurrency 1 -r bench-vitest
+          run: ${{ matrix.bench }}
 
   codspeed-walltime:
     name: Run CodSpeed walltime
@@ -64,6 +74,8 @@ jobs:
         with:
           cache: pnpm
           node-version-file: .nvmrc
+      - name: Restore turbo cache
+        uses: ./.github/actions/turbo-cache
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm turbo run build
 
@@ -100,6 +112,9 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+
+      - name: Restore turbo cache
+        uses: ./.github/actions/turbo-cache
 
       - name: Install repo dependencies
         run: pnpm install --frozen-lockfile --prefer-offline

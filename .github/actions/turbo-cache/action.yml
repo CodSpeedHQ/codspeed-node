@@ -1,0 +1,28 @@
+name: Turbo cache
+description: >
+  Restore and persist the local Turbo cache (.turbo/cache) across CI runs.
+  Keyed on the OS, CPU arch and lockfile, with the commit SHA as a unique suffix
+  so each run writes a fresh entry while falling back to the closest prior cache.
+  Arch is part of the key because Turbo does not hash it into the native addon
+  build, so an x64 cache must not restore into an arm64 run. Turbo validates
+  restored entries by content hash, so a partial restore is always safe.
+
+inputs:
+  key-suffix:
+    description: >
+      Extra discriminator folded into the cache key. Set it when a job builds
+      under a config Turbo does not hash itself (e.g. a specific Node version
+      for the native addon ABI) so its cache stays separate.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/cache@v4
+      with:
+        path: .turbo/cache
+        key: turbo-${{ runner.os }}-${{ runner.arch }}-${{ inputs.key-suffix }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+        restore-keys: |
+          turbo-${{ runner.os }}-${{ runner.arch }}-${{ inputs.key-suffix }}-${{ hashFiles('pnpm-lock.yaml') }}-
+          turbo-${{ runner.os }}-${{ runner.arch }}-${{ inputs.key-suffix }}-
