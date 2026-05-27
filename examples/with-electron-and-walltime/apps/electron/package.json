@@ -1,0 +1,27 @@
+{
+  "name": "@mail-client-demo/electron",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Electron mail-client that renders the @mail-client-demo/model inbox.",
+  "type": "module",
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit",
+    "bench": "node test/inbox.e2e.ts"
+  },
+  "dependencies": {
+    "@mail-client-demo/model": "workspace:*"
+  },
+  "devDependencies": {
+    "@codspeed/playwright-plugin": "link:../../../../packages/playwright-plugin",
+    "@types/node": "^25.9.1",
+    "electron": "^42.2.0",
+    "electron-vite": "^5.0.0",
+    "playwright": "^1.60.0",
+    "tsx": "^4.22.3",
+    "vite": "^7.3.3"
+  }
+}

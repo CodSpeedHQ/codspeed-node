@@ -1,0 +1,24 @@
+{
+  "name": "@mail-client-demo/model",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Mail-client backend-for-frontend model (Email, Inbox, seed). Benchmarked under CodSpeed.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "bench": "vitest bench --run",
+    "bench:codspeed": "codspeed run --mode walltime pnpm bench",
+    "bench:codspeed:memory": "codspeed run --mode memory pnpm bench",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@codspeed/tinybench-plugin": "^5.4.0",
+    "@codspeed/vitest-plugin": "^5.4.0",
+    "@types/node": "^25.9.1",
+    "tinybench": "^6.0.2",
+    "vite": "^7.3.3",
+    "vitest": "^4.1.7"
+  }
+}

@@ -6,6 +6,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   codspeed-instrumented:
     name: Run CodSpeed instrumented
@@ -74,3 +78,55 @@ jobs:
             pnpm turbo run bench --filter=@codspeed/benchmark.js-plugin
             pnpm --workspace-concurrency 1 -r bench-tinybench
             pnpm --workspace-concurrency 1 -r bench-vitest
+
+  electron-e2e:
+    name: Run electron inbox e2e
+    runs-on: codspeed-macro
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      # The example links @codspeed/playwright-plugin to packages/playwright-plugin via the
+      # `link:` protocol, so the in-repo plugin must be built (under the repo's
+      # own Node version) before the example installs and resolves the symlink.
+      - name: Set up Node.js (repo)
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install repo dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Build @codspeed/playwright-plugin
+        run: pnpm turbo run build --filter=@codspeed/playwright-plugin
+
+      - name: Set up Node.js (example)
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: examples/with-electron-and-walltime/package.json
+          cache: pnpm
+          cache-dependency-path: examples/with-electron-and-walltime/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: examples/with-electron-and-walltime
+        run: pnpm install --frozen-lockfile
+
+      - name: Build electron app
+        working-directory: examples/with-electron-and-walltime
+        run: pnpm --filter @mail-client-demo/electron build
+
+      - name: Run electron inbox e2e under codspeed
+        uses: CodSpeedHQ/action@main
+        env:
+          CODSPEED_WALLTIME_PROFILER: "samply"
+        with:
+          working-directory: examples/with-electron-and-walltime
+          run: xvfb-run -a pnpm bench:electron
+          mode: walltime
