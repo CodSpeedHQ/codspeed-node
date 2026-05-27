@@ -225,7 +225,7 @@ importers:
   packages/benchmark.js-plugin:
     dependencies:
       '@codspeed/core':
-        specifier: workspace:^5.4.1-alpha.1
+        specifier: workspace:^5.4.1-alpha.2
         version: link:../core
       lodash:
         specifier: ^4.17.10
@@ -287,7 +287,7 @@ importers:
   packages/playwright:
     dependencies:
       '@codspeed/core':
-        specifier: workspace:^5.4.1-alpha.1
+        specifier: workspace:^5.4.1-alpha.2
         version: link:../core
     devDependencies:
       playwright:
@@ -303,7 +303,7 @@ importers:
   packages/tinybench-plugin:
     dependencies:
       '@codspeed/core':
-        specifier: workspace:^5.4.1-alpha.1
+        specifier: workspace:^5.4.1-alpha.2
         version: link:../core
     devDependencies:
       esbuild-register:
@@ -319,7 +319,7 @@ importers:
   packages/vitest-plugin:
     dependencies:
       '@codspeed/core':
-        specifier: workspace:^5.4.1-alpha.1
+        specifier: workspace:^5.4.1-alpha.2
         version: link:../core
     devDependencies:
       '@total-typescript/shoehorn':
@@ -3723,6 +3723,7 @@ packages:
   git-raw-commits@2.0.11:
     resolution: {integrity: sha512-VnctFhw+xfj8Va1xtfEqCUD2XDrbAPSJx+hSrE5K7fGdjZruW7XV+QOrN7LF/RJyvspRiD2I0asWsxFp0ya26A==}
     engines: {node: '>=10'}
+    deprecated: This package is no longer maintained. For the JavaScript API, please use @conventional-changelog/git-client instead.
     hasBin: true
 
   git-raw-commits@3.0.0:
