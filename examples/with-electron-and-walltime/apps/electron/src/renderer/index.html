@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
+    <title>Inbox</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <aside id="sidebar">
+        <div class="brand">Inbox</div>
+        <nav>
+          <button type="button" data-view="inbox" class="active">Inbox</button>
+          <button type="button" data-view="threads">Threads</button>
+        </nav>
+        <div class="stats" id="stats">—</div>
+      </aside>
+      <section id="main">
+        <header>
+          <input id="search" type="search" placeholder="Search inbox" autocomplete="off" />
+          <span id="status">
+            <span id="status-spinner" aria-hidden="true"></span>
+            <span id="status-text"></span>
+          </span>
+        </header>
+        <div id="progress-bar" hidden></div>
+        <div id="action-bar" hidden>
+          <span id="selection-count">0 selected</span>
+          <button type="button" id="archive-btn">Archive selected</button>
+          <button type="button" id="clear-selection-btn">Clear</button>
+        </div>
+        <div id="list-toolbar">
+          <button type="button" id="select-visible-btn">Select all visible</button>
+        </div>
+        <ul id="email-list"></ul>
+      </section>
+    </div>
+    <script type="module" src="./src/renderer.ts"></script>
+  </body>
+</html>

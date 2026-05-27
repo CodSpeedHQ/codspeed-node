@@ -1,0 +1,24 @@
+{
+  "name": "mail-client-demo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mail-client model + Electron client, benchmarked under CodSpeed",
+  "scripts": {
+    "bench": "pnpm --filter @mail-client-demo/model bench",
+    "bench:codspeed": "pnpm --filter @mail-client-demo/model bench:codspeed",
+    "bench:electron": "pnpm --filter @mail-client-demo/electron bench",
+    "electron": "pnpm --filter @mail-client-demo/electron dev",
+    "build:electron": "pnpm --filter @mail-client-demo/electron build",
+    "typecheck": "pnpm -r typecheck",
+    "format": "biome format --write .",
+    "lint": "biome check ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.15",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": "24.11.1"
+  },
+  "packageManager": "pnpm@10.25.0"
+}

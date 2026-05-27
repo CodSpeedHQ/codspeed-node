@@ -1,0 +1,78 @@
+name: CodSpeed (electron example)
+
+# Electron inbox e2e benchmarks for the examples/with-electron-and-walltime
+# example. It is a self-contained pnpm workspace pinned to its own Node version,
+# so the example steps run from that directory and resolve the Node version from
+# its package.json. The example links @codspeed/playwright to the in-repo
+# package, which is built first under the repo's Node version.
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: examples/with-electron-and-walltime
+
+jobs:
+  electron-e2e:
+    name: Run electron inbox e2e
+    runs-on: codspeed-macro
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      # The example links @codspeed/playwright to packages/playwright via the
+      # `link:` protocol, so the in-repo plugin must be built (under the repo's
+      # own Node version) before the example installs and resolves the symlink.
+      - name: Set up Node.js (repo)
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install repo dependencies
+        working-directory: .
+        run: pnpm install --frozen-lockfile --prefer-offline
+
+      - name: Build @codspeed/playwright
+        working-directory: .
+        run: pnpm turbo run build --filter=@codspeed/playwright
+
+      - name: Set up Node.js (example)
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: examples/with-electron-and-walltime/package.json
+          cache: pnpm
+          cache-dependency-path: examples/with-electron-and-walltime/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build electron app
+        run: pnpm --filter @mail-client-demo/electron build
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @mail-client-demo/electron exec playwright install --with-deps chromium
+
+      - name: Run electron inbox e2e under codspeed
+        uses: CodSpeedHQ/action@runner-alpha
+        env:
+          CODSPEED_WALLTIME_PROFILER: "samply"
+        with:
+          working-directory: examples/with-electron-and-walltime
+          run: xvfb-run -a pnpm bench:electron
+          mode: walltime
+          runner-version: 4.16.2-alpha.2

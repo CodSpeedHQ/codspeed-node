@@ -1,0 +1,9 @@
+node_modules/
+dist/
+out/
+.codspeed/
+*.log
+.DS_Store
+.vscode/
+.idea/
+coverage/
