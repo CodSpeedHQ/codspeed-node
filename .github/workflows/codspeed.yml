@@ -23,6 +23,14 @@ jobs:
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm moon run :build
 
+      - name: Install valgrind-codspeed
+        shell: bash
+        run: |
+          git clone https://github.com/CodSpeedHQ/valgrind-codspeed
+          cd valgrind-codspeed
+          git checkout cod-2714-investigate-pytest-flamegraph-regression
+          ./autogen.sh && ./configure && make -j$(nproc) && sudo make install
+
       - name: Run simulation benchmarks
         uses: CodSpeedHQ/action@main
         with:
