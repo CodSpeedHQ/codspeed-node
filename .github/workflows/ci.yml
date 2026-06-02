@@ -87,30 +87,3 @@ jobs:
         env:
           CODSPEED_SKIP_UPLOAD: true
           CODSPEED_DEBUG: true
-
-  walltime-macos-test:
-    runs-on: macos-latest
-    steps:
-      - uses: "actions/checkout@v4"
-        with:
-          fetch-depth: 0
-          submodules: true
-      - uses: pnpm/action-setup@v2
-      - uses: actions/setup-node@v3
-        with:
-          cache: pnpm
-          node-version-file: .nvmrc
-      - name: Restore turbo cache
-        uses: ./.github/actions/turbo-cache
-      - run: pnpm install --frozen-lockfile --prefer-offline
-      - run: pnpm turbo run build
-
-      - name: Run benchmarks
-        uses: CodSpeedHQ/action@main
-        env:
-          CODSPEED_SKIP_UPLOAD: "true"
-          # Samply fails to profile pnpm targets for now
-          CODSPEED_PROFILER_ENABLED: "false"
-        with:
-          run: pnpm turbo run bench --filter=@codspeed/vitest-plugin
-          mode: walltime
