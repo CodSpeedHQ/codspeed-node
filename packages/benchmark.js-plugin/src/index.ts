@@ -9,6 +9,8 @@ import {
   SetupInstrumentsResponse,
   teardownCore,
   tryIntrospect,
+  wrapWithRootFrame,
+  wrapWithRootFrameSync,
 } from "@codspeed/core";
 import Benchmark from "benchmark";
 import buildSuiteAdd from "./buildSuiteAdd";
@@ -195,7 +197,7 @@ async function runBenchmarks({
       await optimizeFunction(benchPayload);
       await mongoMeasurement.start(uri);
       global.gc?.();
-      await (async function __codspeed_root_frame__() {
+      await wrapWithRootFrame(async () => {
         InstrumentHooks.startBenchmark();
         await benchPayload();
         InstrumentHooks.stopBenchmark();
@@ -205,7 +207,7 @@ async function runBenchmarks({
     } else {
       optimizeFunctionSync(benchPayload);
       await mongoMeasurement.start(uri);
-      (function __codspeed_root_frame__() {
+      wrapWithRootFrameSync(() => {
         InstrumentHooks.startBenchmark();
         benchPayload();
         InstrumentHooks.stopBenchmark();

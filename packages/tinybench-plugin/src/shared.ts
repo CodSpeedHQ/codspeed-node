@@ -1,4 +1,11 @@
-import { InstrumentHooks, setupCore, teardownCore } from "@codspeed/core";
+import {
+  getInstrumentMode,
+  InstrumentHooks,
+  MARKER_TYPE_BENCHMARK_END,
+  MARKER_TYPE_BENCHMARK_START,
+  setupCore,
+  teardownCore,
+} from "@codspeed/core";
 import { Bench, Fn, Task } from "tinybench";
 import { getTaskUri } from "./uri";
 
@@ -40,10 +47,15 @@ export abstract class BaseBenchRunner {
 
   protected wrapWithInstrumentHooks<T>(fn: () => T, uri: string): T {
     InstrumentHooks.startBenchmark();
-    const result = fn();
-    InstrumentHooks.stopBenchmark();
-    InstrumentHooks.setExecutedBenchmark(process.pid, uri);
-    return result;
+    const runStart = InstrumentHooks.currentTimestamp();
+    try {
+      return fn();
+    } finally {
+      const runEnd = InstrumentHooks.currentTimestamp();
+      InstrumentHooks.stopBenchmark();
+      InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+      this.sendBenchmarkMarkers(runStart, runEnd);
+    }
   }
 
   protected async wrapWithInstrumentHooksAsync(
@@ -51,10 +63,15 @@ export abstract class BaseBenchRunner {
     uri: string,
   ): Promise<unknown> {
     InstrumentHooks.startBenchmark();
-    const result = await fn();
-    InstrumentHooks.stopBenchmark();
-    InstrumentHooks.setExecutedBenchmark(process.pid, uri);
-    return result;
+    const runStart = InstrumentHooks.currentTimestamp();
+    try {
+      return await fn();
+    } finally {
+      const runEnd = InstrumentHooks.currentTimestamp();
+      InstrumentHooks.stopBenchmark();
+      InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+      this.sendBenchmarkMarkers(runStart, runEnd);
+    }
   }
 
   protected abstract getModeName(): string;
@@ -62,6 +79,18 @@ export abstract class BaseBenchRunner {
   protected abstract runTaskSync(task: Task, uri: string): void;
   protected abstract finalizeAsyncRun(): Task[];
   protected abstract finalizeSyncRun(): Task[];
+
+  private sendBenchmarkMarkers(runStart: bigint, runEnd: bigint): void {
+    if (getInstrumentMode() !== "walltime") {
+      return;
+    }
+    InstrumentHooks.addMarker(
+      process.pid,
+      MARKER_TYPE_BENCHMARK_START,
+      runStart,
+    );
+    InstrumentHooks.addMarker(process.pid, MARKER_TYPE_BENCHMARK_END, runEnd);
+  }
 
   public setupBenchMethods(): void {
     this.bench.run = async () => {

@@ -3,6 +3,8 @@ import {
   InstrumentHooks,
   mongoMeasurement,
   optimizeFunction,
+  wrapWithRootFrame,
+  wrapWithRootFrameSync,
 } from "@codspeed/core";
 import { Bench, Fn, FnOptions, Task } from "tinybench";
 import { BaseBenchRunner } from "./shared";
@@ -25,18 +27,6 @@ class AnalysisBenchRunner extends BaseBenchRunner {
     return InstrumentHooks.isInstrumented() ? "Measured" : "Checked";
   }
 
-  private wrapFunctionWithFrame(fn: Fn, isAsync: boolean): Fn {
-    if (isAsync) {
-      return async function __codspeed_root_frame__() {
-        await fn();
-      };
-    } else {
-      return function __codspeed_root_frame__() {
-        fn();
-      };
-    }
-  }
-
   protected async runTaskAsync(task: Task, uri: string): Promise<void> {
     const { fnOpts, fn } = task as unknown as { fnOpts?: FnOptions; fn: Fn };
 
@@ -50,10 +40,7 @@ class AnalysisBenchRunner extends BaseBenchRunner {
     await mongoMeasurement.start(uri);
 
     global.gc?.();
-    await this.wrapWithInstrumentHooksAsync(
-      this.wrapFunctionWithFrame(fn, true),
-      uri,
-    );
+    await this.wrapWithInstrumentHooksAsync(wrapWithRootFrame(fn), uri);
 
     await mongoMeasurement.stop(uri);
     await fnOpts?.afterEach?.call(task, "run");
@@ -68,7 +55,7 @@ class AnalysisBenchRunner extends BaseBenchRunner {
     fnOpts?.beforeAll?.call(task, "run");
     fnOpts?.beforeEach?.call(task, "run");
 
-    this.wrapWithInstrumentHooks(this.wrapFunctionWithFrame(fn, false), uri);
+    this.wrapWithInstrumentHooks(wrapWithRootFrameSync(fn), uri);
 
     fnOpts?.afterEach?.call(task, "run");
     fnOpts?.afterAll?.call(task, "run");

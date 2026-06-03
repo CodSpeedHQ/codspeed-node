@@ -11,6 +11,8 @@ jest.mock("@codspeed/core", () => {
   const actual = jest.requireActual("@codspeed/core");
   mockCore.getGitDir = actual.getGitDir;
   mockCore.getCallingFile = actual.getCallingFile;
+  mockCore.wrapWithRootFrame = actual.wrapWithRootFrame;
+  mockCore.wrapWithRootFrameSync = actual.wrapWithRootFrameSync;
   return mockCore;
 });
 

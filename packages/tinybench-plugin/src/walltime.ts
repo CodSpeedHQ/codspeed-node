@@ -3,6 +3,8 @@ import {
   mongoMeasurement,
   msToNs,
   msToS,
+  wrapWithRootFrame,
+  wrapWithRootFrameSync,
   writeWalltimeResults,
   type BenchmarkStats,
   type Benchmark as CodspeedBenchmark,
@@ -64,21 +66,10 @@ class WalltimeBenchRunner extends BaseBenchRunner {
 
   private wrapTaskFunction(task: Task, isAsync: boolean): void {
     const { fn } = task as unknown as { fn: Fn };
-    if (isAsync) {
-      // eslint-disable-next-line no-inner-declarations
-      async function __codspeed_root_frame__() {
-        await fn();
-      }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (task as any).fn = __codspeed_root_frame__;
-    } else {
-      // eslint-disable-next-line no-inner-declarations
-      function __codspeed_root_frame__() {
-        fn();
-      }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (task as any).fn = __codspeed_root_frame__;
-    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (task as any).fn = isAsync
+      ? wrapWithRootFrame(fn)
+      : wrapWithRootFrameSync(fn);
   }
 
   private registerCodspeedBenchmarkFromTask(task: Task): void {

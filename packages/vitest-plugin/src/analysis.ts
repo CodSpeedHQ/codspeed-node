@@ -5,6 +5,7 @@ import {
   optimizeFunction,
   setupCore,
   teardownCore,
+  wrapWithRootFrame,
 } from "@codspeed/core";
 import { Benchmark, type RunnerTestSuite } from "vitest";
 import { NodeBenchmarkRunner } from "vitest/runners";
@@ -47,7 +48,7 @@ async function runAnalysisBench(
   await callSuiteHook(suite, benchmark, "beforeEach");
   await mongoMeasurement.start(uri);
   global.gc?.();
-  await (async function __codspeed_root_frame__() {
+  await wrapWithRootFrame(async () => {
     InstrumentHooks.startBenchmark();
     // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench
     await fn();

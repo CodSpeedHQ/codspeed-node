@@ -77,6 +77,7 @@ export type {
 } from "./generated/openapi";
 export { getV8Flags, tryIntrospect } from "./introspection";
 export { optimizeFunction, optimizeFunctionSync } from "./optimization";
+export { wrapWithRootFrame, wrapWithRootFrameSync } from "./rootFrame";
 export * from "./utils";
 export * from "./walltime";
 export type { InstrumentMode };

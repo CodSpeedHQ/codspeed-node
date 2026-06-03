@@ -16,6 +16,8 @@ const mockCore = vi.hoisted(() => {
       startBenchmark: vi.fn(),
       stopBenchmark: vi.fn(),
       setExecutedBenchmark: vi.fn(),
+      currentTimestamp: vi.fn().mockReturnValue(0n),
+      addMarker: vi.fn(),
     },
     optimizeFunction: vi
       .fn()
@@ -24,6 +26,7 @@ const mockCore = vi.hoisted(() => {
       }),
     setupCore: vi.fn(),
     teardownCore: vi.fn(),
+    writeWalltimeResults: vi.fn(),
   };
 });
 

@@ -1,9 +1,11 @@
 import {
   InstrumentHooks,
+  MARKER_TYPE_BENCHMARK_END,
+  MARKER_TYPE_BENCHMARK_START,
   setupCore,
+  wrapWithRootFrame,
   writeWalltimeResults,
 } from "@codspeed/core";
-import { Fn } from "tinybench";
 import {
   RunnerTaskEventPack,
   RunnerTaskResultPack,
@@ -66,6 +68,7 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
     this.isTinybenchHookedWithCodspeed = true;
 
     const originalRun = tinybench.Task.prototype.run;
+    const pid = process.pid;
 
     const getSuiteUri = (): string => {
       if (this.currentSuiteId === null) {
@@ -75,21 +78,35 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
     };
 
     tinybench.Task.prototype.run = async function () {
-      const { fn } = this as { fn: Fn };
       const suiteUri = getSuiteUri();
 
-      function __codspeed_root_frame__() {
-        return fn();
-      }
-      (this as { fn: Fn }).fn = __codspeed_root_frame__;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const task = this as any;
+      const originalFn = task.fn;
+      task.fn = wrapWithRootFrame(() => originalFn.call(task));
 
       InstrumentHooks.startBenchmark();
-      await originalRun.call(this);
-      InstrumentHooks.stopBenchmark();
+      const runStart = InstrumentHooks.currentTimestamp();
+      try {
+        await originalRun.call(this);
+      } finally {
+        const runEnd = InstrumentHooks.currentTimestamp();
+        task.fn = originalFn;
 
-      // Look up the URI by task name
-      const uri = `${suiteUri}::${this.name}`;
-      InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+        // Benchmark markers must land inside the sample window opened by
+        // startBenchmark(), so they have to be emitted before stopBenchmark()
+        // closes it. The runner consumes the FIFO stream in order, so a marker
+        // sent after StopBenchmark falls outside the sample and breaks the
+        // expected SampleStart > BenchmarkStart > BenchmarkEnd > SampleEnd nesting.
+        InstrumentHooks.addMarker(pid, MARKER_TYPE_BENCHMARK_START, runStart);
+        InstrumentHooks.addMarker(pid, MARKER_TYPE_BENCHMARK_END, runEnd);
+
+        InstrumentHooks.stopBenchmark();
+
+        // Look up the URI by task name
+        const uri = `${suiteUri}::${this.name}`;
+        InstrumentHooks.setExecutedBenchmark(pid, uri);
+      }
 
       return this;
     };
