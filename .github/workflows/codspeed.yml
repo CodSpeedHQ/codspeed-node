@@ -64,6 +64,11 @@ jobs:
   codspeed-walltime:
     name: Run CodSpeed walltime
     runs-on: "codspeed-macro"
+    env:
+      # The custom Node build below is v24, but the repo pins engines.node to
+      # v20 with engine-strict. Relax the check for this job so pnpm install
+      # accepts the custom Node; the runtime itself is compatible.
+      npm_config_engine_strict: "false"
     steps:
       - uses: "actions/checkout@v4"
         with:
@@ -74,15 +79,39 @@ jobs:
         with:
           cache: pnpm
           node-version-file: .nvmrc
+
+      # Custom Node build with the V8 walltime-profiling patches (COD-2819,
+      # COD-2820) on top of v24.15.0. Prepended to PATH so the CodSpeed runner's
+      # `which node` resolves to it instead of the setup-node toolchain.
+      - name: Install custom Node build
+        env:
+          NODE_URL: https://github.com/GuillaumeLagrange/node/releases/download/v24.15.0-codspeed/node-v24.15.0-codspeed-linux-arm64.gz
+          NODE_SHA256: cc5501e713a88632d57a636ae9a0784fc78713056cd6caacc4e16df7b6a24721
+        run: |
+          mkdir -p "$RUNNER_TEMP/custom-node"
+          curl -fsSL "$NODE_URL" -o "$RUNNER_TEMP/custom-node/node.gz"
+          echo "$NODE_SHA256  $RUNNER_TEMP/custom-node/node.gz" | sha256sum -c -
+          gunzip -f "$RUNNER_TEMP/custom-node/node.gz"
+          chmod +x "$RUNNER_TEMP/custom-node/node"
+          echo "$RUNNER_TEMP/custom-node" >> "$GITHUB_PATH"
+
+      - name: Verify custom Node is on PATH
+        run: |
+          which node
+          node --version
+          node --interpreted-frames-native-stack -e "console.log('custom node ok:', process.version, process.versions.v8)"
+
       - name: Restore turbo cache
         uses: ./.github/actions/turbo-cache
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm turbo run build
 
       - name: Run benchmarks
-        # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
-        uses: CodSpeedHQ/action@main
+        uses: CodSpeedHQ/action@3ab7a45ef04699335fd451268f4080ff83cc4ea5 # main
+        env:
+          CODSPEED_WALLTIME_PROFILER: samply
         with:
+          runner-version: "v4.17.6-alpha.7"
           mode: walltime
           run: |
             pnpm turbo run bench --filter=@codspeed/tinybench-plugin
