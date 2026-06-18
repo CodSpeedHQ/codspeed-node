@@ -1,7 +1,11 @@
 import { writeFileSync } from "fs";
+import path from "path";
+
 import { getInstrumentMode } from ".";
 
 const CUSTOM_INTROSPECTION_EXIT_CODE = 0;
+
+const V8_LOG_FILENAME_PATTERN = "codspeed-v8-%p.log";
 
 export const getV8Flags = () => {
   const nodeVersionMajor = parseInt(process.version.slice(1).split(".")[0]);
@@ -9,24 +13,44 @@ export const getV8Flags = () => {
 
   const flags = ["--interpreted-frames-native-stack", "--allow-natives-syntax"];
 
-  if (instrumentMode === "analysis") {
-    flags.push(
-      ...[
-        "--hash-seed=1",
-        "--random-seed=1",
-        "--no-opt",
-        "--predictable",
-        "--predictable-gc-schedule",
-        "--expose-gc",
-        "--no-concurrent-sweeping",
-        "--max-old-space-size=4096",
-      ],
-    );
-    if (nodeVersionMajor < 18) {
-      flags.push("--no-randomize-hashes");
+  switch (instrumentMode) {
+    case "analysis": {
+      flags.push(
+        ...[
+          "--hash-seed=1",
+          "--random-seed=1",
+          "--no-opt",
+          "--predictable",
+          "--predictable-gc-schedule",
+          "--expose-gc",
+          "--no-concurrent-sweeping",
+          "--max-old-space-size=4096",
+        ],
+      );
+      if (nodeVersionMajor < 18) {
+        flags.push("--no-randomize-hashes");
+      }
+      if (nodeVersionMajor < 20) {
+        flags.push("--no-scavenge-task");
+      }
+
+      break;
     }
-    if (nodeVersionMajor < 20) {
-      flags.push("--no-scavenge-task");
+
+    case "walltime": {
+      // Emit the V8 jitdump
+      flags.push("--perf-prof");
+      const v8LogDir = process.env.CODSPEED_V8_LOG;
+      if (v8LogDir) {
+        flags.push(
+          ...[
+            "--log-code",
+            "--no-log-source-code",
+            "--no-logfile-per-isolate",
+            `--logfile=${path.join(v8LogDir, V8_LOG_FILENAME_PATTERN)}`,
+          ],
+        );
+      }
     }
   }
 
