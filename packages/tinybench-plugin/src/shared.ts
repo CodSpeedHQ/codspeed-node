@@ -46,15 +46,11 @@ export abstract class BaseBenchRunner {
   }
 
   protected wrapWithInstrumentHooks<T>(fn: () => T, uri: string): T {
-    InstrumentHooks.startBenchmark();
-    const runStart = InstrumentHooks.currentTimestamp();
+    const runStart = this.openInstrumentWindow();
     try {
       return fn();
     } finally {
-      const runEnd = InstrumentHooks.currentTimestamp();
-      InstrumentHooks.stopBenchmark();
-      InstrumentHooks.setExecutedBenchmark(process.pid, uri);
-      this.sendBenchmarkMarkers(runStart, runEnd);
+      this.closeInstrumentWindow(uri, runStart);
     }
   }
 
@@ -62,16 +58,24 @@ export abstract class BaseBenchRunner {
     fn: Fn,
     uri: string,
   ): Promise<unknown> {
-    InstrumentHooks.startBenchmark();
-    const runStart = InstrumentHooks.currentTimestamp();
+    const runStart = this.openInstrumentWindow();
     try {
       return await fn();
     } finally {
-      const runEnd = InstrumentHooks.currentTimestamp();
-      InstrumentHooks.stopBenchmark();
-      InstrumentHooks.setExecutedBenchmark(process.pid, uri);
-      this.sendBenchmarkMarkers(runStart, runEnd);
+      this.closeInstrumentWindow(uri, runStart);
     }
+  }
+
+  protected openInstrumentWindow(): bigint {
+    InstrumentHooks.startBenchmark();
+    return InstrumentHooks.currentTimestamp();
+  }
+
+  protected closeInstrumentWindow(uri: string, runStart: bigint): void {
+    const runEnd = InstrumentHooks.currentTimestamp();
+    InstrumentHooks.stopBenchmark();
+    InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+    this.sendBenchmarkMarkers(runStart, runEnd);
   }
 
   protected abstract getModeName(): string;

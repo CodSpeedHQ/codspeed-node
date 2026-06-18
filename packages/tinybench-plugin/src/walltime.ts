@@ -9,7 +9,7 @@ import {
   type BenchmarkStats,
   type Benchmark as CodspeedBenchmark,
 } from "@codspeed/core";
-import { Bench, Fn, Task, TaskResult } from "tinybench";
+import { Bench, Fn, Hook, Task, TaskResult } from "tinybench";
 import { BaseBenchRunner } from "./shared";
 
 export function setupCodspeedWalltimeBench(
@@ -17,14 +17,50 @@ export function setupCodspeedWalltimeBench(
   rootCallingFile: string,
 ): void {
   const runner = new WalltimeBenchRunner(bench, rootCallingFile);
+  runner.installInstrumentHooks();
   runner.setupBenchMethods();
 }
 
 class WalltimeBenchRunner extends BaseBenchRunner {
   private codspeedBenchmarks: CodspeedBenchmark[] = [];
 
+  // Carries the window start timestamp from the setup hook to the teardown
+  // hook. Tasks run strictly sequentially, so a single field is enough.
+  private runStart: bigint | null = null;
+
   protected getModeName(): string {
     return "walltime mode";
+  }
+
+  /**
+   * Drive the instrumentation window from the task's setup/teardown hooks so it
+   * brackets only tinybench's measured loop, excluding warmup and the
+   * statistics computation (`processRunResult`) that surround it. The user's
+   * own hooks are preserved and still run in their original order relative to
+   * the work under test.
+   */
+  public installInstrumentHooks(): void {
+    // `bench.opts` is typed `Readonly`, but tinybench mutates it at runtime and
+    // always resolves `setup`/`teardown` to (at least) a no-op default.
+    const opts = this.bench.opts as { setup: Hook; teardown: Hook };
+    const userSetup = opts.setup;
+    const userTeardown = opts.teardown;
+
+    opts.setup = (task, mode) => {
+      const setupResult = userSetup(task, mode);
+      if (mode === "run") {
+        this.runStart = this.openInstrumentWindow();
+      }
+      return setupResult;
+    };
+
+    opts.teardown = (task, mode) => {
+      if (mode === "run" && task) {
+        this.closeInstrumentWindow(this.getTaskUri(task), this.runStart!);
+        this.runStart = null;
+      }
+      return userTeardown(task, mode);
+    };
   }
 
   protected async runTaskAsync(task: Task, uri: string): Promise<void> {
@@ -37,13 +73,14 @@ class WalltimeBenchRunner extends BaseBenchRunner {
     }
 
     await mongoMeasurement.start(uri);
-    await this.wrapWithInstrumentHooksAsync(() => task.run(), uri);
+    await task.run();
     await mongoMeasurement.stop(uri);
 
     this.registerCodspeedBenchmarkFromTask(task);
   }
 
-  protected runTaskSync(task: Task, uri: string): void {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected runTaskSync(task: Task, _uri: string): void {
     // Override the function under test to add a static frame
     this.wrapTaskFunction(task, false);
 
@@ -51,7 +88,7 @@ class WalltimeBenchRunner extends BaseBenchRunner {
       task.warmup();
     }
 
-    this.wrapWithInstrumentHooks(() => task.runSync(), uri);
+    task.runSync();
 
     this.registerCodspeedBenchmarkFromTask(task);
   }
