@@ -88,4 +88,10 @@ Based on the codebase analysis, to add stats access features:
 ## Repository Management Memories
 
 - Use pnpm instead of npm
-- To run tests in a package use moon <package-name>:test
+- The monorepo uses [Turborepo](https://turborepo.com). Run a task for a single
+  package with a filter, using the package's full name (e.g. `@codspeed/tinybench-plugin`):
+  - Test: `pnpm turbo run test --filter=<package-name>`
+  - Build: `pnpm turbo run build --filter=<package-name>`
+  - Typecheck: `pnpm turbo run typecheck --filter=<package-name>`
+  - Lint: `pnpm turbo run lint --filter=<package-name>`
+  - Run a task across all packages by omitting `--filter` (e.g. `pnpm turbo run build`).
