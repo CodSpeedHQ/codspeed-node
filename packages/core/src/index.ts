@@ -56,7 +56,10 @@ export const setupCore = () => {
   }
 
   native_core.InstrumentHooks.setIntegration("codspeed-node", __VERSION__);
-  linuxPerf.start();
+  // In walltime, we use node's native profiling options rather than our own, cf `getV8Flags`
+  if (getCodspeedRunnerMode() !== "walltime") {
+    linuxPerf.start();
+  }
   checkV8Flags();
 
   // Collect Node.js runtime environment to detect changes that could
@@ -68,7 +71,9 @@ export const setupCore = () => {
 };
 
 export const teardownCore = () => {
-  linuxPerf.stop();
+  if (getCodspeedRunnerMode() !== "walltime") {
+    linuxPerf.stop();
+  }
 };
 
 export type {
