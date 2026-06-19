@@ -82,8 +82,12 @@ jobs:
       - name: Run benchmarks
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
         uses: CodSpeedHQ/action@main
+        env:
+          CODSPEED_WALLTIME_PROFILER: samply
         with:
           mode: walltime
+          # TODO: Remove this once runner is released
+          runner-version: v4.17.7-alpha.2
           run: |
             pnpm turbo run bench --filter=@codspeed/tinybench-plugin
             pnpm turbo run bench --filter=@codspeed/vitest-plugin
@@ -173,3 +177,4 @@ jobs:
           working-directory: examples/with-electron-and-walltime
           run: xvfb-run -a pnpm bench:electron
           mode: walltime
+          runner-version: v4.17.7-alpha.2
