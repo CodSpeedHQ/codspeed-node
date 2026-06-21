@@ -108,6 +108,36 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
 
+  examples/with-tinybench-v5:
+    devDependencies:
+      '@codspeed/tinybench-plugin':
+        specifier: workspace:*
+        version: link:../../packages/tinybench-plugin
+      esbuild-register:
+        specifier: ^3.4.2
+        version: 3.4.2(esbuild@0.25.9)
+      tinybench:
+        specifier: ^5.1.0
+        version: 5.1.0
+      typescript:
+        specifier: ^5.1.3
+        version: 5.8.3
+
+  examples/with-tinybench-v6:
+    devDependencies:
+      '@codspeed/tinybench-plugin':
+        specifier: workspace:*
+        version: link:../../packages/tinybench-plugin
+      esbuild-register:
+        specifier: ^3.4.2
+        version: 3.4.2(esbuild@0.25.9)
+      tinybench:
+        specifier: ^6.0.2
+        version: 6.0.2
+      typescript:
+        specifier: ^5.1.3
+        version: 5.8.3
+
   examples/with-typescript-cjs:
     devDependencies:
       '@codspeed/benchmark.js-plugin':
@@ -5959,6 +5989,14 @@ packages:
   tinybench@4.0.1:
     resolution: {integrity: sha512-Nb1srn7dvzkVx0J5h1vq8f48e3TIcbrS7e/UfAI/cDSef/n8yLh4zsAEsFkfpw6auTY+ZaspEvam/xs8nMnotQ==}
     engines: {node: '>=18.0.0'}
+
+  tinybench@5.1.0:
+    resolution: {integrity: sha512-LXKNtFualiKOm6gADe1UXPtf8+Nfn1CtPMEHAT33Fd2YjQatrujkDcK0+4wRC1X6t7fxUDXUs6BsvuIgfkDgDg==}
+    engines: {node: '>=20.0.0'}
+
+  tinybench@6.0.2:
+    resolution: {integrity: sha512-FlHoQpcFvCzeXK5kVPvV7IVgW/hs/B36QWTz876iSdeJguBDfdTSRQmYmaHX+fQNt4hp+gEFB2XXw+8hT4/y8A==}
+    engines: {node: '>=20.0.0'}
 
   tinyexec@0.3.2:
     resolution: {integrity: sha512-KQQR9yN7R5+OSwaK0XQoj22pwHoTlgYqmUscPYoknOoWCWfj/5/ABTMRi69FrKU5ffPVh5QcFikpWJI/P1ocHA==}
@@ -13494,6 +13532,10 @@ snapshots:
   tinybench@2.9.0: {}
 
   tinybench@4.0.1: {}
+
+  tinybench@5.1.0: {}
+
+  tinybench@6.0.2: {}
 
   tinyexec@0.3.2: {}
 

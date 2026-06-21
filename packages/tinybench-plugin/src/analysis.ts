@@ -6,7 +6,7 @@ import {
   wrapWithRootFrame,
   wrapWithRootFrameSync,
 } from "@codspeed/core";
-import { Bench, Fn, FnOptions, Task } from "tinybench";
+import { Bench, Task } from "tinybench";
 import { BaseBenchRunner } from "./shared";
 
 export function setupCodspeedAnalysisBench(
@@ -28,7 +28,7 @@ class AnalysisBenchRunner extends BaseBenchRunner {
   }
 
   protected async runTaskAsync(task: Task, uri: string): Promise<void> {
-    const { fnOpts, fn } = task as unknown as { fnOpts?: FnOptions; fn: Fn };
+    const { fnOpts, fn } = this.getTaskData(task);
 
     await fnOpts?.beforeAll?.call(task, "run");
     await optimizeFunction(async () => {
@@ -50,7 +50,7 @@ class AnalysisBenchRunner extends BaseBenchRunner {
   }
 
   protected runTaskSync(task: Task, uri: string): void {
-    const { fnOpts, fn } = task as unknown as { fnOpts?: FnOptions; fn: Fn };
+    const { fnOpts, fn } = this.getTaskData(task);
 
     fnOpts?.beforeAll?.call(task, "run");
     fnOpts?.beforeEach?.call(task, "run");

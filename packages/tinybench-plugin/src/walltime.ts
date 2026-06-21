@@ -3,13 +3,12 @@ import {
   mongoMeasurement,
   msToNs,
   msToS,
-  wrapWithRootFrame,
-  wrapWithRootFrameSync,
   writeWalltimeResults,
   type BenchmarkStats,
   type Benchmark as CodspeedBenchmark,
 } from "@codspeed/core";
-import { Bench, Fn, Hook, Task, TaskResult } from "tinybench";
+import { Bench, Task, TaskResult } from "tinybench";
+import { getBenchOptions } from "./benchOptions";
 import { BaseBenchRunner } from "./shared";
 
 export function setupCodspeedWalltimeBench(
@@ -40,9 +39,15 @@ class WalltimeBenchRunner extends BaseBenchRunner {
    * the work under test.
    */
   public installInstrumentHooks(): void {
-    // `bench.opts` is typed `Readonly`, but tinybench mutates it at runtime and
-    // always resolves `setup`/`teardown` to (at least) a no-op default.
-    const opts = this.bench.opts as { setup: Hook; teardown: Hook };
+    // The resolved options expose `setup`/`teardown` as typed `Readonly`, but
+    // tinybench populates them with (at least) no-op defaults and lets them be
+    // reassigned at runtime.
+    const opts = getBenchOptions(this.bench);
+
+    // We build the walltime statistics from the per-round latency samples.
+    // tinybench stopped retaining them by default in v6, so opt back in.
+    opts.retainSamples = true;
+
     const userSetup = opts.setup;
     const userTeardown = opts.teardown;
 
@@ -64,11 +69,8 @@ class WalltimeBenchRunner extends BaseBenchRunner {
   }
 
   protected async runTaskAsync(task: Task, uri: string): Promise<void> {
-    // Override the function under test to add a static frame
-    this.wrapTaskFunction(task, true);
-
     // run the warmup of the task right before its actual run
-    if (this.bench.opts.warmup) {
+    if (getBenchOptions(this.bench).warmup) {
       await task.warmup();
     }
 
@@ -81,11 +83,8 @@ class WalltimeBenchRunner extends BaseBenchRunner {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected runTaskSync(task: Task, _uri: string): void {
-    // Override the function under test to add a static frame
-    this.wrapTaskFunction(task, false);
-
-    if (this.bench.opts.warmup) {
-      task.warmup();
+    if (getBenchOptions(this.bench).warmup) {
+      task.warmupSync();
     }
 
     task.runSync();
@@ -101,14 +100,6 @@ class WalltimeBenchRunner extends BaseBenchRunner {
     return this.finalizeWalltimeRun(false);
   }
 
-  private wrapTaskFunction(task: Task, isAsync: boolean): void {
-    const { fn } = task as unknown as { fn: Fn };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (task as any).fn = isAsync
-      ? wrapWithRootFrame(fn)
-      : wrapWithRootFrameSync(fn);
-  }
-
   private registerCodspeedBenchmarkFromTask(task: Task): void {
     const uri = this.getTaskUri(task);
 
@@ -117,8 +108,9 @@ class WalltimeBenchRunner extends BaseBenchRunner {
       return;
     }
 
-    const warmupIterations = this.bench.opts.warmup
-      ? (this.bench.opts.warmupIterations ?? TINYBENCH_WARMUP_DEFAULT)
+    const opts = getBenchOptions(this.bench);
+    const warmupIterations = opts.warmup
+      ? (opts.warmupIterations ?? TINYBENCH_WARMUP_DEFAULT)
       : 0;
     const stats = convertTinybenchResultToBenchmarkStats(
       task.result,
@@ -129,13 +121,11 @@ class WalltimeBenchRunner extends BaseBenchRunner {
       name: task.name,
       uri,
       config: {
-        max_rounds: this.bench.opts.iterations ?? null,
-        max_time_ns: this.bench.opts.time ? msToNs(this.bench.opts.time) : null,
+        max_rounds: opts.iterations ?? null,
+        max_time_ns: opts.time ? msToNs(opts.time) : null,
         min_round_time_ns: null, // tinybench does not have an option for this
         warmup_time_ns:
-          this.bench.opts.warmup && this.bench.opts.warmupTime
-            ? msToNs(this.bench.opts.warmupTime)
-            : null,
+          opts.warmup && opts.warmupTime ? msToNs(opts.warmupTime) : null,
       },
       stats,
     });
