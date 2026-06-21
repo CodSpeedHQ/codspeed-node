@@ -7,6 +7,7 @@ import {
   teardownCore,
 } from "@codspeed/core";
 import { Bench, Fn, Task } from "tinybench";
+import { CapturedTaskData, getTaskData } from "./taskData";
 import { getTaskUri } from "./uri";
 
 declare const __VERSION__: string;
@@ -33,6 +34,16 @@ export abstract class BaseBenchRunner {
 
   protected getTaskUri(task: Task): string {
     return getTaskUri(this.bench, task.name, this.rootCallingFile);
+  }
+
+  protected getTaskData(task: Task): CapturedTaskData {
+    const data = getTaskData(this.bench, task.name);
+    if (!data) {
+      throw new Error(
+        `[CodSpeed] No captured function found for task "${task.name}"`,
+      );
+    }
+    return data;
   }
 
   protected logTaskCompletion(uri: string, status: string): void {

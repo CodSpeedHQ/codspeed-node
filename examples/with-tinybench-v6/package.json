@@ -1,0 +1,15 @@
+{
+  "name": "with-tinybench-v6",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bench-tinybench": "node --loader esbuild-register/loader -r esbuild-register tinybench.ts",
+    "typecheck": "tsc --noEmit --pretty"
+  },
+  "devDependencies": {
+    "@codspeed/tinybench-plugin": "workspace:*",
+    "esbuild-register": "^3.4.2",
+    "tinybench": "^6.0.2",
+    "typescript": "^5.1.3"
+  }
+}
