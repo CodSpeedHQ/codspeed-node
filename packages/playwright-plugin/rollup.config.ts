@@ -1,6 +1,8 @@
+import { createRequire } from "node:module";
 import { defineConfig } from "rollup";
 import { declarationsPlugin, jsPlugins } from "../../rollup.options";
-import pkg from "./package.json" assert { type: "json" };
+
+const pkg = createRequire(import.meta.url)("./package.json");
 
 const entrypoint = "src/index.ts";
 

@@ -19,7 +19,7 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-typescript": "^11.1.5",
     "@types/jest": "^29.5.0",
-    "@types/node": "^20.5.1",
+    "@types/node": "^24.11.1",
     "@typescript-eslint/eslint-plugin": "^8.57.0",
     "@typescript-eslint/parser": "^8.57.0",
     "esbuild": "^0.17.16",
@@ -43,6 +43,6 @@
   },
   "packageManager": "pnpm@10.12.4",
   "engines": {
-    "node": "20.5.1"
+    "node": "24.11.1"
   }
 }
