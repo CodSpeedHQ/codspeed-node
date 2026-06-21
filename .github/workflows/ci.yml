@@ -49,14 +49,10 @@ jobs:
     needs: list-examples
     strategy:
       matrix:
-        node-version: ["18", "20.5.1"]
+        # Consumer-supported Node versions. Node 18 is EOL and tinybench v5+
+        # requires Node >=20, so the floor is 20.
+        node-version: ["20", "22", "24"]
         example: ${{ fromJson(needs.list-examples.outputs.examples) }}
-        # tinybench v5+ requires Node >=20, so its examples cannot run on Node 18
-        exclude:
-          - node-version: "18"
-            example: "with-tinybench-v5"
-          - node-version: "18"
-            example: "with-tinybench-v6"
       fail-fast: false
     steps:
       - uses: "actions/checkout@v4"
