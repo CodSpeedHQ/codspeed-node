@@ -1,12 +1,5 @@
-import {
-  getInstrumentMode,
-  InstrumentHooks,
-  MARKER_TYPE_BENCHMARK_END,
-  MARKER_TYPE_BENCHMARK_START,
-  setupCore,
-  teardownCore,
-} from "@codspeed/core";
-import { Bench, Fn, Task } from "tinybench";
+import { setupCore, teardownCore } from "@codspeed/core";
+import { Bench, Task } from "tinybench";
 import { CapturedTaskData, getTaskData } from "./taskData";
 import { getTaskUri } from "./uri";
 
@@ -56,56 +49,11 @@ export abstract class BaseBenchRunner {
     return this.bench.tasks;
   }
 
-  protected wrapWithInstrumentHooks<T>(fn: () => T, uri: string): T {
-    const runStart = this.openInstrumentWindow();
-    try {
-      return fn();
-    } finally {
-      this.closeInstrumentWindow(uri, runStart);
-    }
-  }
-
-  protected async wrapWithInstrumentHooksAsync(
-    fn: Fn,
-    uri: string,
-  ): Promise<unknown> {
-    const runStart = this.openInstrumentWindow();
-    try {
-      return await fn();
-    } finally {
-      this.closeInstrumentWindow(uri, runStart);
-    }
-  }
-
-  protected openInstrumentWindow(): bigint {
-    InstrumentHooks.startBenchmark();
-    return InstrumentHooks.currentTimestamp();
-  }
-
-  protected closeInstrumentWindow(uri: string, runStart: bigint): void {
-    const runEnd = InstrumentHooks.currentTimestamp();
-    InstrumentHooks.stopBenchmark();
-    InstrumentHooks.setExecutedBenchmark(process.pid, uri);
-    this.sendBenchmarkMarkers(runStart, runEnd);
-  }
-
   protected abstract getModeName(): string;
   protected abstract runTaskAsync(task: Task, uri: string): Promise<void>;
   protected abstract runTaskSync(task: Task, uri: string): void;
   protected abstract finalizeAsyncRun(): Task[];
   protected abstract finalizeSyncRun(): Task[];
-
-  private sendBenchmarkMarkers(runStart: bigint, runEnd: bigint): void {
-    if (getInstrumentMode() !== "walltime") {
-      return;
-    }
-    InstrumentHooks.addMarker(
-      process.pid,
-      MARKER_TYPE_BENCHMARK_START,
-      runStart,
-    );
-    InstrumentHooks.addMarker(process.pid, MARKER_TYPE_BENCHMARK_END, runEnd);
-  }
 
   public setupBenchMethods(): void {
     this.bench.run = async () => {

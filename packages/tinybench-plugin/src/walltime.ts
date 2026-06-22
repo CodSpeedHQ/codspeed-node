@@ -1,5 +1,8 @@
 import {
   calculateQuantiles,
+  InstrumentHooks,
+  MARKER_TYPE_BENCHMARK_END,
+  MARKER_TYPE_BENCHMARK_START,
   mongoMeasurement,
   msToNs,
   msToS,
@@ -54,18 +57,37 @@ class WalltimeBenchRunner extends BaseBenchRunner {
     opts.setup = (task, mode) => {
       const setupResult = userSetup(task, mode);
       if (mode === "run") {
-        this.runStart = this.openInstrumentWindow();
+        InstrumentHooks.startBenchmark();
+        this.runStart = InstrumentHooks.currentTimestamp();
       }
       return setupResult;
     };
 
     opts.teardown = (task, mode) => {
       if (mode === "run" && task) {
-        this.closeInstrumentWindow(this.getTaskUri(task), this.runStart!);
+        const runEnd = InstrumentHooks.currentTimestamp();
+        InstrumentHooks.stopBenchmark();
+        InstrumentHooks.setExecutedBenchmark(
+          process.pid,
+          this.getTaskUri(task),
+        );
+        if (this.runStart !== null) {
+          this.sendBenchmarkMarkers(this.runStart, runEnd);
+        }
+
         this.runStart = null;
       }
       return userTeardown(task, mode);
     };
+  }
+
+  private sendBenchmarkMarkers(runStart: bigint, runEnd: bigint): void {
+    InstrumentHooks.addMarker(
+      process.pid,
+      MARKER_TYPE_BENCHMARK_START,
+      runStart,
+    );
+    InstrumentHooks.addMarker(process.pid, MARKER_TYPE_BENCHMARK_END, runEnd);
   }
 
   protected async runTaskAsync(task: Task, uri: string): Promise<void> {

@@ -3,6 +3,7 @@ import {
   InstrumentHooks,
   mongoMeasurement,
   optimizeFunction,
+  optimizeFunctionSync,
   wrapWithRootFrame,
   wrapWithRootFrameSync,
 } from "@codspeed/core";
@@ -40,7 +41,14 @@ class AnalysisBenchRunner extends BaseBenchRunner {
     await mongoMeasurement.start(uri);
 
     global.gc?.();
-    await this.wrapWithInstrumentHooksAsync(wrapWithRootFrame(fn), uri);
+    const rootFrame = wrapWithRootFrame(fn);
+    InstrumentHooks.startBenchmark();
+    try {
+      await rootFrame();
+    } finally {
+      InstrumentHooks.stopBenchmark();
+      InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+    }
 
     await mongoMeasurement.stop(uri);
     await fnOpts?.afterEach?.call(task, "run");
@@ -53,9 +61,24 @@ class AnalysisBenchRunner extends BaseBenchRunner {
     const { fnOpts, fn } = this.getTaskData(task);
 
     fnOpts?.beforeAll?.call(task, "run");
+
+    optimizeFunctionSync(async () => {
+      fnOpts?.beforeEach?.call(task, "run");
+      await fn();
+      fnOpts?.afterEach?.call(task, "run");
+    });
+
     fnOpts?.beforeEach?.call(task, "run");
 
-    this.wrapWithInstrumentHooks(wrapWithRootFrameSync(fn), uri);
+    global.gc?.();
+    const rootFrame = wrapWithRootFrameSync(fn);
+    InstrumentHooks.startBenchmark();
+    try {
+      rootFrame();
+    } finally {
+      InstrumentHooks.stopBenchmark();
+      InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+    }
 
     fnOpts?.afterEach?.call(task, "run");
     fnOpts?.afterAll?.call(task, "run");
