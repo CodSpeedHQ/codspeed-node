@@ -8,6 +8,9 @@
       "cflags_cc!": [
         "-fno-exceptions"
       ],
+      "cflags_c": [
+        "-std=c11"
+      ],
       "cflags": [
         "-g",
         "-Wno-maybe-uninitialized",
