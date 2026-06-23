@@ -1,6 +1,6 @@
 {
   "name": "@codspeed/playwright-plugin",
-  "version": "5.6.0",
+  "version": "5.7.0",
   "description": "Playwright benchmarking integration for CodSpeed",
   "keywords": [
     "codspeed",
@@ -41,7 +41,7 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@codspeed/core": "workspace:^5.6.0"
+    "@codspeed/core": "workspace:^5.7.0"
   },
   "peerDependencies": {
     "playwright": ">=1.40.0"
