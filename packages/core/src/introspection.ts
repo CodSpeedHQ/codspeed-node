@@ -40,6 +40,7 @@ export const getV8Flags = () => {
     case "walltime": {
       // Emit the V8 jitdump
       flags.push("--perf-prof");
+
       const v8LogDir = process.env.CODSPEED_V8_LOG;
       if (v8LogDir) {
         flags.push(
@@ -50,6 +51,9 @@ export const getV8Flags = () => {
             `--logfile=${path.join(v8LogDir, V8_LOG_FILENAME_PATTERN)}`,
           ],
         );
+      } else {
+        // Just output the perf.map
+        flags.push("--perf-basic-prof");
       }
     }
   }

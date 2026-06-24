@@ -86,8 +86,6 @@ jobs:
           CODSPEED_WALLTIME_PROFILER: samply
         with:
           mode: walltime
-          # TODO: Remove this once runner is released
-          runner-version: v4.17.7-alpha.2
           run: |
             pnpm turbo run bench --filter=@codspeed/tinybench-plugin
             pnpm turbo run bench --filter=@codspeed/vitest-plugin
