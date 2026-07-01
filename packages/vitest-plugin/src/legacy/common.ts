@@ -1,6 +1,8 @@
 import { getGitDir } from "@codspeed/core";
 import path from "path";
 import { Benchmark, type RunnerTask, type RunnerTestSuite } from "vitest";
+// `vitest/suite` only exists on Vitest 3/4; this module is used only there.
+// eslint-disable-next-line import/no-unresolved
 import { getHooks } from "vitest/suite";
 type SuiteHooks = ReturnType<typeof getHooks>;
 
@@ -19,8 +21,9 @@ export async function callSuiteHook<T extends keyof SuiteHooks>(
 
   const hooks = getSuiteHooks(suite, name);
 
-  // @ts-expect-error TODO: add support for hooks parameters
-  await Promise.all(hooks.map((fn) => fn()));
+  // TODO: add support for hook parameters. The hook signature differs across
+  // supported Vitest versions, so we call them through a parameterless cast.
+  await Promise.all((hooks as Array<() => unknown>).map((fn) => fn()));
 
   if (name === "afterEach" && suite?.suite) {
     await callSuiteHook(suite.suite, currentTask, name);
