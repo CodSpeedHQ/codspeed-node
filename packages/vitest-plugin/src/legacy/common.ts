@@ -19,8 +19,9 @@ export async function callSuiteHook<T extends keyof SuiteHooks>(
 
   const hooks = getSuiteHooks(suite, name);
 
-  // @ts-expect-error TODO: add support for hooks parameters
-  await Promise.all(hooks.map((fn) => fn()));
+  // TODO: add support for hook parameters. The hook signature differs across
+  // supported Vitest versions, so we call them through a parameterless cast.
+  await Promise.all((hooks as Array<() => unknown>).map((fn) => fn()));
 
   if (name === "afterEach" && suite?.suite) {
     await callSuiteHook(suite.suite, currentTask, name);

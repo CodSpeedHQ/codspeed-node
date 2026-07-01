@@ -1,7 +1,12 @@
 import { fromPartial } from "@total-typescript/shoehorn";
 import { describe, expect, it, vi, type RunnerTestSuite } from "vitest";
-import { AnalysisRunner as CodSpeedRunner } from "../analysis";
-import { getBenchFn, getBenchOptions } from "../compat";
+import { AnalysisRunner as CodSpeedRunner } from "../legacy/analysis";
+import { getBenchFn, getBenchOptions } from "../legacy/compat";
+
+// The legacy AnalysisRunner targets the Vitest 3/4 benchmark backend
+// (`NodeBenchmarkRunner`, `vitest/suite`), which Vitest 5 removed. This whole
+// file is excluded from the test run under v5+ (see vitest.config.ts); the v5
+// path is covered separately.
 
 const coreMocks = vi.hoisted(() => {
   return {
@@ -28,8 +33,8 @@ vi.mock("@codspeed/core", async (importOriginal) => {
 
 console.log = vi.fn();
 
-vi.mock("../compat", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../compat")>();
+vi.mock("../legacy/compat", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../legacy/compat")>();
   return {
     ...actual,
     getBenchFn: vi.fn(),

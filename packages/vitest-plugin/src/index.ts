@@ -7,49 +7,33 @@ import {
   SetupInstrumentsRequestBody,
   SetupInstrumentsResponse,
 } from "@codspeed/core";
-import { readFileSync } from "fs";
-import { createRequire } from "module";
 import { join } from "path";
 import { Plugin } from "vite";
 import { type ViteUserConfig } from "vitest/config";
+import { resolveVitestBackend } from "./vitestBackend";
 
 // get this file's directory path from import.meta.url
 const __dirname = new URL(".", import.meta.url).pathname;
 const isFileInTs = import.meta.url.endsWith(".ts");
 
-function getCodSpeedFileFromName(name: string) {
+/**
+ * Resolve a plugin-owned file (globalSetup, seam entry points) shipped alongside
+ * this module. Source (`.ts`) and built (`.mjs`) layouts are kept identical (see
+ * rollup.config.ts), so the same relative `name` works in both.
+ */
+function resolveFile(name: string): string {
   const fileExtension = isFileInTs ? "ts" : "mjs";
-
   return join(__dirname, `${name}.${fileExtension}`);
 }
 
-function getVitestMajorVersion(): number | null {
-  try {
-    // Resolve vitest from the project's perspective (cwd), not from the plugin's location
-    // This ensures we detect the vitest version the user has installed
-    const require = createRequire(join(process.cwd(), "package.json"));
-    const vitestPkgPath = require.resolve("vitest/package.json");
-    const vitestPkg = JSON.parse(readFileSync(vitestPkgPath, "utf-8"));
-    return parseInt(vitestPkg.version.split(".")[0], 10);
-  } catch {
-    return null;
-  }
-}
-
-function getRunnerFile(): string | undefined {
-  const instrumentMode = getInstrumentMode();
-  if (instrumentMode === "disabled") {
-    return undefined;
-  }
-
-  return getCodSpeedFileFromName(instrumentMode);
-}
-
 export default function codspeedPlugin(): Plugin {
+  // Resolved lazily on each hook rather than once here: the installed Vitest
+  // version is detected from the project's cwd, which isn't reliably knowable at
+  // plugin-construction time (and tests swap it between construction and use).
   return {
     name: "codspeed:vitest",
     apply(_, { mode }) {
-      if (mode !== "benchmark") {
+      if (!resolveVitestBackend().isActiveForViteMode(mode)) {
         return false;
       }
       if (
@@ -61,37 +45,19 @@ export default function codspeedPlugin(): Plugin {
       return true;
     },
     enforce: "post",
-    config(): ViteUserConfig {
-      const runnerFile = getRunnerFile();
-      const runnerMode = getCodspeedRunnerMode();
-      const v8Flags = getV8Flags();
-      const vitestMajorVersion = getVitestMajorVersion();
-      // by default, assume Vitest v4 or higher
-      const isVitestV4OrHigher = (vitestMajorVersion ?? 4) >= 4;
+    config(incomingConfig, { mode }): ViteUserConfig | undefined {
+      const backend = resolveVitestBackend();
+      if (!backend.isBenchmarkRun(incomingConfig, mode)) {
+        return undefined;
+      }
 
       const config: ViteUserConfig = {
         test: {
           pool: "forks",
-          ...(isVitestV4OrHigher
-            ? { execArgv: v8Flags }
-            : {
-                // Compat with Vitest v3
-                // See: https://vitest.dev/guide/migration.html#pool-rework
-                // poolOptions only exists in Vitest v3
-                poolOptions: {
-                  forks: {
-                    execArgv: v8Flags,
-                  },
-                },
-              }),
-          globalSetup: [getCodSpeedFileFromName("globalSetup")],
-          ...(runnerFile && {
-            runner: runnerFile,
-          }),
-          ...(runnerMode === "walltime" && {
-            benchmark: {
-              includeSamples: true,
-            },
+          globalSetup: [resolveFile("globalSetup")],
+          ...backend.getBenchmarkTestConfig(getV8Flags(), resolveFile),
+          ...(getCodspeedRunnerMode() === "walltime" && {
+            benchmark: backend.getWalltimeBenchmarkConfig(),
           }),
         },
       };
