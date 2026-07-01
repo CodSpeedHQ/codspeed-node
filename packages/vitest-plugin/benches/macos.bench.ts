@@ -1,4 +1,4 @@
-import { bench, describe } from "vitest";
+import { describe, test } from "vitest";
 
 const isMacOS = process.platform === "darwin";
 
@@ -10,7 +10,9 @@ function fibo(n: number): number {
 // macOS-only benchmark: skipped on every other platform, so it only runs on
 // the `codspeed-walltime-macos` CI job (see .github/workflows/codspeed.yml).
 describe.skipIf(!isMacOS)("macos only", () => {
-  bench("fibo darwin", () => {
-    fibo(30);
+  test("fibo darwin", async ({ bench }) => {
+    await bench("fibo darwin", () => {
+      fibo(30);
+    }).run();
   });
 });

@@ -1,4 +1,4 @@
-import { bench, describe, type BenchOptions } from "vitest";
+import { describe, test, type BenchOptions } from "vitest";
 
 const busySleep = (ms: number): void => {
   const end = performance.now() + ms;
@@ -13,27 +13,21 @@ const timingBenchOptions: BenchOptions = {
 };
 
 describe("timing tests", () => {
-  bench(
-    "wait 1ms",
-    async () => {
+  test("wait 1ms", async ({ bench }) => {
+    await bench("wait 1ms", async () => {
       busySleep(1);
-    },
-    timingBenchOptions,
-  );
+    }).run(timingBenchOptions);
+  });
 
-  bench(
-    "wait 500ms",
-    async () => {
+  test("wait 500ms", async ({ bench }) => {
+    await bench("wait 500ms", async () => {
       busySleep(500);
-    },
-    timingBenchOptions,
-  );
+    }).run(timingBenchOptions);
+  });
 
-  bench(
-    "wait 1sec",
-    async () => {
+  test("wait 1sec", async ({ bench }) => {
+    await bench("wait 1sec", async () => {
       busySleep(1_000);
-    },
-    timingBenchOptions,
-  );
+    }).run(timingBenchOptions);
+  });
 });

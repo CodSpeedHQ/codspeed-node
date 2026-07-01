@@ -98,9 +98,14 @@ class V5Backend implements VitestBackend {
     v8Flags: string[],
     resolveFile: (name: string) => string,
   ): ViteUserConfig["test"] {
+    // When CodSpeed isn't driving the run, leave Vitest's benchmark execution
+    // untouched (no instrumentation setup file), matching the legacy backend.
+    const setupFiles =
+      getInstrumentMode() === "disabled" ? undefined : [resolveFile("v5/setup")];
+
     return {
       execArgv: v8Flags,
-      setupFiles: [resolveFile("v5/setup")],
+      ...(setupFiles && { setupFiles }),
     };
   }
 
