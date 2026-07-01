@@ -20,16 +20,24 @@ export default defineConfig([
     plugins: jsPlugins(pkg.version),
     external: ["@codspeed/core", /^vitest/],
   },
+  // The built layout mirrors the source layout (dist/legacy/*, dist/v5/*) so the
+  // plugin resolves the seam files with one path rule in both dev and prod.
   {
-    input: "src/analysis.ts",
-    output: { file: "dist/analysis.mjs", format: "es" },
+    input: "src/legacy/analysis.ts",
+    output: { file: "dist/legacy/analysis.mjs", format: "es" },
     plugins: jsPlugins(pkg.version),
     external: ["@codspeed/core", /^vitest/],
   },
   {
-    input: "src/walltime/index.ts",
-    output: { file: "dist/walltime.mjs", format: "es" },
+    input: "src/legacy/walltime.ts",
+    output: { file: "dist/legacy/walltime.mjs", format: "es" },
     plugins: jsPlugins(pkg.version),
     external: ["@codspeed/core", /^vitest/],
+  },
+  {
+    input: "src/v5/setup.ts",
+    output: { file: "dist/v5/setup.mjs", format: "es" },
+    plugins: jsPlugins(pkg.version),
+    external: ["@codspeed/core", /^vitest/, "tinybench"],
   },
 ]);

@@ -132,3 +132,5 @@ packages/app/.env
 # turbo
 .turbo/
 .rollup.cache/
+
+.codspeed

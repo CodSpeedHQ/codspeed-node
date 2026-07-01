@@ -1,7 +1,15 @@
 import { fromPartial } from "@total-typescript/shoehorn";
 import { describe, expect, it, vi, type RunnerTestSuite } from "vitest";
+// `vitest/suite` only exists on Vitest 3/4; this file is excluded from the test
+// run under v5+ (see vitest.config.ts).
+// eslint-disable-next-line import/no-unresolved
 import { getBenchFn } from "vitest/suite";
-import { AnalysisRunner as CodSpeedRunner } from "../analysis";
+import { AnalysisRunner as CodSpeedRunner } from "../legacy/analysis";
+
+// The legacy AnalysisRunner targets the Vitest 3/4 benchmark backend
+// (`NodeBenchmarkRunner`, `vitest/suite`), which Vitest 5 removed. This whole
+// file is excluded from the test run under v5+ (see vitest.config.ts); the v5
+// path is covered separately.
 
 const coreMocks = vi.hoisted(() => {
   return {

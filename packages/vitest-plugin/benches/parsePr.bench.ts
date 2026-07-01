@@ -1,4 +1,4 @@
-import { bench, describe } from "vitest";
+import { describe, test } from "vitest";
 import parsePr from "./parsePr";
 
 const LONG_BODY =
@@ -8,44 +8,52 @@ const LONG_BODY =
     )
     .join("\n") + "fixes #123";
 
+function benchShortBody() {
+  parsePr({ body: "fixes #123", title: "test", number: 124 });
+}
+
+function benchLongBody() {
+  parsePr({ body: LONG_BODY, title: "test", number: 124 });
+}
+
 describe("parsePr", () => {
-  bench("short body", () => {
-    parsePr({ body: "fixes #123", title: "test", number: 124 });
+  test("short body", async ({ bench }) => {
+    await bench("short body", benchShortBody).run();
   });
 
-  bench("long body", () => {
-    parsePr({ body: LONG_BODY, title: "test", number: 124 });
+  test("long body", async ({ bench }) => {
+    await bench("long body", benchLongBody).run();
   });
 
   describe("nested suite", () => {
-    bench("short body", () => {
-      parsePr({ body: "fixes #123", title: "test", number: 124 });
+    test("short body", async ({ bench }) => {
+      await bench("short body", benchShortBody).run();
     });
 
-    bench("long body", () => {
-      parsePr({ body: LONG_BODY, title: "test", number: 124 });
+    test("long body", async ({ bench }) => {
+      await bench("long body", benchLongBody).run();
     });
 
     describe("deeply nested suite", () => {
-      bench("short body", () => {
-        parsePr({ body: "fixes #123", title: "test", number: 124 });
+      test("short body", async ({ bench }) => {
+        await bench("short body", benchShortBody).run();
       });
     });
   });
 });
 
 describe("another parsePr", () => {
-  bench("short body", () => {
-    parsePr({ body: "fixes #123", title: "test", number: 124 });
+  test("short body", async ({ bench }) => {
+    await bench("short body", benchShortBody).run();
   });
 
-  bench("long body", () => {
-    parsePr({ body: LONG_BODY, title: "test", number: 124 });
+  test("long body", async ({ bench }) => {
+    await bench("long body", benchLongBody).run();
   });
 
   describe("nested suite", () => {
-    bench("short body", () => {
-      parsePr({ body: "fixes #123", title: "test", number: 124 });
+    test("short body", async ({ bench }) => {
+      await bench("short body", benchShortBody).run();
     });
   });
 });

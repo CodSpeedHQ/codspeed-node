@@ -1,4 +1,4 @@
-import { bench, describe } from "vitest";
+import { describe, test } from "vitest";
 import parsePr from "./parsePr";
 
 const LONG_BODY =
@@ -9,12 +9,16 @@ const LONG_BODY =
     .join("\n") + "fixes #123";
 
 describe("parsePr", () => {
-  bench("short body", () => {
-    parsePr({ body: "fixes #123", title: "test-1", number: 1 });
+  test("short body", async ({ bench }) => {
+    await bench("short body", () => {
+      parsePr({ body: "fixes #123", title: "test-1", number: 1 });
+    }).run();
   });
 
-  bench("long body", () => {
-    parsePr({ body: LONG_BODY, title: "test-2", number: 2 });
+  test("long body", async ({ bench }) => {
+    await bench("long body", () => {
+      parsePr({ body: LONG_BODY, title: "test-2", number: 2 });
+    }).run();
   });
 });
 
@@ -24,10 +28,14 @@ function fibo(n: number): number {
 }
 
 describe("fibo", () => {
-  bench("fibo 10", () => {
-    fibo(10);
+  test("fibo 10", async ({ bench }) => {
+    await bench("fibo 10", () => {
+      fibo(10);
+    }).run();
   });
-  bench("fibo 15", () => {
-    fibo(15);
+  test("fibo 15", async ({ bench }) => {
+    await bench("fibo 15", () => {
+      fibo(15);
+    }).run();
   });
 });
