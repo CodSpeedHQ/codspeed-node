@@ -1,14 +1,23 @@
-import { Options as FindupOptions, findUpSync } from "find-up";
-import path, { dirname } from "path";
+import { existsSync, statSync } from "fs";
+import path, { dirname, join } from "path";
 import { get as getStackTrace } from "stack-trace";
 import { fileURLToPath } from "url";
 
-export function getGitDir(path: string): string | undefined {
-  const dotGitPath = findUpSync(".git", {
-    cwd: path,
-    type: "directory",
-  } as FindupOptions);
-  return dotGitPath ? dirname(dotGitPath) : undefined;
+export function getGitDir(fromPath: string): string | undefined {
+  let dir = statSync(fromPath, { throwIfNoEntry: false })?.isDirectory()
+    ? fromPath
+    : dirname(fromPath);
+  for (;;) {
+    // `.git` is a directory in a normal clone and a file in a worktree or submodule.
+    if (existsSync(join(dir, ".git"))) {
+      return dir;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) {
+      return undefined;
+    }
+    dir = parent;
+  }
 }
 
 /**
@@ -23,12 +32,12 @@ export function getGitDir(path: string): string | undefined {
 export function getCallingFile(depth: number): string {
   const stack = getStackTrace();
   let callingFile = stack[depth + 1].getFileName();
+  if (callingFile.startsWith("file://")) {
+    callingFile = fileURLToPath(callingFile);
+  }
   const gitDir = getGitDir(callingFile);
   if (gitDir === undefined) {
     throw new Error("Could not find a git repository");
-  }
-  if (callingFile.startsWith("file://")) {
-    callingFile = fileURLToPath(callingFile);
   }
   return path.relative(gitDir, callingFile);
 }
