@@ -2,7 +2,11 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    // Unit tests live in src/ and run under jest; @types are hoisted to the
+    // workspace root.
+    "types": ["jest", "node"],
+    "typeRoots": ["node_modules/@types", "../../node_modules/@types"]
   },
   "include": ["src/**/*.ts"]
 }

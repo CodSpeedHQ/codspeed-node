@@ -29,7 +29,18 @@ export function withCodSpeed(bench: Bench): Bench {
   // Compute and register URI for bench
   const uriMap = getOrCreateUriMap(bench);
   const taskDataMap = getOrCreateTaskDataMap(bench);
+
+  const walltimeRunner =
+    instrumentMode === "walltime"
+      ? setupCodspeedWalltimeBench(bench, rootCallingFile)
+      : null;
+  if (instrumentMode === "analysis") {
+    setupCodspeedAnalysisBench(bench, rootCallingFile);
+  }
+
   const rawAdd = bench.add;
+  // `getCallingFile` reads the stack, so this wrapper has to be the only frame
+  // between the caller and `rawAdd`.
   bench.add = (name, fn, opts?) => {
     const callingFile = getCallingFile(1);
     let uri = callingFile;
@@ -46,14 +57,12 @@ export function withCodSpeed(bench: Bench): Bench {
     // function's return value, so it preserves tinybench's sync/async handling.
     const registeredFn =
       instrumentMode === "walltime" ? wrapWithRootFrameSync(fn) : fn;
-    return rawAdd.bind(bench)(name, registeredFn, opts);
+    return rawAdd.bind(bench)(
+      name,
+      registeredFn,
+      walltimeRunner?.withIterationMarkers(opts) ?? opts,
+    );
   };
-
-  if (instrumentMode === "analysis") {
-    setupCodspeedAnalysisBench(bench, rootCallingFile);
-  } else if (instrumentMode === "walltime") {
-    setupCodspeedWalltimeBench(bench, rootCallingFile);
-  }
 
   return bench;
 }

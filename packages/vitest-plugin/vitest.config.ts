@@ -8,7 +8,15 @@ export default defineConfig({
     __VERSION__: JSON.stringify("1.0.0"),
   },
   test: {
-    exclude: ["**/tests/**/*", "**/.rollup.cache/**/*"],
+    // Setting `exclude` drops vitest's defaults, and the linked workspace
+    // packages under node_modules resolve to sibling source trees that carry
+    // their own tests.
+    exclude: [
+      "**/node_modules/**",
+      "../**",
+      "**/tests/**/*",
+      "**/.rollup.cache/**/*",
+    ],
     mockReset: true,
   },
 });

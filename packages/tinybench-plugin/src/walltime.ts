@@ -1,8 +1,8 @@
 import {
   calculateQuantiles,
+  composeIterationMarkerHooks,
   InstrumentHooks,
-  MARKER_TYPE_BENCHMARK_END,
-  MARKER_TYPE_BENCHMARK_START,
+  IterationMarkerRecorder,
   mongoMeasurement,
   msToNs,
   msToS,
@@ -14,21 +14,23 @@ import { Bench, Task, TaskResult } from "tinybench";
 import { getBenchOptions } from "./benchOptions";
 import { BaseBenchRunner } from "./shared";
 
+type FnOptions = NonNullable<Parameters<Bench["add"]>[2]>;
+type FnHook = NonNullable<FnOptions["beforeEach"]>;
+
 export function setupCodspeedWalltimeBench(
   bench: Bench,
   rootCallingFile: string,
-): void {
+): WalltimeBenchRunner {
   const runner = new WalltimeBenchRunner(bench, rootCallingFile);
   runner.installInstrumentHooks();
   runner.setupBenchMethods();
+  return runner;
 }
 
 class WalltimeBenchRunner extends BaseBenchRunner {
   private codspeedBenchmarks: CodspeedBenchmark[] = [];
 
-  // Carries the window start timestamp from the setup hook to the teardown
-  // hook. Tasks run strictly sequentially, so a single field is enough.
-  private runStart: bigint | null = null;
+  private readonly markerRecorder = new IterationMarkerRecorder();
 
   protected getModeName(): string {
     return "walltime mode";
@@ -57,37 +59,41 @@ class WalltimeBenchRunner extends BaseBenchRunner {
     opts.setup = (task, mode) => {
       const setupResult = userSetup(task, mode);
       if (mode === "run") {
+        this.markerRecorder.start();
         InstrumentHooks.startBenchmark();
-        this.runStart = InstrumentHooks.currentTimestamp();
       }
       return setupResult;
     };
 
     opts.teardown = (task, mode) => {
       if (mode === "run" && task) {
-        const runEnd = InstrumentHooks.currentTimestamp();
+        // Markers must land inside the sample window opened by
+        // startBenchmark(), so they have to be flushed before stopBenchmark()
+        // closes it.
+        this.markerRecorder.flush();
         InstrumentHooks.stopBenchmark();
         InstrumentHooks.setExecutedBenchmark(
           process.pid,
           this.getTaskUri(task),
         );
-        if (this.runStart !== null) {
-          this.sendBenchmarkMarkers(this.runStart, runEnd);
-        }
-
-        this.runStart = null;
       }
       return userTeardown(task, mode);
     };
   }
 
-  private sendBenchmarkMarkers(runStart: bigint, runEnd: bigint): void {
-    InstrumentHooks.addMarker(
-      process.pid,
-      MARKER_TYPE_BENCHMARK_START,
-      runStart,
+  /**
+   * Decorate a task's options so one marker range is recorded per measured
+   * iteration, giving the profile the iteration count and excluding the loop's
+   * own bookkeeping. The hooks have to be set when the task is registered,
+   * since tinybench keeps them on a private field afterwards.
+   */
+  public withIterationMarkers(fnOpts?: FnOptions): FnOptions {
+    const { beforeEach, afterEach } = composeIterationMarkerHooks<FnHook>(
+      this.markerRecorder,
+      fnOpts?.beforeEach,
+      fnOpts?.afterEach,
     );
-    InstrumentHooks.addMarker(process.pid, MARKER_TYPE_BENCHMARK_END, runEnd);
+    return { ...fnOpts, beforeEach, afterEach };
   }
 
   protected async runTaskAsync(task: Task, uri: string): Promise<void> {

@@ -81,6 +81,10 @@ export type {
   SetupInstrumentsResponse,
 } from "./generated/openapi";
 export { getV8Flags, tryIntrospect } from "./introspection";
+export {
+  composeIterationMarkerHooks,
+  IterationMarkerRecorder,
+} from "./markers";
 export { optimizeFunction, optimizeFunctionSync } from "./optimization";
 export { wrapWithRootFrame, wrapWithRootFrameSync } from "./rootFrame";
 export * from "./utils";

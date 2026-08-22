@@ -1,7 +1,7 @@
 import {
+  composeIterationMarkerHooks,
   InstrumentHooks,
-  MARKER_TYPE_BENCHMARK_END,
-  MARKER_TYPE_BENCHMARK_START,
+  IterationMarkerRecorder,
   setupCore,
   wrapWithRootFrame,
   writeWalltimeResults,
@@ -31,6 +31,9 @@ type TinybenchHook = (
   mode: "run" | "warmup",
 ) => Promise<void> | void;
 
+type TinybenchFnOptions = NonNullable<Parameters<tinybench.Bench["add"]>[2]>;
+type TinybenchFnHook = NonNullable<TinybenchFnOptions["beforeEach"]>;
+
 /** The mutable subset of a tinybench Bench the runner reaches into. */
 interface TinybenchBench {
   setup: TinybenchHook;
@@ -46,9 +49,7 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
   private suiteUris = new Map<string, string>();
   /// Suite ID of the currently running suite, to allow constructing the URI in the context of tinybench tasks
   private currentSuiteId: string | null = null;
-  // Carries the window start timestamp from the setup hook to the teardown
-  // hook. Tasks run strictly sequentially, so a single field is enough.
-  private runStart: bigint | null = null;
+  private readonly markerRecorder = new IterationMarkerRecorder();
 
   async runSuite(suite: RunnerTestSuite): Promise<void> {
     patchRootSuiteWithFullFilePath(suite);
@@ -151,10 +152,25 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
     const OriginalBench = tinybench.Bench;
 
     class InstrumentedBench extends OriginalBench {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      constructor(...benchArgs: any[]) {
+      constructor(...benchArgs: ConstructorParameters<typeof OriginalBench>) {
         super(...benchArgs);
         runner.installInstrumentHooks(this as unknown as TinybenchBench);
+      }
+
+      // The per-iteration hooks are only reachable through `add`, since
+      // tinybench keeps them on a private field of the task afterwards.
+      add(
+        name: string,
+        fn: Parameters<tinybench.Bench["add"]>[1],
+        fnOpts?: TinybenchFnOptions,
+      ) {
+        const { beforeEach, afterEach } =
+          composeIterationMarkerHooks<TinybenchFnHook>(
+            runner.markerRecorder,
+            fnOpts?.beforeEach,
+            fnOpts?.afterEach,
+          );
+        return super.add(name, fn, { ...fnOpts, beforeEach, afterEach });
       }
     }
 
@@ -168,8 +184,8 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
     bench.setup = async (task, mode) => {
       await userSetup(task, mode);
       if (mode === "run") {
+        this.markerRecorder.start();
         InstrumentHooks.startBenchmark();
-        this.runStart = InstrumentHooks.currentTimestamp();
       }
     };
 
@@ -182,20 +198,13 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
   }
 
   private closeInstrumentWindow(uri: string): void {
-    const runEnd = InstrumentHooks.currentTimestamp();
-    const pid = process.pid;
-
     // Benchmark markers must land inside the sample window opened by
-    // startBenchmark(), so they have to be emitted before stopBenchmark()
-    // closes it. The runner consumes the FIFO stream in order, so a marker
-    // sent after StopBenchmark falls outside the sample and breaks the
-    // expected SampleStart > BenchmarkStart > BenchmarkEnd > SampleEnd nesting.
-    InstrumentHooks.addMarker(pid, MARKER_TYPE_BENCHMARK_START, this.runStart!);
-    InstrumentHooks.addMarker(pid, MARKER_TYPE_BENCHMARK_END, runEnd);
+    // startBenchmark(), so they have to be flushed before stopBenchmark()
+    // closes it.
+    this.markerRecorder.flush();
 
     InstrumentHooks.stopBenchmark();
-    InstrumentHooks.setExecutedBenchmark(pid, uri);
-    this.runStart = null;
+    InstrumentHooks.setExecutedBenchmark(process.pid, uri);
   }
 
   // Allow tinybench to retrieve the path to the currently running suite
