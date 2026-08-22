@@ -58,6 +58,13 @@ export const getV8Flags = () => {
     }
   }
 
+  // COD-3036 experiment scaffolding: lets a walltime run sweep extra V8 flags
+  // (tier-up, GC) without republishing the plugin. Temporary.
+  const extra = process.env.CODSPEED_EXTRA_V8_FLAGS;
+  if (extra) {
+    flags.push(...extra.split(/\s+/).filter((flag) => flag !== ""));
+  }
+
   return flags;
 };
 
