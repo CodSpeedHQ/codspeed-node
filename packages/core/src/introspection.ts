@@ -26,6 +26,14 @@ const V8_LOG_FILENAME_PATTERN = "codspeed-v8-%p.log";
  * - `--no-flush-bytecode`, `--no-flush-baseline-code`: V8 discards code for
  *   functions not recently executed, so code can be thrown away and recompiled
  *   part-way through a suite depending on timing.
+ * - `--no-parallel-scavenge`: the young-generation collector otherwise runs on
+ *   helper threads that race the benchmark, and the interleaving differs every
+ *   run. Since marking and compaction then place objects differently, identical
+ *   machine code ends up with measurably different cache behaviour. Decomposing
+ *   `--single-threaded-gc` showed the young generation is where this happens:
+ *   this flag was the best of the GC arms on both a major-GC-bound and an
+ *   allocation-bound suite, and unlike `--no-concurrent-marking` it does not
+ *   make the major-GC-bound one worse.
  *
  * Every flag here either pins a random input or fixes *when* an optimisation
  * happens. None withhold an optimisation — the benchmark has to measure the code
@@ -56,6 +64,7 @@ const WALLTIME_DETERMINISM_FLAGS = [
   "--random-seed=1",
   "--no-flush-bytecode",
   "--no-flush-baseline-code",
+  "--no-parallel-scavenge",
 ];
 
 export const getV8Flags = () => {

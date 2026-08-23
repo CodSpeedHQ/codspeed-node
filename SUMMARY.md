@@ -6,6 +6,170 @@ CI-equivalent runs. Target: **< 5%** for every benchmark. tinybench's own
 per-sample stddev is *not* the metric — CodSpeed reduces the samples to their
 minimum.
 
+## Root cause, found
+
+The per-process shift is **two** separate causes stacked, and neither is random.
+
+### Cause 1 — nondeterministic tier-up (JIT)
+
+Which functions reach TurboFan varies between runs. Traced directly with
+`--trace-opt --trace-deopt` on a focused two-fixture probe (2.8 s per run, so 20
+repeats cost a minute instead of an hour):
+
+- The optimisation trace is **bimodal**: 410-line and 418-line variants, an
+  8-line (= 2 optimisation) difference. The function on the boundary is
+  `getFunctionName`, plus one anonymous callee — they sometimes cross the tier-up
+  threshold and sometimes do not.
+- `initializeFlameGraph` runs an optimise → `wrong map` deopt → re-optimise
+  cycle, and the number of cycles varies.
+
+With the shipped flags (`--no-concurrent-recompilation --hash-seed=1
+--random-seed=1 --no-flush-bytecode --no-flush-baseline-code`), **all 12 runs
+produce a byte-identical normalised trace** — 295 lines, same functions, same
+tiers, same deopts, same order. Cause 1 is closed.
+
+### Cause 2 — concurrent GC racing the mutator
+
+With the JIT trace byte-identical the measured value *still* spread 4.4%, so the
+remainder is not the JIT. Hardware counters say exactly what it is (16 runs,
+shipped flags, correlations against the measured value):
+
+| counter | spread | CV | pearson vs `min_ns` |
+| --- | --- | --- | --- |
+| clock (GHz) | 0.01% | **0.00%** | −0.166 |
+| instructions | 1.01% | **0.34%** | −0.131 |
+| **IPC** | 1.52% | 0.45% | **−0.894** |
+| **cache-misses** | 21.34% | 5.17% | **+0.563** |
+| branch-misses | 5.62% | 1.95% | −0.261 |
+
+So: **identical machine code, on an identically-clocked core, retiring the same
+instruction count — but with materially different cache behaviour.** Frequency,
+thermal and power are ruled out (clock constant to 0.00%); "different code got
+compiled" is ruled out (instruction count constant to 0.34%).
+
+A wrong turn worth recording: `codspeed.slice` allows CPUs 2-15, so I assumed
+migration. Pinning to one core *does* help a lot (CV 1.11% → 0.43%). But the
+probe reads `se.nr_migrations` from `/proc/self/task/*/sched`, and there are only
+**1–4 migrations per run**, uncorrelated with the time (r = −0.12). Pinning was
+treating a symptom.
+
+What pinning actually did was put all seven threads on one core, which
+**serialises V8's concurrent GC threads against the mutator**. That is the real
+mechanism: the GC threads race the benchmark, the interleaving differs every run,
+and marking and compaction therefore leave the heap laid out differently — same
+code, different cache behaviour. Doing it directly, without any affinity:
+
+| config | `recursive` CV | `v8_adapter` CV |
+| --- | --- | --- |
+| control | 0.51% | 0.72% |
+| `--predictable-gc-schedule` | 0.68% | 0.55% |
+| **`--single-threaded-gc`** | **0.38%** | **0.39%** |
+| `--predictable-gc-schedule --single-threaded-gc` | 0.38% | 0.51% |
+| `--predictable-gc-schedule` + pinned young gen | 0.86% | 0.85% |
+| *pinned to one core (reference)* | *0.36%* | *0.34%* |
+
+`--single-threaded-gc` recovers essentially all of the pinning benefit with no
+affinity and ~0.2–1% absolute cost. Two arms confirm the direction of the
+mechanism rather than just fitting it: `--no-incremental-marking` (CV 1.03%) and
+`--no-compact` (CV 1.25%) both make it *worse*, as does `--no-memory-reducer`
+(CV 1.16%) — which independently reproduces the suite-level finding that the GC
+policy flags were harmful.
+
+Note this is *not* `--predictable`. That implies `--single-threaded` for every
+thread — compiler and platform included — and was catastrophic (18/31, worst
+142%). `--single-threaded-gc` touches only the collector's parallelism.
+
+### Cause 3 — two suites sharing a class, proven causally
+
+This is the one that explains the original observation, and it is not a
+statistical argument: it is a controlled A/B.
+
+`MaxHeap build+drain [equal]`, measured on its own versus after merely
+*exercising* `generateFlameGraph` in the same process — no extra live data, no
+heap growth, no flag change, nothing else different:
+
+| | `build [equal]` | `build+drain [descending]` | `build+drain [equal]` |
+| --- | --- | --- | --- |
+| MaxHeap alone | CV 0.31% | CV 0.24% | CV **0.28%** |
+| after exercising `generateFlameGraph` | CV 0.46% | CV 0.39% | CV **5.27%** |
+| absolute change | 4.17 → 5.03 ms (**+21%**) | 15.28 → 16.13 ms (+5.6%) | — |
+
+An 18× jump in run-to-run CV, and the code is genuinely **slower** afterwards.
+
+The reason is in the source: `generateFlameGraph` builds a
+`MaxHeap<InternalFlameGraphNode>` (`generateFlameGraph.ts:310`) with its own
+priority closure, while the MaxHeap suite measures `MaxHeap<Item>` with another.
+`push`, `pop`, `siftUp`, `siftDown` and the `this.priority(item)` callsite are
+**shared code that sees two object shapes and two closures**. V8 compiles it once
+per process against whatever mixed feedback accumulated, and which of several
+possible states it lands in varies from run to run. The +21% shows the
+polymorphic state is worse code, not merely a noisier measurement.
+
+That is the same mechanism as the very first finding — one shared
+`generateFlameGraph` compiled once for 17 fixtures, moving all 17 together — now
+demonstrated causally on a second, independent instance of it.
+
+Two consequences, both benchmark-side and neither statistical:
+
+1. **Hold one benchmark's inputs live at a time.** The suite retained all 17
+   parsed fixtures and every MaxHeap input array for the whole process (~100 MB),
+   so every major collection marked the entire set and each benchmark's GC cost
+   was a function of the whole suite. Inputs are now created on first use and
+   dropped in `afterAll`.
+2. **Run each suite in its own process.** Not repetition — each benchmark is
+   still measured exactly once, in exactly one process, and the two processes
+   produce disjoint URIs so nothing needs merging and
+   `assertSingleResultPerBenchmark` is satisfied. It removes the shared-class
+   coupling outright.
+
+A subtlety found while doing (1): tinybench calls the task function once outside
+the measured loop *and outside the hooks*, to detect whether it is async, and it
+swallows exceptions from that call. Populating inputs in `beforeAll` and nulling
+them in `afterAll` therefore looks correct while silently making that probe call
+throw — it halved the suite checksum, and was only caught by comparing it.
+Inputs are built on demand instead.
+
+Supporting evidence for the same point, from the isolated probes: nothing about
+these benchmarks is variable on its own.
+
+| benchmark | in isolation | in the full suite |
+| --- | --- | --- |
+| `MaxHeap build [ascending]` | CV **0.24%** | CV 0.55% (baseline) |
+| `MaxHeap build [ascending]`, `--single-threaded-gc` | CV **0.33%** | CV **10.28%** |
+| `MaxHeap build+drain [equal]` | CV **0.28%** | CV 3.28% (`lazy+sgc`) |
+| `recursive_indirect_single_cycle` | CV 0.46% | CV 2.84% (baseline) |
+
+Every configuration tried in isolation — control, `--single-threaded-gc`,
+`--no-concurrent-marking`, all of them — lands between 0.2% and 1.0% CV. The full
+suite is 3–30× worse. **The variance is manufactured by putting 31 benchmarks in
+one process**, and the ballast experiments locate it: retaining the parsed
+fixtures reproduces part of it, and exercising the shared `MaxHeap` code
+reproduces the rest.
+
+### Decomposing the GC flag
+
+On the isolated probes (mean run-to-run CV of `min_ns`, flamegraph / MaxHeap):
+
+| flag | flamegraph | MaxHeap |
+| --- | --- | --- |
+| control | 0.51% | 0.29% |
+| `--single-threaded-gc` | 0.44% | 0.29% |
+| `--no-concurrent-marking` | 0.90% | 0.27% |
+| `--no-concurrent-marking --no-concurrent-sweeping` | 0.58% | 0.23% |
+| **`--no-parallel-scavenge`** | **0.37%** | **0.21%** |
+| `--no-parallel-marking` | V8 crashes | — |
+| `--no-concurrent-marking --no-parallel-marking` | V8 crashes | — |
+
+So it is the **young-generation collector** racing the mutator, not marking —
+and `--no-parallel-scavenge` is a far narrower change than disabling all GC
+parallelism. `--no-parallel-marking` aborts the process outright
+(trace/breakpoint trap), alone or combined.
+
+Three configurations validating at 15 repeats: lazy inputs alone, lazy +
+`--single-threaded-gc`, lazy + `--no-parallel-scavenge`.
+
+
+
 ## Bottom line
 
 **Cause.** Every benchmark in a node process shares one compilation of the code
