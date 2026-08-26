@@ -78,7 +78,8 @@ jobs:
           fi
         env:
           NPM_CONFIG_PROVENANCE: true
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # Surfaces npm's OIDC token exchange, which is otherwise silent.
+          NPM_CONFIG_LOGLEVEL: verbose
 
       - if: github.event_name == 'push'
         name: Create a draft release
