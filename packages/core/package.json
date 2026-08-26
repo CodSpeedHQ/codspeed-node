@@ -17,7 +17,7 @@
   "gypfile": true,
   "scripts": {
     "build": "NODE_NO_WARNINGS=1 rollup -c rollup.config.ts --configPlugin typescript --configImportAttributesKey with",
-    "build-native-addon": "prebuildify --napi --strip",
+    "build-native-addon": "prebuildify --name node --strip --no-napi --target 22.0.0 --target 24.0.0",
     "build-tracer-client": "openapi --client axios --input ./tracer.spec.json --name MongoTracer --output ./src/generated/openapi",
     "test": "jest --passWithNoTests --silent",
     "test/integ": "jest --passWithNoTests --silent -c jest.config.integ.js",
@@ -37,7 +37,7 @@
     "node-addon-api": "^5.1.0",
     "node-gyp": "^12.2.0",
     "openapi-typescript-codegen": "^0.23.0",
-    "prebuildify": "^5.0.1"
+    "prebuildify": "^6.0.1"
   },
   "dependencies": {
     "axios": "^1.4.0",

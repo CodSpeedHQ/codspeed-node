@@ -1,5 +1,5 @@
+import { withCodSpeed } from "@codspeed/tinybench-plugin";
 import { Bench } from "tinybench";
-import { withCodSpeed } from "..";
 import parsePr from "./parsePr";
 import { registerTimingBenchmarks } from "./timing";
 

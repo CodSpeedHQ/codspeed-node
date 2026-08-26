@@ -35,6 +35,7 @@
         "src/native_core/**/*.c",
         "src/native_core/**/*.h",
         "binding.gyp",
+        "package.json",
       ],
       "outputs": ["prebuilds/**"],
       "env": ["CC", "CXX"],
