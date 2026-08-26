@@ -5,11 +5,11 @@
 
 static inline std::string
 v8LocalStringToString(v8::Local<v8::String> v8String) {
-  std::string buffer(v8String->Utf8Length(v8::Isolate::GetCurrent()) + 1, 0);
-  v8String->WriteUtf8(v8::Isolate::GetCurrent(), &buffer[0],
-                      v8String->Utf8Length(v8::Isolate::GetCurrent()) + 1);
-  // Sanitize name, removing unwanted \0 resulted from WriteUtf8
-  return std::string(buffer.c_str());
+  // Utf8Value NUL-terminates, so the c-string constructor stops at the first
+  // embedded NUL, as callers expect for symbol names. It yields nullptr when
+  // the conversion throws.
+  v8::String::Utf8Value value(v8::Isolate::GetCurrent(), v8String);
+  return *value ? std::string(*value) : std::string();
 }
 
 #endif // LINUX_PERF_UTILS_H

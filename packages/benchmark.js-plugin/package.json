@@ -15,7 +15,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "NODE_NO_WARNINGS=1 rollup -c rollup.config.ts --configPlugin typescript --configImportAttributesKey with",
+    "build": "rollup -c",
     "test": "jest --passWithNoTests --silent",
     "test/integ": "jest --passWithNoTests --silent -c jest.config.integ.js",
     "lint": "eslint .",

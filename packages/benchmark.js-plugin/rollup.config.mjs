@@ -1,5 +1,5 @@
 import { defineConfig } from "rollup";
-import { declarationsPlugin, jsPlugins } from "../../rollup.options";
+import { declarationsPlugin, jsPlugins } from "../../rollup.options.mjs";
 import pkg from "./package.json" with { type: "json" };
 
 const entrypoint = "src/index.ts";
@@ -27,5 +27,6 @@ export default defineConfig([
       { file: pkg.module, format: "es", sourcemap: true },
     ],
     plugins: jsPlugins(pkg.version),
+    external: ["@codspeed/core"],
   },
 ]);

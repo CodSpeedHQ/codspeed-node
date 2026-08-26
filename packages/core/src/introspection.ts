@@ -1,7 +1,7 @@
 import { writeFileSync } from "fs";
 import path from "path";
 
-import { getInstrumentMode } from ".";
+import { getInstrumentMode } from "./runnerMode";
 
 const CUSTOM_INTROSPECTION_EXIT_CODE = 0;
 

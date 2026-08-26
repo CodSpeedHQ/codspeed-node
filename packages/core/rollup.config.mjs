@@ -1,5 +1,5 @@
 import { defineConfig } from "rollup";
-import { declarationsPlugin, jsPlugins } from "../../rollup.options";
+import { declarationsPlugin, jsPlugins } from "../../rollup.options.mjs";
 import pkg from "./package.json" with { type: "json" };
 
 const entrypoint = "src/index.ts";
@@ -27,6 +27,13 @@ export default defineConfig([
       { file: pkg.module, format: "es", sourcemap: true },
     ],
     plugins: jsPlugins(pkg.version),
-    external: ["@codspeed/core"],
+    onwarn(warning, warn) {
+      // The optimization helpers reach V8 natives syntax
+      // (%OptimizeFunctionOnNextCall), which has no non-eval entry point.
+      if (warning.code === "EVAL" && warning.id?.endsWith("optimization.ts")) {
+        return;
+      }
+      warn(warning);
+    },
   },
 ]);

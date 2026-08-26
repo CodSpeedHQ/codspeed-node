@@ -9,7 +9,7 @@
   "ignorePatterns": [
     "**/dist/**",
     "**/node_modules/**",
-    "**/rollup.config.ts",
+    "**/rollup.config.mjs",
     "**/jest.config.js",
     "packages/core/src/native_core/instruments/hooks/**"
   ],

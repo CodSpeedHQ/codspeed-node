@@ -17,8 +17,8 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
-      - uses: pnpm/action-setup@v2
-      - uses: actions/setup-node@v3
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           cache: pnpm
           node-version-file: .nvmrc
@@ -57,8 +57,8 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
-      - uses: pnpm/action-setup@v2
-      - uses: actions/setup-node@v3
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
         with:
           cache: pnpm
           node-version: ${{ matrix.node-version }}
@@ -73,7 +73,7 @@ jobs:
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
         uses: CodSpeedHQ/action@main
         with:
-          mode: instrumentation
+          mode: simulation
           run: pnpm --filter ${{ matrix.example }} bench-tinybench
         env:
           CODSPEED_SKIP_UPLOAD: true
@@ -82,7 +82,7 @@ jobs:
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
         uses: CodSpeedHQ/action@main
         with:
-          mode: instrumentation
+          mode: simulation
           run: pnpm --filter ${{ matrix.example }} bench-benchmark-js
         env:
           CODSPEED_SKIP_UPLOAD: true

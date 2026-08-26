@@ -1,5 +1,5 @@
 import { defineConfig } from "rollup";
-import { declarationsPlugin, jsPlugins } from "../../rollup.options";
+import { declarationsPlugin, jsPlugins } from "../../rollup.options.mjs";
 import pkg from "./package.json" with { type: "json" };
 
 const entrypoint = "src/index.ts";
