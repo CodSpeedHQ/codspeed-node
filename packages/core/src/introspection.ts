@@ -32,6 +32,15 @@ export const getV8Flags = () => {
       }
       if (nodeVersionMajor < 20) {
         flags.push("--no-scavenge-task");
+      } else {
+        // V8 11.3 renamed --scavenge-task to --minor-gc-task
+        flags.push("--no-minor-gc-task");
+      }
+      if (nodeVersionMajor >= 24) {
+        // --no-opt is only an alias for --no-turbofan. Maglev is compiled out of
+        // Node < 24 but enabled by default from V8 13.6 on, where it keeps
+        // tiering up hot functions and cuts their instruction count ~4x.
+        flags.push("--no-maglev");
       }
 
       break;
