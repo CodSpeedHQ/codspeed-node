@@ -1,4 +1,5 @@
 import { fromPartial } from "@total-typescript/shoehorn";
+import { getV8Flags } from "@codspeed/core";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import codspeedPlugin from "../index";
 
@@ -113,18 +114,7 @@ describe("codSpeedPlugin", () => {
           expect.stringContaining("packages/vitest-plugin/src/globalSetup.ts"),
         ],
         pool: "forks",
-        execArgv: [
-          "--interpreted-frames-native-stack",
-          "--allow-natives-syntax",
-          "--hash-seed=1",
-          "--random-seed=1",
-          "--no-opt",
-          "--predictable",
-          "--predictable-gc-schedule",
-          "--expose-gc",
-          "--no-concurrent-sweeping",
-          "--max-old-space-size=4096",
-        ],
+        execArgv: getV8Flags(),
         runner: expect.stringContaining(
           "packages/vitest-plugin/src/analysis.ts",
         ),
@@ -152,18 +142,7 @@ describe("codSpeedPlugin", () => {
         pool: "forks",
         poolOptions: {
           forks: {
-            execArgv: [
-              "--interpreted-frames-native-stack",
-              "--allow-natives-syntax",
-              "--hash-seed=1",
-              "--random-seed=1",
-              "--no-opt",
-              "--predictable",
-              "--predictable-gc-schedule",
-              "--expose-gc",
-              "--no-concurrent-sweeping",
-              "--max-old-space-size=4096",
-            ],
+            execArgv: getV8Flags(),
           },
         },
         runner: expect.stringContaining(
