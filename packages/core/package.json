@@ -16,7 +16,7 @@
   "types": "dist/index.d.ts",
   "gypfile": true,
   "scripts": {
-    "build": "NODE_NO_WARNINGS=1 rollup -c rollup.config.ts --configPlugin typescript",
+    "build": "NODE_NO_WARNINGS=1 rollup -c rollup.config.ts --configPlugin typescript --configImportAttributesKey with",
     "build-native-addon": "prebuildify --napi --strip",
     "build-tracer-client": "openapi --client axios --input ./tracer.spec.json --name MongoTracer --output ./src/generated/openapi",
     "test": "jest --passWithNoTests --silent",

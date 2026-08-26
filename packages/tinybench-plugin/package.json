@@ -21,7 +21,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "NODE_NO_WARNINGS=1 rollup -c rollup.config.ts --configPlugin typescript",
+    "build": "NODE_NO_WARNINGS=1 rollup -c rollup.config.ts --configPlugin typescript --configImportAttributesKey with",
     "test": "vitest --run",
     "test/integ": "echo 'no integ tests'",
     "lint": "eslint .",
