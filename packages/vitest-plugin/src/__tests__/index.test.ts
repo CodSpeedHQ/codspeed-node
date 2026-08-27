@@ -1,5 +1,5 @@
-import { fromPartial } from "@total-typescript/shoehorn";
 import { getV8Flags } from "@codspeed/core";
+import { fromPartial } from "@total-typescript/shoehorn";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import codspeedPlugin from "../index";
 
