@@ -50,14 +50,15 @@ export { getV8Flags, tryIntrospect } from "./introspection";
 export {
   getUnsupportedNodeVersionWarning,
   SUPPORTED_NODE_MAJORS,
+  warnCi,
   warnOnUnsupportedNodeVersion,
 } from "./nodeVersion";
 export { optimizeFunction, optimizeFunctionSync } from "./optimization";
 export { wrapWithRootFrame, wrapWithRootFrameSync } from "./rootFrame";
+export { getCodspeedRunnerMode, getInstrumentMode } from "./runnerMode";
+export type { InstrumentMode } from "./runnerMode";
 export * from "./utils";
 export * from "./walltime";
-export type { InstrumentMode } from "./runnerMode";
-export { getCodspeedRunnerMode, getInstrumentMode } from "./runnerMode";
 export const InstrumentHooks = native_core.InstrumentHooks;
 
 // Marker type constants, sourced from the native addon (which reads them from
