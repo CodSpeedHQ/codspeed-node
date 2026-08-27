@@ -30,9 +30,45 @@ file is the durable artifact; anything held only in conversation gets lost.
    interleaved is provisional, and one of them (`--no-parallel-scavenge`) was
    outright wrong.
 
-## Root cause, found
+## Where this stands
 
-The per-process shift is **two** separate causes stacked, and neither is random.
+**Shipped and proven.** Measured interleaved against the pre-COD-3036 state,
+15 repeats of each arm alternating so machine drift cancels:
+
+| | base | shipped |
+| --- | --- | --- |
+| **MaxHeap over 5% spread** | 8 / 14 | **0 / 14** |
+| MaxHeap mean CV | 1.92% | **0.57%** |
+| MaxHeap worst | 16.18% | **4.20%** |
+| MaxHeap speed | — | **9–64% faster** |
+| flamegraph over 5% spread | **4 / 17** | 12 / 17 |
+| flamegraph mean CV | **1.09%** | 1.84% |
+| all 31, worst | 16.18% | **8.67%** |
+| all 31, mean CV | 1.46% | **1.27%** |
+| all 31, pairwise > 5% | 4.33% | **4.09%** |
+
+The MaxHeap half is solved: every task under the threshold, a third of the
+variance, and materially faster because it now measures optimised code. That came
+from two changes that only work together — run each suite in its own process, and
+drive the shared heap code to a settled compilation before measuring.
+
+**Not solved, and the honest headline: the flamegraph suite is worse than when I
+started** — 4 of 17 fixtures over 5% became 12 of 17. The cause is identified and
+is a consequence of the process split: run alone, that suite no longer inherits a
+heap grown by the MaxHeap input arrays, and its GC behaviour during measured
+windows changes. `--initial-old-space-size=512` was the obvious substitute and
+does not work (A/B3). This is where the next session should start.
+
+Two methodological errors cost most of the time here, both recorded in full below
+because they invalidated conclusions rather than merely slowing things down:
+comparing configurations across batches on a machine that drifts 18%, and using
+standalone probes that do not reproduce the failure at all.
+
+## Root causes
+
+Six mechanisms, each identified and measured. Causes 1, 3 and 5 are real and
+addressed; Cause 2's fix was disproven; Causes 4 and 6 are understood but not
+fixed.
 
 ### Cause 1 — nondeterministic tier-up (JIT)
 
@@ -400,6 +436,139 @@ batches should be treated as provisional.** The ones that survive interleaving
 are the ones to trust, and interleaving costs nothing but ordering the runs
 differently.
 
+
+### The interleaved A/B, and what it overturned
+
+Every configuration up to this point was measured as its own batch. Once the
+drift was understood, the whole comparison was redone properly: each repeat runs
+the pre-COD-3036 state and the fixed state **back to back**, 15 repeats of each,
+so drift hits both arms equally.
+
+It overturned two conclusions and confirmed one.
+
+**Confirmed — the MaxHeap side is a large win.** Every task improved, and they
+are also much faster, which means the settled numbers are truer numbers and not
+just quieter ones:
+
+| benchmark | base spread | fixed spread | speed |
+| --- | --- | --- | --- |
+| `partial-drain 10%` | 15.51% | **4.90%** | −41.4% |
+| `churn` | 11.88% | **2.66%** | −39.8% |
+| `build [equal]` | 8.19% | **2.56%** | −28.7% |
+| `build+drain [equal]` | 4.93% | **1.30%** | −15.8% |
+| `build+drain [ascending]` | 2.54% | **0.63%** | −47.7% |
+| `build [ascending]` | 2.25% | **0.99%** | −64.1% |
+| `build+drain scaling n=1000` | 3.25% | **0.55%** | −25.2% |
+
+**Overturned 1 — `--no-parallel-scavenge`**, covered above: 34–41% slower for
+0.2 points of spread. Reverted.
+
+**Overturned 2 — lazy fixture loading made the flamegraph suite worse.** With the
+flag gone and everything else in place, almost every flamegraph fixture had
+*regressed* against baseline:
+
+| fixture | base | with lazy fixtures |
+| --- | --- | --- |
+| `recursive_direct` | 4.48% | **14.21%** |
+| `test_bench_fibo` | 7.61% | 11.57% |
+| `recursive_indirect_single_cycle` | 5.25% | 10.12% |
+| `recursive_indirect_multiple_cycles` | 5.25% | 9.13% |
+| `test_bench_backtracking` | 4.64% | 7.71% |
+
+The mechanism is the mirror image of the one that motivated it: dropping a
+several-hundred-megabyte call graph in `afterAll` leaves a major collection
+pending, and it lands inside the **next** task's measured window. For a task that
+takes 70–150 µs per call that is enormous. Holding the fixtures for the whole
+process — which is what the suite did originally — costs nothing now that the two
+suites no longer share a process, because the only benchmarks that pay for the
+retained set are the ones being measured against it.
+
+So lazy inputs were solving a real problem (Cause 3, the shared `MaxHeap` class)
+that the **process split** already solves outright, and their side effect was
+larger than their benefit. Reverted for the flamegraph suite; kept for MaxHeap,
+whose inputs are 20 MB rather than hundreds and every one of whose tasks improved.
+
+#### A/B3 — eager loading was not the cause either
+
+Reverting to retained fixtures did not recover the flamegraph suite. Interleaved,
+15 repeats each: 10/31 over 5% in both arms, and the same fixtures still
+regressed (`recursive_direct` 5.25% → 10.07%, `v8_adapter` 3.40% → 8.94%,
+`codegen` 2.88% → 8.18%). MaxHeap was again a clean win in the same window
+(`churn` 13.20% → 4.72% and 40% faster, `partial-drain` 16.74% → 3.93% and 42%
+faster).
+
+So the flamegraph regression belongs to one of the two remaining
+flamegraph-side interventions: `--initial-old-space-size=512`, or settling
+`generateFlameGraph` on the smallest fixture.
+
+**Both were justified by standalone probes, and standalone probes have no power
+here.** Outside the runner every flamegraph fixture sits under 3% spread over 12
+processes — including the ones that fail through it. A probe that cannot
+reproduce the failure cannot be used to argue that something fixes it, and it
+equally cannot show that something breaks it. Both are removed.
+
+That is the second methodological error in this investigation, and it is the same
+shape as the first: **evidence collected in a system that does not exhibit the
+bug is not evidence about the bug.** The first was comparing across batches; this
+one is measuring outside the runner.
+
+What is kept for the flamegraph suite is what it always did — every fixture
+parsed up front and retained — plus the process split, which is what stops the
+MaxHeap class being compiled against two shapes.
+
+#### A/B4 — it was the process split
+
+With the pin and the settle stripped, the flamegraph suite differed from baseline
+in exactly one way: it ran alone in its own process. Interleaved, 15 repeats each:
+
+| group | base | split |
+| --- | --- | --- |
+| flamegraph over 5% | **4 / 17** | 12 / 17 |
+| flamegraph mean CV | **1.09%** | 1.84% |
+| MaxHeap over 5% | 8 / 14 | **0 / 14** |
+| MaxHeap mean CV | 1.92% | **0.57%** |
+| MaxHeap worst | 16.18% | **4.20%** |
+
+So the split is a large win for one suite and a real loss for the other, and the
+loss has a plausible mechanism: running the flamegraph suite alone removes the
+MaxHeap input arrays (~20 MB, built at registration) from its process, so it no
+longer inherits a heap that something else has already grown. That is Cause 4's
+mechanism — heap sizing decides how much major-GC work lands in a measured window
+— pointing the other way. The flamegraph suite had been getting the pre-grown heap
+for free.
+
+That also explains why `--initial-old-space-size=512` looked so good on a
+standalone probe and did nothing through the runner: on the probe it was
+substituting for a heap nothing else had grown, which is the probe's artefact, not
+the runner's problem.
+
+**Resolution, after A/B5 below:** the split stays. Dropping it to recover the
+flamegraph suite was tried and is far worse overall, because the settle — which is
+where MaxHeap's entire win comes from — depends on it.
+
+#### A/B5 — the split and the settle are coupled
+
+The obvious response to A/B4 was to keep the settle and drop the split. It is
+catastrophically wrong. One process with the settle in place, interleaved,
+13 repeats each:
+
+| benchmark | base | one process + settle |
+| --- | --- | --- |
+| `build [ascending]` | 19.89% | **227.12%** |
+| `build+drain [ascending]` | 16.61% | **124.58%** |
+| `build [random]` | 4.75% | **58.50%** |
+| MaxHeap over 5% | 3 / 14 | 12 / 14 |
+| MaxHeap mean CV | 1.51% | **8.18%** |
+
+That is Cause 3 confirmed from the other side, and it is the most emphatic result
+in this document. The settle drives `push`/`pop`/`siftUp`/`siftDown` to a
+compilation specialised for `MaxHeap<Item>`; `generateFlameGraph` then runs 17
+tasks through the same code with a second shape and invalidates it; and what the
+MaxHeap tasks then measure is **far worse than if nothing had been settled at
+all**. Settling code that something else will immediately repolymorphise is worse
+than leaving it alone.
+
+**The settle requires the split.** They ship together or not at all.
 
 ### Decomposing the GC flag
 
