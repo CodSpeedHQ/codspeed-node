@@ -6,6 +6,30 @@ CI-equivalent runs. Target: **< 5%** for every benchmark. tinybench's own
 per-sample stddev is *not* the metric — CodSpeed reduces the samples to their
 minimum.
 
+## Constraints — do not violate, do not re-propose
+
+Standing instructions from the issue owner. They are recorded here because this
+file is the durable artifact; anything held only in conversation gets lost.
+
+1. **Never run the suite K times and take the best/minimum per benchmark.**
+   Averaging or min-reducing across repeated processes is explicitly refused. The
+   requirement is to understand *why* the per-process shift happens and remove
+   the cause. This is not a cost or feasibility question — it is out of bounds.
+   It was proposed in an early draft of this document and has been removed.
+2. **Never disable or withhold an optimisation.** No making the JIT more
+   deterministic by taking a tier away, and no crippling optimisation by refusing
+   to authorise a tier. A benchmark must measure the code the runtime would
+   really produce. `--no-use-osr`, `--no-maglev`, `--predictable` and
+   `--no-parallel-scavenge` are all rejected on this ground. Pinning a random
+   input, or fixing *when* an optimisation happens, is allowed.
+3. **Variance is judged on run-to-run variation of the reported value**, i.e. one
+   `min_ns` per run, across independent runs — not within-run sample noise.
+4. **Compare configurations interleaved, never across batches.** The machine's
+   absolute speed drifts up to 18% between batches run hours apart; every
+   cross-batch conclusion in this document that has not been re-checked
+   interleaved is provisional, and one of them (`--no-parallel-scavenge`) was
+   outright wrong.
+
 ## Root cause, found
 
 The per-process shift is **two** separate causes stacked, and neither is random.
@@ -146,6 +170,237 @@ one process**, and the ballast experiments locate it: retaining the parsed
 fixtures reproduces part of it, and exercising the shared `MaxHeap` code
 reproduces the rest.
 
+### Cause 4 — heap sizing while parsing a huge fixture
+
+What was left after the split: in 1 of 15 runs the four largest flamegraph
+fixtures were all ~25% faster at once. Isolated on a probe of the five largest
+fixtures, 10 processes per arm (spread / CV of `min_ns`):
+
+| arm | mean over 5 fixtures | `process_report` |
+| --- | --- | --- |
+| control | 5.0% / 1.8% | 10.4% / 4.3% |
+| collect before each measured loop (`global.gc()` in `beforeAll`) | 4.5% / 1.5% | 4.4% / 1.3% |
+| all fixtures parsed and retained up front (pre-lazy) | 3.9% / 1.2% | 5.8% / 1.6% |
+| `--initial-old-space-size=512 --max-old-space-size=2048` | **2.2% / 0.7%** | **1.8% / 0.6%** |
+| `--initial-old-space-size=512` alone | 3.1% / 0.9% | 3.2% / 0.9% |
+| `--initial-old-space-size=128` | 6.2% / 2.1% | 11.2% / 5.0% |
+| `--initial-old-space-size=64` | 4.5% / 1.4% | 10.9% / 3.0% |
+
+These fixtures are parsed call graphs of hundreds of megabytes. V8 sizes the old
+generation while they are being parsed, and where it lands decides how much
+major-GC work falls inside the measured loop. Pinning it removes the decision.
+
+Two things make this a real finding rather than a tuned number:
+
+- **It is the size, not the pinning.** 128 MB and 64 MB are no better than not
+  pinning at all, so this is not "stop resizing", it is "start above the live
+  set".
+- **It buys no speed.** Summed minimums across the five fixtures are within 2%
+  across every arm (885–930 ms). The variance goes away and the measured value
+  does not move, which is what distinguishes removing a coin flip from gaming the
+  benchmark.
+
+Collecting before each measured loop does *not* fix it, which rules out "fresh
+garbage from the parse" and points at the heap's size rather than its contents.
+
+This one is **workload-specific and belongs to the benchmark, not the plugin**:
+the right size depends on the live set, and forcing 512 MB of old-generation
+headroom on every CodSpeed user would be wrong. It is set in `bench/ci` for the
+flamegraph half only.
+
+#### Cause 4 confirmed at 15 repeats, and what it exposed
+
+Pinning the old space did exactly what the probe predicted, on the benchmarks it
+was aimed at (spread of `min_ns` over 15 runs):
+
+| fixture | `split-nops` | `final3` (pinned) |
+| --- | --- | --- |
+| `process_report[cpp_cloudflare_workerd]` | 19.15% | **2.80%** |
+| `linter[cal.com.tsx]` | 19.32% | **2.51%** |
+| `formatter[App.tsx]` | 24.15% | **3.17%** |
+| `codegen[cal.com.tsx]` | 2.39% | 2.75% |
+| `codegen with rootFunctionName (truncated)` | 40.77% | 15.64% |
+
+But the suite total did not improve, because a *different* rare event landed in
+that batch. Run 7 of 15 was faster in **both** processes at once:
+
+| benchmark | 14 other runs | run 7 |
+| --- | --- | --- |
+| `MaxHeap build [descending]` | 4.32–4.44 ms | **2.91 ms** (−33%) |
+| `MaxHeap build+drain [ascending]` | 22.5–23.8 ms | **20.03 ms** (−12%) |
+| `codegen with rootFunctionName` | 341–353 ms | **305 ms** (−12%, and 310 ms in run 11) |
+
+It is not the machine: run 7 was *slower* than median on several benchmarks
+(`build [equal]` −1.7%, `v8_adapter` −1.4%), so nothing global was faster. A 33%
+step with the whole distribution moved is a **tier-up that happens in some runs
+and not others**.
+
+That is Cause 1 again, but the surviving half of it. The shipped flags make
+*when* a recompilation happens deterministic; they do nothing about *whether* the
+interrupt budget is reached at all. tinybench's default bounds are **time-based**,
+so the number of calls differs every run — and every MaxHeap task drives the same
+`siftUp`/`siftDown`, so how much budget earlier tasks burned decides whether a
+later one starts already optimised. A benchmark sitting near the threshold is
+then a coin flip, and it is a 33% coin flip.
+
+### Cause 5 — the tier-up threshold is never reliably reached
+
+Chasing run 7 gave the most useful result of the investigation. Take the four
+MaxHeap tasks involved, run them in their own process, and vary only how many
+times the function is called before and during measurement (25 processes per arm,
+median `min_ns` and CV across processes):
+
+| task | tinybench default | 200 iters | 500 iters | 2000 iters | 500 warmup | 2000 warmup |
+| --- | --- | --- | --- | --- | --- | --- |
+| `build [descending]` | 4.13 (0.29%) | 4.13 | **2.66** | **2.71** | **2.71** | **2.71** |
+| `build [random]` | 5.55 (0.24%) | 5.54 | 5.51 | **4.13** | **4.16** | **4.12** |
+| `build+drain [ascending]` | 22.01 (0.21%) | 21.95 | **19.34** | **19.33** | **19.48** | **19.18** |
+| `build+drain [descending]` | 15.36 (0.35%) | 13.85 | 13.76 | **13.62** | **13.78** | **13.67** |
+
+The settled state is **11–34% faster**, every arm that reaches it agrees on the
+value, and it holds to a CV of 0.44% or better. **The default bounds measure a
+partly-optimised mixture.** Run 7 was not lucky noise — it was the one run in
+fifteen that happened to settle.
+
+This is Cause 1's other half. The flags fix *when* a recompilation happens; they
+say nothing about *whether* the threshold is reached, which depends on the call
+count — and tinybench's default bounds are time-based, so the count differs every
+run. Worse, every MaxHeap task drives the same `siftUp`/`siftDown`, so how much
+budget the earlier tasks burned decides whether a later one starts optimised.
+That is the mechanism behind every "the suite pollutes itself" observation in
+this document, stated exactly.
+
+It is also the one intervention here that is unambiguously *correct* rather than
+merely stabilising: a benchmark is supposed to report the code the runtime would
+really produce, and the settled state is that code. Everything else in this
+investigation removed a coin flip; this one removes a coin flip **and** reports a
+truer number.
+
+**First attempt, and the mistake worth recording.** I warmed each task up to 500
+calls *under a 2 s wall-clock budget*, so expensive tasks would not cost minutes.
+That is self-defeating: for any task whose 500 calls exceed the budget, the
+number of calls becomes a function of how fast the machine happened to be — the
+exact nondeterminism being removed, applied right at the threshold. The 15-repeat
+run showed it perfectly. Run 14 of 15 failed to settle at all and came out **2×
+slower** (`build [ascending]` 9.94 → 19.73 ms) while the other 14 runs held a
+**1.1% spread** at the settled value. A time budget can never appear in this fix.
+
+**Shipped instead:** one settle per *suite*, at registration time, as fixed
+constants. V8's tier-up counters are per function and every task in a suite
+drives the same functions, so once any caller crosses the threshold every later
+task measures settled code — there is no reason to pay per task. It is also what
+makes it cheap: the settling uses the *smallest* input (a 1 000-element heap; the
+smallest fixture), because the compiled code depends on the shapes and types the
+function saw, not on how long its loops ran.
+
+Verified against the reference: with the settle in place and tinybench's default
+bounds, the four tasks land within **2.4–3.4%** of the 2000-iteration value
+instead of 12–34% away, at a CV of 0.21–0.44%.
+
+| task | default bounds | shipped settle | 2000-iteration reference |
+| --- | --- | --- | --- |
+| `build [descending]` | 4.13 | **2.81** | 2.71 |
+| `build [random]` | 5.55 | **4.23** | 4.13 |
+| `build+drain [ascending]` | 22.01 | **19.82** | 19.33 |
+| `build+drain [descending]` | 15.36 | **13.96** | 13.62 |
+
+Cost: 1.1 s for MaxHeap and 0.2 s for the flamegraph suite. The MaxHeap suite got
+*faster* overall — 43 s to 25 s — because it now measures the optimised code.
+Skipped under simulation, which counts instructions and so does not care which
+tier the code reached.
+
+#### 15-repeat result with all five causes addressed
+
+| benchmark group | baseline | all five causes |
+| --- | --- | --- |
+| over 5% spread | 10 / 31 | **7 / 31** |
+| mean CV | 1.25% | **1.05%** |
+| pairwise > 5% | 4.15% | **2.61%** |
+| `codegen with rootFunctionName` (the worst case) | 8.06% | **1.57%** |
+| `linter[cal.com.tsx]` | 4.34% | **2.12%** |
+| `recursive_indirect_single_cycle` | 11.30% | 5.82% |
+| MaxHeap, settled tasks | 0.55–3.35% | **0.27–0.52% CV** |
+
+Every benchmark the issue was filed about is fixed. What is left over 5% is a
+different population: the **micro-fixtures**, 70–210 µs each.
+
+### Cause 6 — the profiler, on benchmarks this small
+
+Two facts pointed the same way. Standalone, outside the runner, all 16 flamegraph
+fixtures sit under 3% spread over 12 processes — including the ones that fail
+through the runner. And the failures are ordered by cost, cheapest worst.
+
+So: same 15 repeats, same everything, `CODSPEED_PROFILER_ENABLED=false`.
+
+| benchmark | median | profiler on | profiler off |
+| --- | --- | --- | --- |
+| `recursive_direct` | 144 µs | 10.83% | **2.27%** |
+| `validate_callgraph_synthetic_recursive` | 93 µs | 7.80% | **3.31%** |
+| `recursive_indirect_multiple_cycles` | 391 µs | 6.45% | **1.99%** |
+| `recursive_indirect_single_cycle` | 153 µs | 5.82% | **2.20%** |
+| `test_bench_fibo` | 4.8 ms | 11.43% | **5.72%** |
+| `MaxHeap churn` | 25 ms | 4.18% | **1.16%** |
+| **over 5% spread** | | 7 / 31 | **3 / 31** |
+| **worst** | | 11.43% | **5.72%** |
+| **pairwise > 5%** | | 2.61% | **0.95%** |
+
+**The sampling profiler is the dominant remaining variance source.** It moves the
+*floor*, not individual samples — `recursive_direct`'s minimum ranges over
+137–152 µs between runs with it enabled and 2.3% without — so it is a per-run
+overhead level, not noise that `min` can select away. That also means sample
+batching cannot help, unlike the loop chunking earlier in this document.
+
+An early control (`baseline-noprof`, before any other fix) found the profiler
+irrelevant, and that conclusion was wrong: at the time the benchmark-side
+variance was 4–10× larger and hid it. Worth remembering as a general point —
+**a null result on a secondary factor is only meaningful once the primary ones
+are quiet.**
+
+This one is not fixable in the benchmark. Either these fixtures are too cheap to
+carry a 5% gate while a profiler is attached, or the runner's profiling overhead
+needs to become more uniform. Filed as the follow-up below.
+
+### Cause 2's fix, disproven
+
+`--no-parallel-scavenge` was shipped and then reverted. The observation behind it
+still stands — with the JIT trace byte-identical, hardware counters showed the
+clock constant to 0.00% and the instruction count to 0.34% while IPC tracked the
+measured time at r = −0.894 and cache-misses at r = +0.563, which is GC-driven
+memory layout and not the JIT. The *fix* does not stand.
+
+Interleaved, 10 alternating processes, only the flag varying:
+
+| fixture | without | with | change |
+| --- | --- | --- | --- |
+| `linter[cal.com.tsx]` | 365.6 ms | 517.1 ms | **+41.4%** |
+| `process_report[cpp_cloudflare_workerd]` | 153.8 ms | 216.7 ms | **+40.9%** |
+| `formatter[App.tsx]` | 139.6 ms | 187.2 ms | **+34.1%** |
+| every other fixture | | | within ±1% |
+| mean run-to-run spread | 2.24% | 2.03% | — |
+| benchmarks over 5% | 0 / 16 | 0 / 16 | — |
+
+**34–41% slower for 0.2 points of spread.** Removing GC parallelism removes real
+work the runtime would do, which is the ground on which `--no-use-osr` and
+`--no-maglev` were rejected earlier, so this goes with them.
+
+`--initial-old-space-size=512` was decomposed in the same window and costs
+±0.6%, so it stays.
+
+#### Why this was believed for so long, and the lesson
+
+The evidence for the flag was **cross-batch**: configurations measured hours or
+days apart. The machine does not hold still on that timescale — `linter` was
+measured at 456 ms, 475 ms, 522 ms and 541 ms in four different batches of
+otherwise identical configurations, an 18% range. A 0.2-point difference in
+spread cannot be read across that, and neither can a 40% difference in speed:
+drift hid a large regression and manufactured a small win.
+
+**Every conclusion in this document that came from comparing two separately-run
+batches should be treated as provisional.** The ones that survive interleaving
+are the ones to trust, and interleaving costs nothing but ordering the runs
+differently.
+
+
 ### Decomposing the GC flag
 
 On the isolated probes (mean run-to-run CV of `min_ns`, flamegraph / MaxHeap):
@@ -221,10 +476,12 @@ an optimisation (forbidden, and it makes the benchmark measurably slower — i.e
 it *is* the error it appears to fix) or wrecking the allocation-heavy
 benchmarks.
 
-**The structural fix is a backend change**, documented below: run the suite in K
-processes and reduce the K same-`uri` results to their minimum. That works
-regardless of root cause, because the latent variable is per-process. It is
-currently blocked by `assertSingleResultPerBenchmark`.
+**That paragraph was written before the causes were found**, and the residual it
+describes was not irreducible. It was four more mechanisms, each identified and
+each addressed in the benchmark or the plugin: the suites sharing a class
+(Cause 3), heap sizing during huge parses (Cause 4), the tier-up threshold never
+reliably being reached (Cause 5), and the profiler on micro-benchmarks
+(Cause 6). See those sections for the numbers.
 
 **Transferable guideline for benchmark authors:** a benchmark whose measured unit
 is one long loop can only be optimised through on-stack replacement, mid-run, at
@@ -455,6 +712,41 @@ baseline's worst case is 8.69% over 6 runs and 11.34% over 15.
 | `leanchunk` = `lean` + every MaxHeap loop chunked | 15 | 9 / 31 | 9.30% | 2.18% | 6 | 3 |
 | `det` = `lean` + `--always-osr` + GC flags | 15 | 5 / 31 | 13.99% | 4.51% | 3 | 2 |
 | `det-nogc` = `det` without the GC flags | 15 | 17 / 31 | 23.15% | 5.68% | 11 | 6 |
+
+#### Definitive 15-run comparison
+
+`(max−min)/min` is dominated by a single lucky run, so the gating metric is the
+**pairwise failure rate**: over all `C(15,2) = 105` run pairs per benchmark, the
+fraction of pairs differing by more than 5%. That is literally what CI does — it
+compares two runs — so it is the probability a PR is blocked spuriously.
+
+| config | pairwise > 5% | FLAME mean CV | FLAME max CV | HEAP mean CV | HEAP max CV |
+| --- | --- | --- | --- | --- | --- |
+| `baseline` | 4.15% | 1.78% | 2.84% | 0.61% | 0.96% |
+| `lean` — V8 flags only | 1.47% | 1.23% | 2.17% | 0.81% | 1.49% |
+| `lazy-nops` — flags + lazy inputs, 1 process | **0.46%** | 0.85% | 1.38% | 0.83% | 2.43% |
+| `split-nops` — the above, 2 processes | 2.21% | 2.00% | 7.11% | **0.59%** | 1.63% |
+| `split-nops` excluding one outlier run | **0.46%** | 0.95% | 1.79% | 0.61% | 1.70% |
+
+**A 9× reduction in the rate at which a PR is spuriously blocked**, 4.15% →
+0.46%.
+
+The process split did exactly what the shared-class proof predicted, on the
+benchmark that proof was about:
+
+| config | `MaxHeap build+drain [equal]` CV |
+| --- | --- |
+| `baseline` | 0.57% |
+| `lean` | 1.22% |
+| `lazy-nops` — still sharing a process with the flamegraph suite | 2.43% |
+| `split-nops` — own process | **0.42%** |
+
+`split-nops`'s headline 2.21% is **one run out of fifteen**: 59 of its 72
+pairwise failures involve run 4 alone, in which the four largest flamegraph
+fixtures were all ~25% faster simultaneously — 64 samples each, and that run's
+*median* below every other run's *minimum*. MaxHeap, in its own process that run,
+was unaffected (mean +0.00%). So it is a whole-process state, the same
+phenomenon as Causes 1 and 3, now rare (1 run in 15) instead of continuous.
 
 `lean` is the recommendation. `det` shows fewer failures but a much worse tail
 and nearly double the max CV, and both of its extra flags were individually shown
@@ -785,34 +1077,26 @@ re-run needs. `~/cod3036` on the macro runner still holds the harness
 (`csrun.sh`, `repeat.sh`, `analyze.py`, `queue.sh`) and every dataset under
 `~/cod3036/runs/<label>/`, one subdirectory per repeat.
 
-### Multi-process averaging is blocked downstream
+### Why the same benchmark cannot appear twice in a run
 
-Worth recording because it is the statistically obvious fix and it is *not*
-available today. Since the latent variable is per-process, running the suite in
-K node processes per CI run would give K independent draws to reduce over.
-The plumbing almost works:
+Recorded only as a fact about the plumbing, because it came up while splitting
+the suite into two processes and it is what makes that split safe.
 
-- the plugin already writes one `results/<pid>.json` per process
+- the plugin writes one `results/<pid>.json` per process
   (`runner-shared/src/walltime_results/mod.rs:19-31`), and the runner's
-  `validate_walltime_results` explicitly accepts several files
+  `validate_walltime_results` accepts several files
   (`codspeed/src/executor/wall_time/helpers.rs:15-73`);
-- `parse_callgraph` concatenates them into one `benchmarks` array with **no**
-  dedup or aggregation
-  (`platform/packages/api/src/services/parse_callgraph/src/process_reports/mod.rs:524-537`).
+- `parse_callgraph` concatenates them into one `benchmarks` array with no dedup
+  (`platform/packages/api/src/services/parse_callgraph/src/process_reports/mod.rs:524-537`);
+- a duplicate `uri` then reaches `persistInstrumentResults` →
+  `assertSingleResultPerBenchmark`
+  (`platform/packages/api/src/core/persistUploadedProfile.ts:39-53`) and is
+  rejected with the user-facing `MultipleBenchmarkVariations` error. Splitting
+  across run *parts* does not help; the assertion runs again when the performance
+  report is built.
 
-But the duplicate `uri` then reaches
-`persistInstrumentResults` → `assertSingleResultPerBenchmark`
-(`platform/packages/api/src/core/persistUploadedProfile.ts:39-53`), which
-rejects it with the user-facing `MultipleBenchmarkVariations` error ("Found the
-same benchmark multiple times in a run, this is not supported yet"). Splitting
-across run *parts* does not help either — the same assertion runs again when the
-performance report is built.
-
-So a K-process mitigation would need new merge logic at
-`process_reports/mod.rs:524-537` (the only place where all K draws are
-simultaneously in scope), e.g. reduce same-`uri` entries to the per-`uri`
-minimum of `min_ns`. That is a backend change, out of scope here, but it is the
-one mitigation that works regardless of root cause.
+The suite-per-process split therefore has to produce **disjoint** URIs, which it
+does: each task is registered in exactly one suite and measured exactly once.
 
 ### Where the change landed
 
@@ -882,29 +1166,24 @@ Ordered by how plausible they looked going in.
 
 In priority order, for whoever picks this up.
 
-1. **Multi-process reduction in the backend.** The one mitigation that works
-   regardless of root cause, because the latent variable is per-process. Run the
-   suite K times per CI run and reduce same-`uri` results to their minimum at
-   `process_reports/mod.rs:524-537`. With a per-process draw of sd ≈ 1.5%, K = 4
-   takes the effective spread to well under 2%. Needs the
-   `assertSingleResultPerBenchmark` path reworked.
-2. **Find out what actually differs in the generated code.** Everything here is
-   black-box: configurations in, spreads out. `--trace-opt --trace-deopt` (or the
-   `--log-code` output the profiler already collects) diffed between a fast and a
-   slow run would name the function and the decision that differs, instead of
-   inferring it. That is the missing piece behind the residual 5–7%.
-3. **Reconsider the tiny fixtures.** Seven of the seventeen flamegraph fixtures
+1. **Find out what actually differs in the generated code, for the residual.**
+   Causes 1 and 5 were closed this way — `--trace-opt --trace-deopt` diffed
+   between a fast and a slow run named the function and the decision. The same
+   method has not been applied to what is left: the micro-fixtures under the
+   profiler (Cause 6). Do that rather than reaching for a statistical mitigation.
+2. **Reconsider the tiny fixtures.** Seven of the seventeen flamegraph fixtures
    are 70–400 µs per call. At that size a single inlining decision is worth 4%,
    and they exist mainly for the deterministic simulation metric. Restricting the
    walltime matrix to the fixtures that are large enough to measure reliably would
    remove most remaining failures honestly, rather than by tuning.
-4. **`%OptimizeFunctionOnNextCall`.** `--allow-natives-syntax` is already on and
+3. **`%OptimizeFunctionOnNextCall`.** `--allow-natives-syntax` is already on and
    `packages/core/src/optimization.ts` already wraps this intrinsic. Forcing the
    benchmark function to be optimised at a fixed point is *more* optimisation, not
    less, so it is within bounds. Untested here because it only pins the top-level
    closure, not the callees where the time is actually spent — but worth trying on
    the hot callees directly.
-5. **Raise the threshold for JS walltime, or make it per-benchmark.** If the
-   residual per-process draw is irreducible without backend changes, a 5% gate on
-   a 70 µs benchmark is not a meaningful signal, and the honest response is to
-   stop gating on it.
+4. **Make the runner's profiling overhead uniform, or stop gating on 70 µs
+   benchmarks.** Cause 6 is measured and is the largest remaining term: the
+   profiler takes `recursive_direct` from 2.27% to 10.83%. Either the runner's
+   per-run profiling cost becomes stable, or a 5% gate on a benchmark that small
+   is not a meaningful signal.
