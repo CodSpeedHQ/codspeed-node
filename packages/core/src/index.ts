@@ -16,8 +16,12 @@ export const setupCore = () => {
   warnOnUnsupportedNodeVersion();
 
   if (!native_core.isBound) {
+    const reason =
+      native_core.bindError instanceof Error
+        ? native_core.bindError.message
+        : String(native_core.bindError);
     throw new Error(
-      "Native core module is not bound, CodSpeed integration will not work properly",
+      `Native core module is not bound, CodSpeed integration will not work properly (Node ${process.version}, ABI ${process.versions.modules}, ${process.platform}-${process.arch}): ${reason}`,
     );
   }
 

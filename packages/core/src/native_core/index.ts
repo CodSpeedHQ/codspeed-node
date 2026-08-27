@@ -9,6 +9,7 @@ interface NativeCore {
 
 interface NativeCoreWithBindingStatus extends NativeCore {
   isBound: boolean;
+  bindError?: unknown;
 }
 
 let native_core: NativeCoreWithBindingStatus;
@@ -76,6 +77,7 @@ try {
       MARKER_TYPE_BENCHMARK_END: 3,
     },
     isBound: false,
+    bindError: e,
   };
 }
 
