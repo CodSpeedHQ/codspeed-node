@@ -1,8 +1,7 @@
 /**
- * Majors the native addon ships prebuilds for, as listed in the
- * `build-native-addon` targets in package.json. Prebuilds are matched on the
- * exact ABI version, so on any other major the addon only loads when it has
- * been compiled from source locally.
+ * Majors CodSpeed is tested against. The native addon itself is built as a
+ * single Node-API binary and loads on any major, so this only gates the
+ * warning about measurement stability.
  */
 export const SUPPORTED_NODE_MAJORS = [22, 24];
 

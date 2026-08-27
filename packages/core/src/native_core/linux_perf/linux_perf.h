@@ -10,7 +10,7 @@ namespace codspeed_native {
 
 class LinuxPerfHandler : public v8::CodeEventHandler {
 public:
-  explicit LinuxPerfHandler(v8::Isolate *isolate);
+  LinuxPerfHandler(v8::Isolate *isolate, napi_env env);
   ~LinuxPerfHandler() override;
 
   void Handle(v8::CodeEvent *code_event) override;
@@ -19,6 +19,7 @@ private:
   std::ofstream mapFile;
   std::string FormatName(v8::CodeEvent *code_event);
   v8::Isolate *isolate_;
+  napi_env env_;
 };
 
 class LinuxPerf : public Napi::ObjectWrap<LinuxPerf> {

@@ -17,7 +17,7 @@
   "gypfile": true,
   "scripts": {
     "build": "rollup -c",
-    "build-native-addon": "prebuildify --name node --strip --no-napi --target 22.0.0 --target 24.0.0",
+    "build-native-addon": "prebuildify --name node.napi --napi --strip --target 22.0.0",
     "build-tracer-client": "openapi --client axios --input ./tracer.spec.json --name MongoTracer --output ./src/generated/openapi",
     "test": "jest --passWithNoTests --silent",
     "test/integ": "jest --passWithNoTests --silent -c jest.config.integ.js",

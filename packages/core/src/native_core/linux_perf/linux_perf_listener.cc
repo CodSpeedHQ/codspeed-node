@@ -5,9 +5,10 @@
 
 namespace codspeed_native {
 
-LinuxPerfHandler::LinuxPerfHandler(v8::Isolate *isolate)
+LinuxPerfHandler::LinuxPerfHandler(v8::Isolate *isolate, napi_env env)
     : v8::CodeEventHandler(isolate) {
   isolate_ = isolate;
+  env_ = env;
   int pid = static_cast<int>(uv_os_getpid());
   mapFile.open("/tmp/perf-" + std::to_string(pid) + ".map");
 }
@@ -17,7 +18,7 @@ LinuxPerfHandler::~LinuxPerfHandler() { mapFile.close(); }
 std::string LinuxPerfHandler::FormatName(v8::CodeEvent *code_event) {
   std::string name = std::string(code_event->GetComment());
   if (name.empty()) {
-    name = v8LocalStringToString(code_event->GetFunctionName());
+    name = v8LocalStringToString(env_, code_event->GetFunctionName());
   }
   return name;
 }
@@ -27,7 +28,8 @@ void LinuxPerfHandler::Handle(v8::CodeEvent *code_event) {
           << code_event->GetCodeSize() << " ";
   mapFile << v8::CodeEvent::GetCodeEventTypeName(code_event->GetCodeType())
           << ":" << FormatName(code_event) << " "
-          << v8LocalStringToString(code_event->GetScriptName()) << std::dec
+          << v8LocalStringToString(env_, code_event->GetScriptName())
+          << std::dec
           << ":" << code_event->GetScriptLine() << ":"
           << code_event->GetScriptColumn() << std::endl;
 }

@@ -22,7 +22,7 @@ LinuxPerf::LinuxPerf(const Napi::CallbackInfo &info)
 Napi::Value LinuxPerf::Start(const Napi::CallbackInfo &info) {
   if (handler == nullptr) {
     v8::Isolate *isolate = v8::Isolate::GetCurrent();
-    handler = new LinuxPerfHandler(isolate);
+    handler = new LinuxPerfHandler(isolate, info.Env());
     handler->Enable();
     return Napi::Boolean::New(info.Env(), true);
   }
