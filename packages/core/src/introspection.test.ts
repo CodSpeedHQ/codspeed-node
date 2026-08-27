@@ -28,7 +28,6 @@ describe("getV8Flags", () => {
           "--random-seed=1",
           "--no-flush-bytecode",
           "--no-flush-baseline-code",
-          "--no-parallel-scavenge",
         ]),
       );
     });

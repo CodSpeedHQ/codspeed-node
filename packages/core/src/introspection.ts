@@ -26,14 +26,6 @@ const V8_LOG_FILENAME_PATTERN = "codspeed-v8-%p.log";
  * - `--no-flush-bytecode`, `--no-flush-baseline-code`: V8 discards code for
  *   functions not recently executed, so code can be thrown away and recompiled
  *   part-way through a suite depending on timing.
- * - `--no-parallel-scavenge`: the young-generation collector otherwise runs on
- *   helper threads that race the benchmark, and the interleaving differs every
- *   run. Since marking and compaction then place objects differently, identical
- *   machine code ends up with measurably different cache behaviour. Decomposing
- *   `--single-threaded-gc` showed the young generation is where this happens:
- *   this flag was the best of the GC arms on both a major-GC-bound and an
- *   allocation-bound suite, and unlike `--no-concurrent-marking` it does not
- *   make the major-GC-bound one worse.
  *
  * Every flag here either pins a random input or fixes *when* an optimisation
  * happens. None withhold an optimisation — the benchmark has to measure the code
@@ -57,6 +49,15 @@ const V8_LOG_FILENAME_PATTERN = "codspeed-v8-%p.log";
  *   were *most* stable without them — one went from 0.64% to 12.69%. Pinning the
  *   young generation changes promotion behaviour, which is not neutral for
  *   allocation-heavy code.
+ * - `--no-parallel-scavenge`: serialising the young-generation collector looked
+ *   like the answer for a while — hardware counters said the machine code was
+ *   byte-identical between a fast and a slow run while IPC tracked the measured
+ *   time at r = −0.894, which points at GC-driven memory layout rather than the
+ *   JIT. It does not survive an interleaved A/B: over 10 alternating processes it
+ *   made the three largest benchmarks in a suite 34–41% slower
+ *   (365 → 517 ms on one) while moving their mean run-to-run spread by 0.2
+ *   points, from 2.24% to 2.03%. Removing GC parallelism removes real work the
+ *   runtime would do.
  */
 const WALLTIME_DETERMINISM_FLAGS = [
   "--no-concurrent-recompilation",
@@ -64,7 +65,6 @@ const WALLTIME_DETERMINISM_FLAGS = [
   "--random-seed=1",
   "--no-flush-bytecode",
   "--no-flush-baseline-code",
-  "--no-parallel-scavenge",
 ];
 
 export const getV8Flags = () => {
