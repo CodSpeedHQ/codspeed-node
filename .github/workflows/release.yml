@@ -71,11 +71,24 @@ jobs:
       - if: github.event_name == 'push'
         name: Publish the libraries
         run: |
-          if [[ "${{ github.ref }}" == *"-alpha"* ]]; then
-            pnpm publish -r --access=public --no-git-checks --tag=alpha
-          else
+          # Prerelease tags publish under their own identifier (alpha, beta, rc);
+          # only a plain vX.Y.Z tag is allowed to move the `latest` dist-tag.
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [[ "$VERSION" != *-* ]]; then
             pnpm publish -r --access=public --no-git-checks
+            exit 0
           fi
+
+          PREID="${VERSION#*-}"
+          PREID="${PREID%%.*}"
+          # npm rejects a dist-tag that parses as a semver range, so a numeric
+          # identifier has no channel to publish under, and `latest` is the
+          # stable channel a prerelease must never take over.
+          if [[ ! "$PREID" =~ ^[A-Za-z][A-Za-z0-9-]*$ || "${PREID,,}" == "latest" ]]; then
+            echo "Refusing to publish $GITHUB_REF_NAME: '$PREID' cannot be a prerelease dist-tag" >&2
+            exit 1
+          fi
+          pnpm publish -r --access=public --no-git-checks --tag="$PREID"
         env:
           NPM_CONFIG_PROVENANCE: true
           # Surfaces npm's OIDC token exchange, which is otherwise silent.
@@ -85,6 +98,10 @@ jobs:
         name: Create a draft release
         run: |
           NEW_VERSION=$(pnpm lerna list --json | jq -r '.[] | select(.name == "@codspeed/core") | .version')
-          gh release create v$NEW_VERSION --title "v$NEW_VERSION" --generate-notes -d
+          PRERELEASE=""
+          if [[ "$NEW_VERSION" == *-* ]]; then
+            PRERELEASE="--prerelease"
+          fi
+          gh release create "v$NEW_VERSION" --title "v$NEW_VERSION" --generate-notes -d $PRERELEASE
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
