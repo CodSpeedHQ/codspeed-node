@@ -1,5 +1,21 @@
 #!/bin/bash
-# Usage: ./scripts/release.sh <major|minor|patch|premajor|preminor|prepatch|prerelease> [preid]
+#
+# Usage: ./scripts/release.sh <version>
+#
+#   version   major | minor | patch   stable release
+#             prerelease              next prerelease of the current version,
+#                                     keeping its identifier
+#             X.Y.Z-<id>.N            explicit version, used to start a new
+#                                     prerelease series
+#
+# The identifier of a prerelease version (e.g. "beta" in 5.8.0-beta.0) becomes
+# the npm dist-tag the release workflow publishes under, so consumers opt in
+# with `pnpm add @codspeed/core@beta` while `latest` keeps pointing at the last
+# stable release.
+#
+#   ./scripts/release.sh patch          5.7.1        -> 5.7.2         (dist-tag latest)
+#   ./scripts/release.sh 5.8.0-beta.0   5.7.1        -> 5.8.0-beta.0  (dist-tag beta)
+#   ./scripts/release.sh prerelease     5.8.0-beta.0 -> 5.8.0-beta.1  (dist-tag beta)
 set -ex
 
 # Fail if not on main
@@ -8,24 +24,12 @@ if [ "$(git rev-parse --abbrev-ref HEAD)" != "main" ]; then
   exit 1
 fi
 
-if [ $# -lt 1 ] || [ $# -gt 2 ]; then
-  echo "Usage: ./release.sh <major|minor|patch|premajor|preminor|prepatch|prerelease> [preid]"
+if [ $# -ne 1 ]; then
+  echo "Usage: ./release.sh <major|minor|patch|prerelease|X.Y.Z-id.N>"
   exit 1
-fi
-
-# lerna defaults the prerelease identifier to "alpha"; the dist-tag the release
-# workflow publishes under is derived from it, so it must be spelled out for
-# any other channel.
-PREID=()
-if [ $# -eq 2 ]; then
-  if [[ ! "$2" =~ ^[a-z][a-z0-9-]*$ || "$2" == "latest" ]]; then
-    echo "Invalid prerelease identifier: '$2' (expected e.g. alpha, beta, rc)"
-    exit 1
-  fi
-  PREID=(--preid "$2")
 fi
 
 # Fail if there are any unstaged changes left
 git diff --exit-code
 
-pnpm lerna version "$1" "${PREID[@]}" --force-publish --no-private --sign-git-tag
+pnpm lerna version "$1" --force-publish --no-private --sign-git-tag
