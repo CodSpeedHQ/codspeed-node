@@ -30,11 +30,6 @@ jobs:
   native-abi:
     runs-on: "ubuntu-latest"
     name: Native addon ABI compatibility
-    env:
-      # The flags the runner passes in a real benchmark process. They cannot go
-      # through NODE_OPTIONS (--allow-natives-syntax is rejected there), so jest
-      # runs in-band under a flagged node instead of forking workers.
-      NODE_OPTS: "--interpreted-frames-native-stack --allow-natives-syntax"
     steps:
       - uses: "actions/checkout@v4"
         with:
@@ -51,21 +46,20 @@ jobs:
           key-suffix: native-abi
       - run: pnpm install --frozen-lockfile --prefer-offline
       # Build one prebuild set, then load it without rebuilding under each
-      # runtime via the jest integ test. The other jobs compile the addon
-      # with the Node version that loads it, so they cannot detect an ABI
-      # mismatch.
+      # runtime via the composite action below. The other jobs compile the
+      # addon with the Node version that loads it, so they cannot detect an
+      # ABI mismatch or a V8-version-specific natives-syntax failure.
       - run: pnpm turbo run build --filter=@codspeed/core
 
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/test-native-abi
         with:
           node-version: "22"
-      - run: node ${{ env.NODE_OPTS }} "$(node -p 'require.resolve("jest/bin/jest")')" -c jest.config.integ.js --runInBand tests/index.integ.test.ts
-        working-directory: packages/core
-      - uses: actions/setup-node@v6
+      - uses: ./.github/actions/test-native-abi
         with:
           node-version: "24"
-      - run: node ${{ env.NODE_OPTS }} "$(node -p 'require.resolve("jest/bin/jest")')" -c jest.config.integ.js --runInBand tests/index.integ.test.ts
-        working-directory: packages/core
+      - uses: ./.github/actions/test-native-abi
+        with:
+          node-version: "26"
 
   list-examples:
     runs-on: "ubuntu-latest"
@@ -89,7 +83,7 @@ jobs:
     needs: list-examples
     strategy:
       matrix:
-        node-version: ["22", "24"]
+        node-version: ["22", "24", "26"]
         example: ${{ fromJson(needs.list-examples.outputs.examples) }}
       fail-fast: false
     steps:

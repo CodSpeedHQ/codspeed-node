@@ -1,0 +1,27 @@
+name: Test Native ABI
+description: >
+  Set up the given Node.js major and run the core package's integ tests
+  in-band, without rebuilding, to catch native addon ABI mismatches and
+  V8-version-specific natives-syntax behavior. The flags mirror what the
+  runner passes in a real benchmark process; they cannot go through
+  NODE_OPTIONS (--allow-natives-syntax is rejected there), so jest runs
+  in-band under a flagged node instead of forking workers.
+
+inputs:
+  node-version:
+    description: Node.js major version to test under
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs.node-version }}
+    - shell: bash
+      working-directory: packages/core
+      run: >
+        node --interpreted-frames-native-stack --allow-natives-syntax
+        "$(node -p 'require.resolve("jest/bin/jest")')"
+        -c jest.config.integ.js --runInBand
+        tests/index.integ.test.ts tests/optimization.integ.test.ts

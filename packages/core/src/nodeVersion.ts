@@ -3,7 +3,7 @@
  * single Node-API binary and loads on any major, so this only gates the
  * warning about measurement stability.
  */
-export const SUPPORTED_NODE_MAJORS = [22, 24];
+export const SUPPORTED_NODE_MAJORS = [22, 24, 26];
 
 export function getUnsupportedNodeVersionWarning(
   version: string,
