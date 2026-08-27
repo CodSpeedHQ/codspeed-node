@@ -1,6 +1,7 @@
 import { checkV8Flags } from "./introspection";
 import { MongoMeasurement } from "./mongoMeasurement";
 import native_core from "./native_core";
+import { warnOnUnsupportedNodeVersion } from "./nodeVersion";
 import { getCodspeedRunnerMode } from "./runnerMode";
 
 declare const __VERSION__: string;
@@ -12,6 +13,8 @@ export const isBound = native_core.isBound;
 export const mongoMeasurement = new MongoMeasurement();
 
 export const setupCore = () => {
+  warnOnUnsupportedNodeVersion();
+
   if (!native_core.isBound) {
     throw new Error(
       "Native core module is not bound, CodSpeed integration will not work properly",
@@ -44,6 +47,11 @@ export type {
   SetupInstrumentsResponse,
 } from "./generated/openapi";
 export { getV8Flags, tryIntrospect } from "./introspection";
+export {
+  getUnsupportedNodeVersionWarning,
+  SUPPORTED_NODE_MAJORS,
+  warnOnUnsupportedNodeVersion,
+} from "./nodeVersion";
 export { optimizeFunction, optimizeFunctionSync } from "./optimization";
 export { wrapWithRootFrame, wrapWithRootFrameSync } from "./rootFrame";
 export * from "./utils";

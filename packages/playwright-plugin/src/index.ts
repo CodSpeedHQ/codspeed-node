@@ -5,6 +5,7 @@ import {
   MARKER_TYPE_BENCHMARK_END,
   MARKER_TYPE_BENCHMARK_START,
   msToS,
+  warnOnUnsupportedNodeVersion,
   writeWalltimeResults,
   type Benchmark,
   type BenchmarkStats,
@@ -100,6 +101,8 @@ let integrationInitialized = false;
 function ensureIntegrationSetup(): void {
   if (integrationInitialized) return;
   integrationInitialized = true;
+
+  warnOnUnsupportedNodeVersion();
 
   InstrumentHooks.setIntegration("node-custom", __VERSION__);
   InstrumentHooks.setEnvironment("nodejs", "version", process.versions.node);
