@@ -27,6 +27,46 @@ jobs:
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm turbo run lint typecheck test
 
+  native-abi:
+    runs-on: "ubuntu-latest"
+    name: Native addon ABI compatibility
+    env:
+      # The flags the runner passes in a real benchmark process. They cannot go
+      # through NODE_OPTIONS (--allow-natives-syntax is rejected there), so jest
+      # runs in-band under a flagged node instead of forking workers.
+      NODE_OPTS: "--interpreted-frames-native-stack --allow-natives-syntax"
+    steps:
+      - uses: "actions/checkout@v4"
+        with:
+          fetch-depth: 0
+          submodules: true
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          cache: pnpm
+          node-version-file: .nvmrc
+      - name: Restore turbo cache
+        uses: ./.github/actions/turbo-cache
+        with:
+          key-suffix: native-abi
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      # Build one prebuild set, then load it without rebuilding under each
+      # runtime via the jest integ test. The other jobs compile the addon
+      # with the Node version that loads it, so they cannot detect an ABI
+      # mismatch.
+      - run: pnpm turbo run build --filter=@codspeed/core
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - run: node ${{ env.NODE_OPTS }} "$(node -p 'require.resolve("jest/bin/jest")')" -c jest.config.integ.js --runInBand tests/index.integ.test.ts
+        working-directory: packages/core
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - run: node ${{ env.NODE_OPTS }} "$(node -p 'require.resolve("jest/bin/jest")')" -c jest.config.integ.js --runInBand tests/index.integ.test.ts
+        working-directory: packages/core
+
   list-examples:
     runs-on: "ubuntu-latest"
     name: List examples

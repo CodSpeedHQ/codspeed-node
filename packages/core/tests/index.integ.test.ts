@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-export {}; // Make this a module
+import fs from "fs";
 
 beforeEach(() => {
   jest.resetModules();
@@ -9,6 +9,25 @@ describe("with bindings", () => {
   it("should be bound", () => {
     const isBound = require("..").isBound as boolean;
     expect(isBound).toBe(true);
+  });
+
+  // Symbols in the addon are bound lazily, so a prebuild built against another
+  // ABI loads without complaint and only dies once a V8 entry point runs.
+  it("should write the perf map when the core is set up", () => {
+    const { setupCore, teardownCore } = require("..") as {
+      setupCore: () => void;
+      teardownCore: () => void;
+    };
+    setupCore();
+    teardownCore();
+
+    const perfMap = `/tmp/perf-${process.pid}.map`;
+    const entries = fs
+      .readFileSync(perfMap, "utf8")
+      .split("\n")
+      .filter(Boolean);
+    fs.unlinkSync(perfMap);
+    expect(entries.length).toBeGreaterThan(0);
   });
 });
 
