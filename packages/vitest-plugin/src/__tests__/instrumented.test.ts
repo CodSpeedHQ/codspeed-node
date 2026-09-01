@@ -1,7 +1,7 @@
 import { fromPartial } from "@total-typescript/shoehorn";
 import { describe, expect, it, vi, type RunnerTestSuite } from "vitest";
 import { AnalysisRunner as CodSpeedRunner } from "../analysis";
-import { getBenchFn } from "../compat";
+import { getBenchFn, getBenchOptions } from "../compat";
 
 const coreMocks = vi.hoisted(() => {
   return {
@@ -33,9 +33,11 @@ vi.mock("../compat", async (importOriginal) => {
   return {
     ...actual,
     getBenchFn: vi.fn(),
+    getBenchOptions: vi.fn(),
   };
 });
 const mockedGetBenchFn = vi.mocked(getBenchFn);
+const mockedGetBenchOptions = vi.mocked(getBenchOptions);
 
 describe("CodSpeedRunner", () => {
   it("should run the bench function", async () => {
@@ -132,5 +134,51 @@ describe("CodSpeedRunner", () => {
       "[CodSpeed] running suite packages/vitest-plugin/src/__tests__/instrumented.test.ts done",
     );
     expect(coreMocks.teardownCore).toHaveBeenCalledTimes(1);
+  });
+  it("should call the bench setup and teardown hooks around each cycle", async () => {
+    const calls: string[] = [];
+    mockedGetBenchFn.mockReturnValue(() => {
+      calls.push("fn");
+    });
+    mockedGetBenchOptions.mockReturnValue({
+      setup: (task, mode) => {
+        calls.push(`setup:${mode}:${task.name}`);
+      },
+      teardown: (task, mode) => {
+        calls.push(`teardown:${mode}:${task.name}`);
+      },
+    });
+    coreMocks.InstrumentHooks.startBenchmark.mockImplementation(() => {
+      calls.push("startBenchmark");
+    });
+    coreMocks.InstrumentHooks.stopBenchmark.mockImplementation(() => {
+      calls.push("stopBenchmark");
+    });
+
+    const runner = new CodSpeedRunner(fromPartial({}));
+    const suite = fromPartial<RunnerTestSuite>({
+      file: { filepath: __filename },
+      name: "test suite",
+      tasks: [
+        {
+          type: "test",
+          mode: "run",
+          meta: { benchmark: true },
+          name: "test bench",
+        },
+      ],
+    });
+
+    await runner.runSuite(suite);
+
+    const hookCalls = calls.filter((call) => call !== "fn");
+    expect(hookCalls).toEqual([
+      "setup:warmup:test bench",
+      "teardown:warmup:test bench",
+      "setup:run:test bench",
+      "startBenchmark",
+      "stopBenchmark",
+      "teardown:run:test bench",
+    ]);
   });
 });

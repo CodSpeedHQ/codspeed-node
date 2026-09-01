@@ -7,13 +7,16 @@ import {
   teardownCore,
   wrapWithRootFrame,
 } from "@codspeed/core";
+import type * as tinybench from "tinybench";
 import { Benchmark, type RunnerTestSuite } from "vitest";
 import {
   callSuiteHook,
   isVitestTaskBenchmark,
   patchRootSuiteWithFullFilePath,
 } from "./common";
-import { getBenchFn, NodeBenchmarkRunner } from "./compat";
+import { getBenchFn, getBenchOptions, NodeBenchmarkRunner } from "./compat";
+
+type Tinybench = typeof tinybench;
 
 const currentFileName =
   typeof __filename === "string"
@@ -33,17 +36,27 @@ async function runAnalysisBench(
   benchmark: Benchmark,
   suite: RunnerTestSuite,
   currentSuiteName: string,
+  tinybenchModule: Tinybench,
 ) {
   const uri = `${currentSuiteName}::${benchmark.name}`;
   const fn = getBenchFn(benchmark);
 
+  // Constructing a Bench applies tinybench's no-op defaults for the setup and
+  // teardown hooks and gives them the Task they expect. The bench itself is
+  // never run: this runner drives the benchmark function directly.
+  const bench = new tinybenchModule.Bench(getBenchOptions(benchmark));
+  const task = new tinybenchModule.Task(bench, benchmark.name, fn);
+
+  await bench.setup(task, "warmup");
   await optimizeFunction(async () => {
     await callSuiteHook(suite, benchmark, "beforeEach");
     // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench
     await fn();
     await callSuiteHook(suite, benchmark, "afterEach");
   });
+  await bench.teardown(task, "warmup");
 
+  await bench.setup(task, "run");
   await callSuiteHook(suite, benchmark, "beforeEach");
   await mongoMeasurement.start(uri);
   global.gc?.();
@@ -56,12 +69,14 @@ async function runAnalysisBench(
   })();
   await mongoMeasurement.stop(uri);
   await callSuiteHook(suite, benchmark, "afterEach");
+  await bench.teardown(task, "run");
 
   logCodSpeed(`${uri} done`);
 }
 
 async function runAnalysisBenchmarkSuite(
   suite: RunnerTestSuite,
+  tinybenchModule: Tinybench,
   parentSuiteName?: string,
 ) {
   const currentSuiteName = parentSuiteName
@@ -74,9 +89,9 @@ async function runAnalysisBenchmarkSuite(
     if (task.mode !== "run") continue;
 
     if (isVitestTaskBenchmark(task)) {
-      await runAnalysisBench(task, suite, currentSuiteName);
+      await runAnalysisBench(task, suite, currentSuiteName, tinybenchModule);
     } else if (task.type === "suite") {
-      await runAnalysisBenchmarkSuite(task, currentSuiteName);
+      await runAnalysisBenchmarkSuite(task, tinybenchModule, currentSuiteName);
     }
   }
 
@@ -91,7 +106,7 @@ export class AnalysisRunner extends NodeBenchmarkRunner {
     patchRootSuiteWithFullFilePath(suite);
 
     logCodSpeed(`running suite ${suite.name}`);
-    await runAnalysisBenchmarkSuite(suite);
+    await runAnalysisBenchmarkSuite(suite, await this.importTinybench());
     logCodSpeed(`running suite ${suite.name} done`);
 
     teardownCore();
