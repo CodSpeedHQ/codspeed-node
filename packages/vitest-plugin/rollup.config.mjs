@@ -12,7 +12,10 @@ export default defineConfig([
   {
     input: "src/index.ts",
     output: { file: pkg.types, format: "es" },
-    plugins: declarationsPlugin({ compilerOptions: { composite: false } }),
+    plugins: declarationsPlugin({
+      compilerOptions: { composite: false, preserveSymlinks: false },
+    }),
+    external: ["vite"],
   },
   {
     input: "src/globalSetup.ts",
