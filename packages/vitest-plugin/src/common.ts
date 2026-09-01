@@ -1,7 +1,7 @@
 import { getGitDir } from "@codspeed/core";
 import path from "path";
 import { Benchmark, type RunnerTask, type RunnerTestSuite } from "vitest";
-import { getHooks } from "vitest/suite";
+import { getHooks } from "./compat";
 type SuiteHooks = ReturnType<typeof getHooks>;
 
 function getSuiteHooks(suite: RunnerTestSuite, name: keyof SuiteHooks) {

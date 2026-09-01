@@ -8,13 +8,12 @@ import {
   wrapWithRootFrame,
 } from "@codspeed/core";
 import { Benchmark, type RunnerTestSuite } from "vitest";
-import { NodeBenchmarkRunner } from "vitest/runners";
-import { getBenchFn } from "vitest/suite";
 import {
   callSuiteHook,
   isVitestTaskBenchmark,
   patchRootSuiteWithFullFilePath,
 } from "./common";
+import { getBenchFn, NodeBenchmarkRunner } from "./compat";
 
 const currentFileName =
   typeof __filename === "string"

@@ -10,8 +10,8 @@ import {
   type RunnerTestSuite,
   type Benchmark as VitestBenchmark,
 } from "vitest";
-import { getBenchOptions } from "vitest/suite";
 import { isVitestTaskBenchmark } from "../common";
+import { getBenchOptions } from "../compat";
 
 export async function extractBenchmarkResults(
   suite: RunnerTestSuite,

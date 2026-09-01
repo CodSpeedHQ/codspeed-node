@@ -12,8 +12,8 @@ import {
   RunnerTaskResultPack,
   type RunnerTestSuite,
 } from "vitest";
-import { NodeBenchmarkRunner } from "vitest/runners";
 import { patchRootSuiteWithFullFilePath } from "../common";
+import { NodeBenchmarkRunner } from "../compat";
 import { extractBenchmarkResults } from "./utils";
 
 type Tinybench = typeof tinybench;

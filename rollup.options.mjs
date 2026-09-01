@@ -13,9 +13,10 @@ import esbuild from "rollup-plugin-esbuild";
  */
 export const declarationsPlugin = (options) => [dts(options)];
 
-export const jsPlugins = (version) => [
+export const jsPlugins = (version, target = "es2020") => [
   json(),
   esbuild({
+    target,
     define: {
       __VERSION__: '"' + version + '"',
     },
