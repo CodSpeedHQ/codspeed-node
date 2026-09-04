@@ -1,5 +1,4 @@
 import {
-  getCodspeedRunnerMode,
   getInstrumentMode,
   getV8Flags,
   InstrumentHooks,
@@ -56,9 +55,6 @@ export default function codspeedPlugin(): Plugin {
           pool: "forks",
           globalSetup: [resolveFile("globalSetup")],
           ...backend.getBenchmarkTestConfig(getV8Flags(), resolveFile),
-          ...(getCodspeedRunnerMode() === "walltime" && {
-            benchmark: backend.getWalltimeBenchmarkConfig(),
-          }),
         },
       };
 

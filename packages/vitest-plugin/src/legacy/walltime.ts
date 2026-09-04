@@ -5,7 +5,6 @@ import {
   RunnerTaskResultPack,
   type RunnerTestSuite,
 } from "vitest";
-import { NodeBenchmarkRunner } from "./compat";
 import {
   installInstrumentHooks,
   patchTaskRunOnce,
@@ -13,6 +12,7 @@ import {
   type TinybenchBench,
 } from "../instrument";
 import { patchRootSuiteWithFullFilePath } from "./common";
+import { NodeBenchmarkRunner } from "./compat";
 import { extractBenchmarkResults } from "./walltime-utils";
 
 type Tinybench = typeof tinybench;
@@ -20,8 +20,8 @@ type Tinybench = typeof tinybench;
 /**
  * Lets tinybench run the benches through Vitest's default benchmark execution,
  * instrumenting each measured loop, then extracts the results from the suite
- * tree afterwards. (The v5 seam instruments the same way but reads results off
- * the live tinybench tasks instead — see `v5/setup.ts`.)
+ * tree afterwards. (The v5 provider instruments the same way but reads results
+ * off the live tinybench tasks instead — see `v5/provider.ts`.)
  */
 export class WalltimeRunner extends NodeBenchmarkRunner {
   private suiteUris = new Map<string, string>();

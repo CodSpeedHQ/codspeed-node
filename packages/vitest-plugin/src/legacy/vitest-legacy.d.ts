@@ -1,46 +1,19 @@
-// Vitest 3/4 exposed benchmark internals through `vitest/runners` and
-// `vitest/suite`, and surfaced the `Benchmark` task type from `vitest`. Vitest 5
-// removed all of these (benchmarks now run through the unified `TestRunner`).
+// Vitest 3/4 exposed the benchmark internals through the `vitest/runners` and
+// `vitest/suite` subpaths, which Vitest 5 removed. `legacy/compat.ts` imports
+// them only when the installed Vitest doesn't expose them from its main entry
+// point, i.e. only on Vitest 3/4 — but the package is type-checked against
+// whichever Vitest is installed, including 5, where the subpaths don't resolve.
+// These declarations keep that code compiling; nothing imports them under v5.
 //
-// The legacy runner (`analysis.ts`, `walltime/`) still imports them and is only
-// loaded when the user runs Vitest 3/4, but the plugin is type-checked against
-// whichever Vitest is installed — including 5, where these are gone. These
-// ambient declarations keep the legacy code compiling there without affecting
-// runtime: the modules are never imported under v5.
-
-import type * as tinybench from "tinybench";
-
-declare module "vitest" {
-  import type { RunnerTestCase } from "vitest";
-
-  // In v3/4 a benchmark is a test case carrying tinybench output on its result.
-  interface Benchmark extends RunnerTestCase {
-    meta: RunnerTestCase["meta"] & { benchmark?: boolean };
-  }
-}
+// This file must stay a script (no top-level imports): a `declare module` inside
+// a module is an augmentation, which requires the module to resolve.
 
 declare module "vitest/runners" {
-  import type { RunnerTestSuite } from "vitest";
-
-  export class NodeBenchmarkRunner {
-    constructor(config?: unknown);
-    config: unknown;
-    runSuite(suite: RunnerTestSuite): Promise<void>;
-    importTinybench(): Promise<typeof tinybench>;
-  }
+  export const NodeBenchmarkRunner: import("./compat").LegacyBenchmarkApi["NodeBenchmarkRunner"];
 }
 
 declare module "vitest/suite" {
-  import type { Benchmark } from "vitest";
-
-  export function getBenchFn(benchmark: Benchmark): () => unknown;
-  export function getBenchOptions(benchmark: Benchmark): {
-    time?: number;
-    warmupTime?: number;
-    warmupIterations?: number;
-    iterations?: number;
-  };
-  export function getHooks(
-    suite: unknown,
-  ): Record<string, Array<() => unknown>>;
+  export const getHooks: import("./compat").LegacyBenchmarkApi["getHooks"];
+  export const getBenchFn: import("./compat").LegacyBenchmarkApi["getBenchFn"];
+  export const getBenchOptions: import("./compat").LegacyBenchmarkApi["getBenchOptions"];
 }

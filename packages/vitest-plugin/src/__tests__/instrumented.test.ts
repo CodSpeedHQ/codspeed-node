@@ -3,10 +3,9 @@ import { describe, expect, it, vi, type RunnerTestSuite } from "vitest";
 import { AnalysisRunner as CodSpeedRunner } from "../legacy/analysis";
 import { getBenchFn, getBenchOptions } from "../legacy/compat";
 
-// The legacy AnalysisRunner targets the Vitest 3/4 benchmark backend
-// (`NodeBenchmarkRunner`, `vitest/suite`), which Vitest 5 removed. This whole
-// file is excluded from the test run under v5+ (see vitest.config.ts); the v5
-// path is covered separately.
+// `legacy/compat` resolves the Vitest 3/4 benchmark backend from the installed
+// Vitest, so it is mocked entirely: that backend is gone on Vitest 5, which this
+// package is developed against.
 
 const coreMocks = vi.hoisted(() => {
   return {
@@ -33,10 +32,16 @@ vi.mock("@codspeed/core", async (importOriginal) => {
 
 console.log = vi.fn();
 
-vi.mock("../legacy/compat", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../legacy/compat")>();
+vi.mock("../legacy/compat", () => {
+  class NodeBenchmarkRunner {
+    async importTinybench() {
+      return import("tinybench");
+    }
+  }
+
   return {
-    ...actual,
+    NodeBenchmarkRunner,
+    getHooks: vi.fn(),
     getBenchFn: vi.fn(),
     getBenchOptions: vi.fn(),
   };

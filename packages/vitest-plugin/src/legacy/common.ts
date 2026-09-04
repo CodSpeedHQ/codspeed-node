@@ -1,7 +1,7 @@
 import { getGitDir } from "@codspeed/core";
 import path from "path";
-import { Benchmark, type RunnerTask, type RunnerTestSuite } from "vitest";
-import { getHooks } from "./compat";
+import { type RunnerTask, type RunnerTestSuite } from "vitest";
+import { getHooks, type BenchmarkTask } from "./compat";
 type SuiteHooks = ReturnType<typeof getHooks>;
 
 function getSuiteHooks(suite: RunnerTestSuite, name: keyof SuiteHooks) {
@@ -36,6 +36,6 @@ export function patchRootSuiteWithFullFilePath(suite: RunnerTestSuite) {
   suite.name = path.relative(gitDir, suite.file.filepath);
 }
 
-export function isVitestTaskBenchmark(task: RunnerTask): task is Benchmark {
+export function isVitestTaskBenchmark(task: RunnerTask): task is BenchmarkTask {
   return task.type === "test" && task.meta.benchmark === true;
 }

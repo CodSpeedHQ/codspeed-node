@@ -5,7 +5,10 @@ import {
   MARKER_TYPE_BENCHMARK_START,
   msToNs,
   msToS,
+  optimizeFunction,
+  optimizeFunctionSync,
   wrapWithRootFrame,
+  wrapWithRootFrameSync,
   writeWalltimeResults,
   type Benchmark,
   type BenchmarkStats,
@@ -13,6 +16,21 @@ import {
 import type * as tinybench from "tinybench";
 
 export type Tinybench = typeof tinybench;
+
+/** tinybench's per-task lifecycle hooks (a subset of `FnOptions`). */
+export interface TinybenchFnOptions {
+  beforeAll?: (mode?: "run" | "warmup") => unknown;
+  beforeEach?: (mode?: "run" | "warmup") => unknown;
+  afterEach?: (mode?: "run" | "warmup") => unknown;
+  afterAll?: (mode?: "run" | "warmup") => unknown;
+}
+
+/** The captured registration for a task: its fn and options. */
+export interface CapturedTask {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fn: (...args: any[]) => any;
+  fnOpts?: TinybenchFnOptions;
+}
 
 /** A tinybench task, exposing the `fn` the runner wraps with the root frame. */
 export interface TinybenchTask {
@@ -34,18 +52,6 @@ export interface TinybenchBench {
   teardown: TinybenchHook;
 }
 
-/** The minimal task shape `patchTaskRunWithRootFrame` mutates. */
-interface RunnableTask {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  fn: (...args: any[]) => any;
-}
-
-/** The tinybench Task prototype whose `run` we wrap. */
-interface TinybenchTaskClass {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  prototype: { run: (this: any) => Promise<unknown> };
-}
-
 /**
  * The tinybench statistics shape (latency/throughput) shared across the v2 and
  * v6 lines. Only the fields the conversion needs are modeled.
@@ -60,6 +66,8 @@ interface TinybenchStatistics {
 
 interface TinybenchTaskResult {
   state?: string;
+  /** Set by tinybench when `state` is `"errored"`. */
+  error?: Error;
   totalTime: number;
   latency: TinybenchStatistics;
 }
@@ -77,8 +85,6 @@ interface InstrumentWindow {
   runStart: bigint | null;
 }
 
-let isTaskPatched = false;
-
 /**
  * The window bracketing the currently running task's measured loop, driven by
  * the setup/teardown hooks below. Tasks run strictly sequentially within a
@@ -86,14 +92,22 @@ let isTaskPatched = false;
  */
 const instrumentWindow: InstrumentWindow = { runStart: null };
 
+/** The tinybench Task prototype whose `run` the legacy seam wraps. */
+interface TinybenchTaskClass {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  prototype: { run: (this: any) => Promise<unknown> };
+}
+
+let isTaskPatched = false;
+
 /**
- * Wrap every task's fn with the root frame so collected stacks are attributed to
- * a benchmark. Idempotent: patching the shared `Task.prototype.run` in place hits
- * every Bench instance, so repeat calls are no-ops.
+ * Wrap every task's fn with the root frame by patching `Task.prototype.run` in
+ * place. Used only by the legacy (Vitest 3/4) walltime seam, which runs on
+ * tinybench v2 where a task's `fn` is a plain, reassignable property.
  *
- * `TaskClass` must be the exact prototype the host constructed its tasks against
- * (taken from a live task, not imported) so the patch applies even when multiple
- * copies of tinybench are installed.
+ * The Vitest 5 seam cannot use this: tinybench v6 made `fn` a true `#private`
+ * field, so reassigning `task.fn` is a silent no-op there — the frame must be
+ * baked in at registration time instead (see rootFrameRegisterFn).
  */
 export function patchTaskRunOnce(TaskClass: TinybenchTaskClass): void {
   if (isTaskPatched) {
@@ -102,7 +116,7 @@ export function patchTaskRunOnce(TaskClass: TinybenchTaskClass): void {
   isTaskPatched = true;
 
   const originalRun = TaskClass.prototype.run;
-  TaskClass.prototype.run = async function (this: RunnableTask) {
+  TaskClass.prototype.run = async function (this: CapturedTask) {
     const originalFn = this.fn;
     this.fn = wrapWithRootFrame(() => originalFn.call(this));
 
@@ -112,6 +126,93 @@ export function patchTaskRunOnce(TaskClass: TinybenchTaskClass): void {
       this.fn = originalFn;
     }
   };
+}
+
+/**
+ * The root-frame wrap to hand tinybench at registration time. Post-hoc
+ * assignment to a task's `fn` is a no-op on tinybench v6 (private field), so the
+ * frame must be baked into the registered fn instead.
+ */
+export function rootFrameRegisterFn(
+  fn: CapturedTask["fn"],
+): CapturedTask["fn"] {
+  return wrapWithRootFrame(() => fn());
+}
+
+/**
+ * Run one benchmark under instrumentation, matching the analysis window the
+ * Vitest 3/4 runner uses exactly: warm the JIT with `optimizeFunction` outside
+ * the window, run the user hooks around a single measured `fn()`, and bracket
+ * only that call with `startBenchmark`/`stopBenchmark` under the root frame. The
+ * measurement comes from the instrument, so no wall-clock markers are emitted
+ * and tinybench's timing loop is not involved.
+ *
+ * Synchronous benchmarks run through a fully synchronous window
+ * (`wrapWithRootFrameSync`, no `await`): awaiting a sync fn would splice Node's
+ * promise-hook machinery in above the root frame and pollute the sample. Async
+ * benchmarks necessarily use the awaited path.
+ */
+export async function runAnalysisTask(
+  { fn, fnOpts }: CapturedTask,
+  uri: string,
+): Promise<void> {
+  if (isAsyncFn(fn)) {
+    await runAnalysisTaskAsync(fn, fnOpts, uri);
+  } else {
+    await runAnalysisTaskSync(fn, fnOpts, uri);
+  }
+}
+
+function isAsyncFn(fn: CapturedTask["fn"]): boolean {
+  return fn.constructor?.name === "AsyncFunction";
+}
+
+async function runAnalysisTaskAsync(
+  fn: CapturedTask["fn"],
+  fnOpts: TinybenchFnOptions | undefined,
+  uri: string,
+): Promise<void> {
+  await fnOpts?.beforeAll?.("run");
+  await optimizeFunction(async () => {
+    await fnOpts?.beforeEach?.("run");
+    await fn();
+    await fnOpts?.afterEach?.("run");
+  });
+
+  await fnOpts?.beforeEach?.("run");
+  global.gc?.();
+  await wrapWithRootFrame(async () => {
+    InstrumentHooks.startBenchmark();
+    await fn();
+    InstrumentHooks.stopBenchmark();
+    InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+  })();
+  await fnOpts?.afterEach?.("run");
+  await fnOpts?.afterAll?.("run");
+}
+
+function runAnalysisTaskSync(
+  fn: CapturedTask["fn"],
+  fnOpts: TinybenchFnOptions | undefined,
+  uri: string,
+): void {
+  fnOpts?.beforeAll?.("run");
+  optimizeFunctionSync(() => {
+    fnOpts?.beforeEach?.("run");
+    fn();
+    fnOpts?.afterEach?.("run");
+  });
+
+  fnOpts?.beforeEach?.("run");
+  global.gc?.();
+  wrapWithRootFrameSync(() => {
+    InstrumentHooks.startBenchmark();
+    fn();
+    InstrumentHooks.stopBenchmark();
+    InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+  })();
+  fnOpts?.afterEach?.("run");
+  fnOpts?.afterAll?.("run");
 }
 
 /**
@@ -148,24 +249,29 @@ export function installInstrumentHooks(
 }
 
 function closeInstrumentWindow(uri: string): void {
-  const runEnd = InstrumentHooks.currentTimestamp();
+  emitBenchmarkWindow(uri, instrumentWindow.runStart!);
+  instrumentWindow.runStart = null;
+}
+
+/**
+ * Close the currently open instrumentation window: emit the benchmark markers
+ * bracketing [start, now], stop the benchmark, and attribute the sample to `uri`.
+ *
+ * Benchmark markers must land inside the sample window opened by
+ * startBenchmark(), so they are emitted before stopBenchmark() closes it. The
+ * runner consumes the FIFO stream in order, so a marker sent after stopBenchmark
+ * would fall outside the sample and break the expected
+ * SampleStart > BenchmarkStart > BenchmarkEnd > SampleEnd nesting.
+ */
+function emitBenchmarkWindow(uri: string, start: bigint): void {
+  const end = InstrumentHooks.currentTimestamp();
   const pid = process.pid;
 
-  // Benchmark markers must land inside the sample window opened by
-  // startBenchmark(), so they have to be emitted before stopBenchmark()
-  // closes it. The runner consumes the FIFO stream in order, so a marker
-  // sent after StopBenchmark falls outside the sample and breaks the
-  // expected SampleStart > BenchmarkStart > BenchmarkEnd > SampleEnd nesting.
-  InstrumentHooks.addMarker(
-    pid,
-    MARKER_TYPE_BENCHMARK_START,
-    instrumentWindow.runStart!,
-  );
-  InstrumentHooks.addMarker(pid, MARKER_TYPE_BENCHMARK_END, runEnd);
+  InstrumentHooks.addMarker(pid, MARKER_TYPE_BENCHMARK_START, start);
+  InstrumentHooks.addMarker(pid, MARKER_TYPE_BENCHMARK_END, end);
 
   InstrumentHooks.stopBenchmark();
   InstrumentHooks.setExecutedBenchmark(pid, uri);
-  instrumentWindow.runStart = null;
 }
 
 /**

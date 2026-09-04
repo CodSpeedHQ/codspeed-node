@@ -25,30 +25,21 @@ export interface VitestBackend {
   /**
    * The `test` config fragment that wires the benchmark instrumentation into
    * Vitest: the V8 exec args (whose placement moved across versions) plus the
-   * integration seam (a custom runner on legacy, a setup file on v5).
+   * integration seam. Legacy wires a custom runner subclass (and, in walltime
+   * mode, asks tinybench to retain samples); v5 wires a `benchmark.provider`
+   * that owns execution and sample retention entirely.
    */
   getBenchmarkTestConfig(
     v8Flags: string[],
     resolveFile: (name: string) => string,
   ): ViteUserConfig["test"];
-
-  /**
-   * The `test.benchmark` fragment asking tinybench to retain per-iteration
-   * samples so the walltime runner can compute quantiles. Only used in walltime
-   * mode. The option was renamed (`includeSamples` → `retainSamples`) when
-   * Vitest 5 moved to tinybench v6.
-   */
-  getWalltimeBenchmarkConfig(): Record<string, boolean>;
 }
 
 /**
- * Vitest 5 reworked the benchmark backend: the dedicated `NodeBenchmarkRunner`
- * and the `vitest/runners` / `vitest/suite` entrypoints are gone, benchmarks run
- * inside `test()` through the unified `TestRunner`, and tinybench moved to v6.
- * The integration seam therefore differs fundamentally (a `TestRunner` patch
- * installed from a setup file vs. a runner subclass per mode), which is why the
- * two backends are separate implementations rather than a pile of inline
- * ternaries.
+ * The integration seam differs across Vitest generations: on 3/4 benchmarks run
+ * through a `NodeBenchmarkRunner` subclass (via `vitest/runners` /
+ * `vitest/suite`), while 5+ exposes a `benchmark.provider` API and dropped those
+ * entrypoints.
  *
  * When the version cannot be detected we assume the latest supported major.
  */
@@ -74,24 +65,26 @@ function getVitestMajorVersion(): number | null {
 }
 
 /**
- * Vitest 5+. `vitest bench` runs under the `"test"` mode with
- * `test.benchmark.enabled` flipped (there is no dedicated benchmark mode), so
- * the plugin stays active for every mode and gates on the config instead.
- * Instrumentation is installed from a setup file that patches the shared
- * `TestRunner` (see `v5/setup.ts`).
+ * Vitest 5+. There is no dedicated benchmark Vite mode anymore (`vitest bench`
+ * runs under `"test"`), so the plugin stays active for every mode.
+ * Instrumentation is installed through a `benchmark.provider` that owns
+ * benchmark execution (see `v5/provider.ts`).
  */
 class V5Backend implements VitestBackend {
   isActiveForViteMode(): boolean {
     return true;
   }
 
-  isBenchmarkRun(config: ViteUserConfig): boolean {
-    // `benchmark.enabled` only exists on the Vitest 5 config; the v3/4 typings
-    // we may be compiled against don't know about it.
-    const benchmark = config.test?.benchmark as
-      | { enabled?: boolean }
-      | undefined;
-    return benchmark?.enabled === true;
+  /**
+   * Vitest 5 clones its benchmark project from the resolved one *after* the Vite
+   * config hooks ran, so a benchmark run cannot be read off the incoming config:
+   * `test.benchmark.enabled` still holds the user's value and `vitest bench`
+   * only sets an internal CLI flag. CodSpeed exclusively drives benchmark runs,
+   * so gate on the instrument mode instead. Without CodSpeed the plugin injects
+   * nothing and Vitest runs the benchmarks through its own tinybench provider.
+   */
+  isBenchmarkRun(): boolean {
+    return getInstrumentMode() !== "disabled";
   }
 
   getBenchmarkTestConfig(
@@ -100,12 +93,10 @@ class V5Backend implements VitestBackend {
   ): ViteUserConfig["test"] {
     return {
       execArgv: v8Flags,
-      setupFiles: [resolveFile("v5/setup")],
+      // The provider owns benchmark execution: it runs the registered functions
+      // under instrumentation (analysis) or drives tinybench itself (walltime).
+      benchmark: { provider: resolveFile("v5/provider") },
     };
-  }
-
-  getWalltimeBenchmarkConfig(): Record<string, boolean> {
-    return { retainSamples: true };
   }
 }
 
@@ -135,6 +126,12 @@ class LegacyBackend implements VitestBackend {
         ? undefined
         : resolveFile(join("legacy", instrumentMode));
 
+    // Walltime asks tinybench to retain per-iteration samples so the runner can
+    // compute quantiles. On tinybench v2 (Vitest 3/4) the option is
+    // `includeSamples` (renamed `retainSamples` in v6).
+    const benchmark =
+      instrumentMode === "walltime" ? { includeSamples: true } : undefined;
+
     return {
       // Vitest 3 nests exec args under `poolOptions.forks`; v4 moved them to a
       // top-level `test.execArgv`.
@@ -143,10 +140,7 @@ class LegacyBackend implements VitestBackend {
         ? { execArgv: v8Flags }
         : { poolOptions: { forks: { execArgv: v8Flags } } }),
       ...(runner && { runner }),
-    };
-  }
-
-  getWalltimeBenchmarkConfig(): Record<string, boolean> {
-    return { includeSamples: true };
+      ...(benchmark && { benchmark }),
+    } as ViteUserConfig["test"];
   }
 }

@@ -8,14 +8,19 @@ import {
   wrapWithRootFrame,
 } from "@codspeed/core";
 import type * as tinybench from "tinybench";
-import { Benchmark, type RunnerTestSuite } from "vitest";
+import { type RunnerTestSuite } from "vitest";
 
 import {
   callSuiteHook,
   isVitestTaskBenchmark,
   patchRootSuiteWithFullFilePath,
 } from "./common";
-import { getBenchFn, getBenchOptions, NodeBenchmarkRunner } from "./compat";
+import {
+  getBenchFn,
+  getBenchOptions,
+  NodeBenchmarkRunner,
+  type BenchmarkTask,
+} from "./compat";
 
 type Tinybench = typeof tinybench;
 
@@ -34,7 +39,7 @@ function logCodSpeed(message: string) {
 }
 
 async function runAnalysisBench(
-  benchmark: Benchmark,
+  benchmark: BenchmarkTask,
   suite: RunnerTestSuite,
   currentSuiteName: string,
   tinybenchModule: Tinybench,
@@ -91,10 +96,10 @@ async function runAnalysisBenchmarkSuite(
   for (const task of suite.tasks) {
     if (task.mode !== "run") continue;
 
-    if (isVitestTaskBenchmark(task)) {
-      await runAnalysisBench(task, suite, currentSuiteName, tinybenchModule);
-    } else if (task.type === "suite") {
+    if (task.type === "suite") {
       await runAnalysisBenchmarkSuite(task, tinybenchModule, currentSuiteName);
+    } else if (isVitestTaskBenchmark(task)) {
+      await runAnalysisBench(task, suite, currentSuiteName, tinybenchModule);
     }
   }
 

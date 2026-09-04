@@ -1,16 +1,12 @@
 import { type Benchmark } from "@codspeed/core";
-import {
-  type RunnerTaskResult,
-  type RunnerTestSuite,
-  type Benchmark as VitestBenchmark,
-} from "vitest";
-import { getBenchOptions } from "./compat";
+import { type RunnerTaskResult, type RunnerTestSuite } from "vitest";
 import {
   tinybenchTaskToBenchmark,
   type TinybenchOptions,
   type TinybenchTask,
 } from "../instrument";
 import { isVitestTaskBenchmark } from "./common";
+import { getBenchOptions, type BenchmarkTask } from "./compat";
 
 export async function extractBenchmarkResults(
   suite: RunnerTestSuite,
@@ -20,14 +16,14 @@ export async function extractBenchmarkResults(
   const currentPath = parentPath ? `${parentPath}::${suite.name}` : suite.name;
 
   for (const task of suite.tasks) {
-    if (isVitestTaskBenchmark(task) && task.result?.state === "pass") {
+    if (task.type === "suite") {
+      const nestedBenchmarks = await extractBenchmarkResults(task, currentPath);
+      benchmarks.push(...nestedBenchmarks);
+    } else if (isVitestTaskBenchmark(task) && task.result?.state === "pass") {
       const benchmark = processBenchmarkTask(task, currentPath);
       if (benchmark) {
         benchmarks.push(benchmark);
       }
-    } else if (task.type === "suite") {
-      const nestedBenchmarks = await extractBenchmarkResults(task, currentPath);
-      benchmarks.push(...nestedBenchmarks);
     }
   }
 
@@ -35,7 +31,7 @@ export async function extractBenchmarkResults(
 }
 
 function processBenchmarkTask(
-  task: VitestBenchmark,
+  task: BenchmarkTask,
   suitePath: string,
 ): Benchmark | null {
   const uri = `${suitePath}::${task.name}`;

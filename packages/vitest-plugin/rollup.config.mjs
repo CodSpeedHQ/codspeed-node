@@ -40,8 +40,8 @@ export default defineConfig([
     external: ["@codspeed/core", /^vitest/],
   },
   {
-    input: "src/v5/setup.ts",
-    output: { file: "dist/v5/setup.mjs", format: "es" },
+    input: "src/v5/provider.ts",
+    output: { file: "dist/v5/provider.mjs", format: "es" },
     plugins: jsPlugins(pkg.version),
     external: ["@codspeed/core", /^vitest/, "tinybench"],
   },

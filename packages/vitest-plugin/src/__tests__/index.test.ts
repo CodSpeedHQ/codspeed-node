@@ -1,5 +1,5 @@
-import { fromPartial } from "@total-typescript/shoehorn";
 import { getV8Flags } from "@codspeed/core";
+import { fromPartial } from "@total-typescript/shoehorn";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import codspeedPlugin from "../index";
 
@@ -106,7 +106,7 @@ describe("codSpeedPlugin", () => {
     });
 
     it("should stay active regardless of mode on v5 (benchmark gating happens in config)", async () => {
-      fsMocks.setMockVersion("5.0.0-beta.5");
+      fsMocks.setMockVersion("5.0.0");
       coreMocks.InstrumentHooks.isInstrumented.mockReturnValue(true);
 
       const applyPlugin = applyPluginFunction(
@@ -180,8 +180,10 @@ describe("codSpeedPlugin", () => {
   });
 
   describe("v5 config", () => {
-    it("should not inject config when benchmarks are not enabled", () => {
-      fsMocks.setMockVersion("5.0.0-beta.5");
+    it("should not inject config when CodSpeed is not driving the run", () => {
+      fsMocks.setMockVersion("5.0.0");
+      delete process.env.CODSPEED_ENV;
+
       const v5Plugin = codspeedPlugin();
       const config = v5Plugin.config;
       if (typeof config !== "function")
@@ -194,11 +196,12 @@ describe("codSpeedPlugin", () => {
       );
 
       expect(result).toBeUndefined();
+      process.env.CODSPEED_ENV = "1";
       fsMocks.setMockVersion("4.0.18");
     });
 
-    it("should inject the v5 setup file (not a runner) when benchmarks are enabled", () => {
-      fsMocks.setMockVersion("5.0.0-beta.5");
+    it("should wire the v5 benchmark provider (not a runner or setup file)", () => {
+      fsMocks.setMockVersion("5.0.0");
       const v5Plugin = codspeedPlugin();
       const config = v5Plugin.config;
       if (typeof config !== "function")
@@ -206,9 +209,7 @@ describe("codSpeedPlugin", () => {
 
       const result = config.call(
         {} as never,
-        // `benchmark.enabled` is a Vitest 5 config field the v3/4 typings (which
-        // this file may be compiled against) don't expose.
-        { test: { benchmark: { enabled: true } } } as never,
+        {},
         fromPartial({ mode: "test" }),
       );
 
@@ -221,15 +222,13 @@ describe("codSpeedPlugin", () => {
           ],
           pool: "forks",
           execArgv: getV8Flags(),
-          setupFiles: [
-            expect.stringContaining("packages/vitest-plugin/src/v5/setup.ts"),
-          ],
+          benchmark: {
+            provider: expect.stringContaining(
+              "packages/vitest-plugin/src/v5/provider.ts",
+            ),
+          },
         },
       });
-      // The v5 path must not set a custom runner.
-      expect(
-        (result as { test?: { runner?: unknown } })?.test?.runner,
-      ).toBeUndefined();
       fsMocks.setMockVersion("4.0.18");
     });
   });
