@@ -1,5 +1,5 @@
-import { fromPartial } from "@total-typescript/shoehorn";
 import { getV8Flags } from "@codspeed/core";
+import { fromPartial } from "@total-typescript/shoehorn";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import codspeedPlugin from "../index";
 
@@ -55,6 +55,7 @@ describe("codSpeedPlugin", () => {
     // Clean up environment variables
     delete process.env.CODSPEED_ENV;
     delete process.env.CODSPEED_RUNNER_MODE;
+    fsMocks.setMockVersion("4.0.18");
   });
 
   it("should have a name", async () => {
@@ -66,7 +67,9 @@ describe("codSpeedPlugin", () => {
   });
 
   describe("apply", () => {
-    it("should not apply the plugin when the mode is not benchmark", async () => {
+    it("should not apply the plugin when the mode is not benchmark (v3/v4)", async () => {
+      fsMocks.setMockVersion("4.0.18");
+
       const applyPlugin = applyPluginFunction(
         {},
         fromPartial({ mode: "test" }),
@@ -75,7 +78,8 @@ describe("codSpeedPlugin", () => {
       expect(applyPlugin).toBe(false);
     });
 
-    it("should apply the plugin when there is no instrumentation", async () => {
+    it("should apply the plugin when there is no instrumentation (v3/v4)", async () => {
+      fsMocks.setMockVersion("4.0.18");
       coreMocks.InstrumentHooks.isInstrumented.mockReturnValue(false);
 
       const applyPlugin = applyPluginFunction(
@@ -89,7 +93,8 @@ describe("codSpeedPlugin", () => {
       expect(applyPlugin).toBe(true);
     });
 
-    it("should apply the plugin when there is instrumentation", async () => {
+    it("should apply the plugin when there is instrumentation (v3/v4)", async () => {
+      fsMocks.setMockVersion("4.0.18");
       coreMocks.InstrumentHooks.isInstrumented.mockReturnValue(true);
 
       const applyPlugin = applyPluginFunction(
@@ -99,14 +104,32 @@ describe("codSpeedPlugin", () => {
 
       expect(applyPlugin).toBe(true);
     });
+
+    it("should stay active regardless of mode on v5 (benchmark gating happens in config)", async () => {
+      fsMocks.setMockVersion("5.0.0");
+      coreMocks.InstrumentHooks.isInstrumented.mockReturnValue(true);
+
+      const applyPlugin = applyPluginFunction(
+        {},
+        fromPartial({ mode: "test" }),
+      );
+
+      expect(applyPlugin).toBe(true);
+      fsMocks.setMockVersion("4.0.18");
+    });
   });
 
   it("should apply the codspeed config for v4", () => {
+    fsMocks.setMockVersion("4.0.18");
     const config = resolvedCodSpeedPlugin.config;
     if (typeof config !== "function")
       throw new Error("config is not a function");
 
-    const result = config.call({} as never, {}, fromPartial({}));
+    const result = config.call(
+      {} as never,
+      {},
+      fromPartial({ mode: "benchmark" }),
+    );
 
     expect(result).toStrictEqual({
       test: {
@@ -116,23 +139,25 @@ describe("codSpeedPlugin", () => {
         pool: "forks",
         execArgv: getV8Flags(),
         runner: expect.stringContaining(
-          "packages/vitest-plugin/src/analysis.ts",
+          "packages/vitest-plugin/src/legacy/analysis.ts",
         ),
       },
     });
   });
 
   it("should apply the codspeed config for v3 with poolOptions", () => {
-    // Set mock version to v3
     fsMocks.setMockVersion("3.2.0");
 
-    // Create a new plugin instance to pick up the mocked version
     const v3Plugin = codspeedPlugin();
     const config = v3Plugin.config;
     if (typeof config !== "function")
       throw new Error("config is not a function");
 
-    const result = config.call({} as never, {}, fromPartial({}));
+    const result = config.call(
+      {} as never,
+      {},
+      fromPartial({ mode: "benchmark" }),
+    );
 
     expect(result).toStrictEqual({
       test: {
@@ -146,12 +171,65 @@ describe("codSpeedPlugin", () => {
           },
         },
         runner: expect.stringContaining(
-          "packages/vitest-plugin/src/analysis.ts",
+          "packages/vitest-plugin/src/legacy/analysis.ts",
         ),
       },
     });
 
-    // Reset mock version back to v4
     fsMocks.setMockVersion("4.0.18");
+  });
+
+  describe("v5 config", () => {
+    it("should not inject config when CodSpeed is not driving the run", () => {
+      fsMocks.setMockVersion("5.0.0");
+      delete process.env.CODSPEED_ENV;
+
+      const v5Plugin = codspeedPlugin();
+      const config = v5Plugin.config;
+      if (typeof config !== "function")
+        throw new Error("config is not a function");
+
+      const result = config.call(
+        {} as never,
+        {},
+        fromPartial({ mode: "test" }),
+      );
+
+      expect(result).toBeUndefined();
+      process.env.CODSPEED_ENV = "1";
+      fsMocks.setMockVersion("4.0.18");
+    });
+
+    it("should wire the v5 benchmark provider (not a runner or setup file)", () => {
+      fsMocks.setMockVersion("5.0.0");
+      const v5Plugin = codspeedPlugin();
+      const config = v5Plugin.config;
+      if (typeof config !== "function")
+        throw new Error("config is not a function");
+
+      const result = config.call(
+        {} as never,
+        {},
+        fromPartial({ mode: "test" }),
+      );
+
+      expect(result).toStrictEqual({
+        test: {
+          globalSetup: [
+            expect.stringContaining(
+              "packages/vitest-plugin/src/globalSetup.ts",
+            ),
+          ],
+          pool: "forks",
+          execArgv: getV8Flags(),
+          benchmark: {
+            provider: expect.stringContaining(
+              "packages/vitest-plugin/src/v5/provider.ts",
+            ),
+          },
+        },
+      });
+      fsMocks.setMockVersion("4.0.18");
+    });
   });
 });

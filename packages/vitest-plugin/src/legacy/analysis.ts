@@ -8,13 +8,19 @@ import {
   wrapWithRootFrame,
 } from "@codspeed/core";
 import type * as tinybench from "tinybench";
-import { Benchmark, type RunnerTestSuite } from "vitest";
+import { type RunnerTestSuite } from "vitest";
+
 import {
   callSuiteHook,
   isVitestTaskBenchmark,
   patchRootSuiteWithFullFilePath,
 } from "./common";
-import { getBenchFn, getBenchOptions, NodeBenchmarkRunner } from "./compat";
+import {
+  getBenchFn,
+  getBenchOptions,
+  NodeBenchmarkRunner,
+  type BenchmarkTask,
+} from "./compat";
 
 type Tinybench = typeof tinybench;
 
@@ -33,13 +39,17 @@ function logCodSpeed(message: string) {
 }
 
 async function runAnalysisBench(
-  benchmark: Benchmark,
+  benchmark: BenchmarkTask,
   suite: RunnerTestSuite,
   currentSuiteName: string,
   tinybenchModule: Tinybench,
 ) {
   const uri = `${currentSuiteName}::${benchmark.name}`;
-  const fn = getBenchFn(benchmark);
+  // tinybench's bench fn carries a `this: Bench` requirement on Vitest 3/4 that
+  // we don't need (the work under test is self-contained); call it as a plain
+  // parameterless function. The cast also smooths over the typing differences
+  // across supported Vitest versions.
+  const fn = getBenchFn(benchmark) as () => unknown;
 
   // Constructing a Bench applies tinybench's no-op defaults for the setup and
   // teardown hooks and gives them the Task they expect. The bench itself is
@@ -50,7 +60,6 @@ async function runAnalysisBench(
   await bench.setup(task, "warmup");
   await optimizeFunction(async () => {
     await callSuiteHook(suite, benchmark, "beforeEach");
-    // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench
     await fn();
     await callSuiteHook(suite, benchmark, "afterEach");
   });
@@ -62,7 +71,6 @@ async function runAnalysisBench(
   global.gc?.();
   await wrapWithRootFrame(async () => {
     InstrumentHooks.startBenchmark();
-    // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench
     await fn();
     InstrumentHooks.stopBenchmark();
     InstrumentHooks.setExecutedBenchmark(process.pid, uri);
@@ -88,10 +96,10 @@ async function runAnalysisBenchmarkSuite(
   for (const task of suite.tasks) {
     if (task.mode !== "run") continue;
 
-    if (isVitestTaskBenchmark(task)) {
-      await runAnalysisBench(task, suite, currentSuiteName, tinybenchModule);
-    } else if (task.type === "suite") {
+    if (task.type === "suite") {
       await runAnalysisBenchmarkSuite(task, tinybenchModule, currentSuiteName);
+    } else if (isVitestTaskBenchmark(task)) {
+      await runAnalysisBench(task, suite, currentSuiteName, tinybenchModule);
     }
   }
 

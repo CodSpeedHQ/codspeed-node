@@ -1,7 +1,7 @@
 import { getGitDir } from "@codspeed/core";
 import path from "path";
-import { Benchmark, type RunnerTask, type RunnerTestSuite } from "vitest";
-import { getHooks } from "./compat";
+import { type RunnerTask, type RunnerTestSuite } from "vitest";
+import { getHooks, type BenchmarkTask } from "./compat";
 type SuiteHooks = ReturnType<typeof getHooks>;
 
 function getSuiteHooks(suite: RunnerTestSuite, name: keyof SuiteHooks) {
@@ -19,8 +19,9 @@ export async function callSuiteHook<T extends keyof SuiteHooks>(
 
   const hooks = getSuiteHooks(suite, name);
 
-  // @ts-expect-error TODO: add support for hooks parameters
-  await Promise.all(hooks.map((fn) => fn()));
+  // TODO: add support for hook parameters. The hook signature differs across
+  // supported Vitest versions, so we call them through a parameterless cast.
+  await Promise.all((hooks as Array<() => unknown>).map((fn) => fn()));
 
   if (name === "afterEach" && suite?.suite) {
     await callSuiteHook(suite.suite, currentTask, name);
@@ -35,6 +36,6 @@ export function patchRootSuiteWithFullFilePath(suite: RunnerTestSuite) {
   suite.name = path.relative(gitDir, suite.file.filepath);
 }
 
-export function isVitestTaskBenchmark(task: RunnerTask): task is Benchmark {
+export function isVitestTaskBenchmark(task: RunnerTask): task is BenchmarkTask {
   return task.type === "test" && task.meta.benchmark === true;
 }
