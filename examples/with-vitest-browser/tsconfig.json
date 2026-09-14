@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "lib": ["es2023", "dom"],
+    "module": "ESNext",
+    "verbatimModuleSyntax": true,
+    "target": "es2022",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "Bundler"
+  }
+}
