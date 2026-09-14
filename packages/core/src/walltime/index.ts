@@ -61,4 +61,5 @@ export function writeWalltimeResults(
 
 export * from "./interfaces";
 export * from "./quantiles";
+export * from "./stats";
 export * from "./utils";
