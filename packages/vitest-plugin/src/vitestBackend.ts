@@ -1,8 +1,19 @@
-import { getInstrumentMode } from "@codspeed/core";
 import { readFileSync } from "fs";
 import { createRequire } from "module";
 import { join } from "path";
+
 import { type ViteUserConfig } from "vitest/config";
+
+import { getInstrumentMode } from "@codspeed/core";
+
+import { codspeedBrowserCommands } from "./browserCommands";
+
+// The page half imports `vitest`: pre-bundling it would give the page a second
+// copy of Vitest's collector, and the test file's registrations would land in
+// the wrong one.
+const BROWSER_PAGE_CONFIG: ViteUserConfig = {
+  optimizeDeps: { exclude: ["@codspeed/vitest-plugin/browser"] },
+};
 
 /**
  * Everything about integrating with Vitest that depends on which Vitest
@@ -23,16 +34,24 @@ export interface VitestBackend {
   isBenchmarkRun(config: ViteUserConfig, mode: string): boolean;
 
   /**
-   * The `test` config fragment that wires the benchmark instrumentation into
-   * Vitest: the V8 exec args (whose placement moved across versions) plus the
+   * The config fragment that wires the benchmark instrumentation into Vitest:
+   * the V8 exec args (whose placement moved across versions) plus the
    * integration seam. Legacy wires a custom runner subclass (and, in walltime
    * mode, asks tinybench to retain samples); v5 wires a `benchmark.provider`
-   * that owns execution and sample retention entirely.
+   * that owns execution and sample retention entirely, or, for a browser
+   * project, the commands the page drives the instrument through.
    */
-  getBenchmarkTestConfig(
+  getBenchmarkConfig(
+    config: ViteUserConfig,
     v8Flags: string[],
     resolveFile: (name: string) => string,
-  ): ViteUserConfig["test"];
+  ): ViteUserConfig;
+
+  /**
+   * The config fragment a run that CodSpeed does not drive still needs, so that
+   * declaring benchmarks stays valid outside a measured run.
+   */
+  getIdleConfig(config: ViteUserConfig): ViteUserConfig | undefined;
 }
 
 /**
@@ -87,15 +106,44 @@ class V5Backend implements VitestBackend {
     return getInstrumentMode() !== "disabled";
   }
 
-  getBenchmarkTestConfig(
+  getIdleConfig(config: ViteUserConfig): ViteUserConfig | undefined {
+    return config.test?.browser?.enabled ? BROWSER_PAGE_CONFIG : undefined;
+  }
+
+  getBenchmarkConfig(
+    config: ViteUserConfig,
     v8Flags: string[],
     resolveFile: (name: string) => string,
-  ): ViteUserConfig["test"] {
+  ): ViteUserConfig {
+    if (config.test?.browser?.enabled) {
+      return {
+        ...BROWSER_PAGE_CONFIG,
+        // Cross-origin isolation is what unlocks the page's high-resolution
+        // `performance.now()`, which the walltime sample is taken with.
+        server: {
+          headers: {
+            "Cross-Origin-Opener-Policy": "same-origin",
+            "Cross-Origin-Embedder-Policy": "require-corp",
+          },
+        },
+        test: {
+          browser: { commands: codspeedBrowserCommands() },
+          // Benchmarks share the browser, so a parallel file would measure
+          // through another one's work.
+          fileParallelism: false,
+        },
+      };
+    }
+
     return {
-      execArgv: v8Flags,
-      // The provider owns benchmark execution: it runs the registered functions
-      // under instrumentation (analysis) or drives tinybench itself (walltime).
-      benchmark: { provider: resolveFile("v5/provider") },
+      test: {
+        pool: "forks",
+        execArgv: v8Flags,
+        // The provider owns benchmark execution: it runs the registered
+        // functions under instrumentation (analysis) or drives tinybench itself
+        // (walltime).
+        benchmark: { provider: resolveFile("v5/provider") },
+      },
     };
   }
 }
@@ -116,10 +164,15 @@ class LegacyBackend implements VitestBackend {
     return mode === "benchmark";
   }
 
-  getBenchmarkTestConfig(
+  getIdleConfig(): undefined {
+    return undefined;
+  }
+
+  getBenchmarkConfig(
+    _config: ViteUserConfig,
     v8Flags: string[],
     resolveFile: (name: string) => string,
-  ): ViteUserConfig["test"] {
+  ): ViteUserConfig {
     const instrumentMode = getInstrumentMode();
     const runner =
       instrumentMode === "disabled"
@@ -133,14 +186,17 @@ class LegacyBackend implements VitestBackend {
       instrumentMode === "walltime" ? { includeSamples: true } : undefined;
 
     return {
-      // Vitest 3 nests exec args under `poolOptions.forks`; v4 moved them to a
-      // top-level `test.execArgv`.
-      // See: https://vitest.dev/guide/migration.html#pool-rework
-      ...(this.major >= 4
-        ? { execArgv: v8Flags }
-        : { poolOptions: { forks: { execArgv: v8Flags } } }),
-      ...(runner && { runner }),
-      ...(benchmark && { benchmark }),
-    } as ViteUserConfig["test"];
+      test: {
+        pool: "forks",
+        // Vitest 3 nests exec args under `poolOptions.forks`; v4 moved them to
+        // a top-level `test.execArgv`.
+        // See: https://vitest.dev/guide/migration.html#pool-rework
+        ...(this.major >= 4
+          ? { execArgv: v8Flags }
+          : { poolOptions: { forks: { execArgv: v8Flags } } }),
+        ...(runner && { runner }),
+        ...(benchmark && { benchmark }),
+      },
+    } as ViteUserConfig;
   }
 }

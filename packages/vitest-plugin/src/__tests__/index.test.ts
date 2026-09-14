@@ -1,6 +1,8 @@
-import { getV8Flags } from "@codspeed/core";
 import { fromPartial } from "@total-typescript/shoehorn";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+
+import { getV8Flags } from "@codspeed/core";
+
 import codspeedPlugin from "../index";
 
 const coreMocks = vi.hoisted(() => {
@@ -200,6 +202,28 @@ describe("codSpeedPlugin", () => {
       fsMocks.setMockVersion("4.0.18");
     });
 
+    it("should keep the page entry point out of the pre-bundle when CodSpeed is not driving the run", () => {
+      fsMocks.setMockVersion("5.0.0");
+      delete process.env.CODSPEED_ENV;
+
+      const v5Plugin = codspeedPlugin();
+      const config = v5Plugin.config;
+      if (typeof config !== "function")
+        throw new Error("config is not a function");
+
+      const result = config.call(
+        {} as never,
+        { test: { browser: { enabled: true, instances: [] } } },
+        fromPartial({ mode: "test" }),
+      );
+
+      expect(result).toStrictEqual({
+        optimizeDeps: { exclude: ["@codspeed/vitest-plugin/browser"] },
+      });
+      process.env.CODSPEED_ENV = "1";
+      fsMocks.setMockVersion("4.0.18");
+    });
+
     it("should wire the v5 benchmark provider (not a runner or setup file)", () => {
       fsMocks.setMockVersion("5.0.0");
       const v5Plugin = codspeedPlugin();
@@ -227,6 +251,44 @@ describe("codSpeedPlugin", () => {
               "packages/vitest-plugin/src/v5/provider.ts",
             ),
           },
+        },
+      });
+      fsMocks.setMockVersion("4.0.18");
+    });
+
+    it("should wire the browser commands instead of the provider for a browser project", () => {
+      fsMocks.setMockVersion("5.0.0");
+      const v5Plugin = codspeedPlugin();
+      const config = v5Plugin.config;
+      if (typeof config !== "function")
+        throw new Error("config is not a function");
+
+      const result = config.call(
+        {} as never,
+        { test: { browser: { enabled: true, instances: [] } } },
+        fromPartial({ mode: "test" }),
+      );
+
+      expect(result).toStrictEqual({
+        server: {
+          headers: {
+            "Cross-Origin-Opener-Policy": "same-origin",
+            "Cross-Origin-Embedder-Policy": "require-corp",
+          },
+        },
+        optimizeDeps: { exclude: ["@codspeed/vitest-plugin/browser"] },
+        test: {
+          globalSetup: [
+            expect.stringContaining(
+              "packages/vitest-plugin/src/globalSetup.ts",
+            ),
+          ],
+          browser: {
+            commands: {
+              codspeedRunRound: expect.any(Function),
+            },
+          },
+          fileParallelism: false,
         },
       });
       fsMocks.setMockVersion("4.0.18");

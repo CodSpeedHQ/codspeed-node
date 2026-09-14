@@ -1,5 +1,4 @@
 import {
-  getGitDir,
   getInstrumentMode,
   InstrumentHooks,
   setupCore,
@@ -7,7 +6,6 @@ import {
   type Benchmark,
 } from "@codspeed/core";
 import { createRequire } from "module";
-import path from "path";
 import type {
   BenchmarkGroup,
   BenchmarkProvider,
@@ -26,6 +24,7 @@ import {
   type TinybenchOptions,
   type TinybenchTask,
 } from "../instrument";
+import { buildBenchmarkUri } from "../uri";
 
 /** tinybench's statistics for one dimension (latency or throughput). */
 type BenchStatistics = BenchResult["latency"];
@@ -70,25 +69,16 @@ setupCore();
 process.once("beforeExit", () => teardownCore());
 
 /**
- * Build the URI prefix shared by every benchmark of a group: the git-relative
- * file path followed by the suite/test path, `::`-separated (e.g.
- * `src/a.bench.ts::my suite::my test`). Each registration name is appended to
- * it, so a group registering several benchmarks (`bench.compare()`) reports one
- * URI per benchmark.
+ * Build the URI prefix shared by every benchmark of a group. Each registration
+ * name is appended to it, so a group registering several benchmarks
+ * (`bench.compare()`) reports one URI per benchmark.
  */
 function buildGroupUri(test: BenchmarkGroup["test"]): string {
   const filepath = test.file?.filepath;
   if (!filepath) {
     throw new Error("[CodSpeed] could not resolve the running benchmark file");
   }
-  const gitDir = getGitDir(filepath);
-  if (gitDir === undefined) {
-    throw new Error("Could not find a git repository");
-  }
-  const relativeFile = path.relative(gitDir, filepath);
-  // `fullTestName` uses " > " between suite levels; normalize to "::".
-  const testPath = test.fullTestName.split(" > ").join("::");
-  return [relativeFile, testPath].filter(Boolean).join("::");
+  return buildBenchmarkUri(filepath, test.fullTestName);
 }
 
 /**

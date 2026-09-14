@@ -14,6 +14,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.mjs"
     }
   },
   "type": "module",
@@ -39,9 +43,19 @@
     "@codspeed/core": "workspace:^6.0.0-beta.2"
   },
   "peerDependencies": {
+    "@vitest/browser": "^5.0.0",
+    "@vitest/browser-playwright": "^5.0.0",
     "tinybench": ">=2.9.0",
     "vite": "^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0",
     "vitest": "^3.2 || ^4 || ^5"
+  },
+  "peerDependenciesMeta": {
+    "@vitest/browser": {
+      "optional": true
+    },
+    "@vitest/browser-playwright": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@total-typescript/shoehorn": "^0.1.1",

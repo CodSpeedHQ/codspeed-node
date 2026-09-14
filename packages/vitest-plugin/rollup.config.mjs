@@ -17,6 +17,22 @@ export default defineConfig([
     }),
     external: ["vite"],
   },
+  // The page half must not pull in anything node-native: keeping `@codspeed/core`
+  // out of its externals makes the build fail if it ever does.
+  {
+    input: "src/browser/bench.ts",
+    output: { file: "dist/browser.mjs", format: "es" },
+    plugins: jsPlugins(pkg.version),
+    external: [/^vitest/],
+  },
+  {
+    input: "src/browser/bench.ts",
+    output: { file: "dist/browser.d.ts", format: "es" },
+    plugins: declarationsPlugin({
+      compilerOptions: { composite: false, preserveSymlinks: false },
+    }),
+    external: [/^vitest/],
+  },
   {
     input: "src/globalSetup.ts",
     output: { file: "dist/globalSetup.mjs", format: "es" },

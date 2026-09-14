@@ -1,3 +1,8 @@
+import { join } from "path";
+
+import { Plugin } from "vite";
+import { type ViteUserConfig } from "vitest/config";
+
 import {
   getInstrumentMode,
   getV8Flags,
@@ -6,9 +11,7 @@ import {
   SetupInstrumentsRequestBody,
   SetupInstrumentsResponse,
 } from "@codspeed/core";
-import { join } from "path";
-import { Plugin } from "vite";
-import { type ViteUserConfig } from "vitest/config";
+
 import { resolveVitestBackend } from "./vitestBackend";
 
 // get this file's directory path from import.meta.url
@@ -47,18 +50,22 @@ export default function codspeedPlugin(): Plugin {
     config(incomingConfig, { mode }): ViteUserConfig | undefined {
       const backend = resolveVitestBackend();
       if (!backend.isBenchmarkRun(incomingConfig, mode)) {
-        return undefined;
+        return backend.getIdleConfig(incomingConfig);
       }
 
-      const config: ViteUserConfig = {
+      const benchmarkConfig = backend.getBenchmarkConfig(
+        incomingConfig,
+        getV8Flags(),
+        resolveFile,
+      );
+
+      return {
+        ...benchmarkConfig,
         test: {
-          pool: "forks",
           globalSetup: [resolveFile("globalSetup")],
-          ...backend.getBenchmarkTestConfig(getV8Flags(), resolveFile),
+          ...benchmarkConfig.test,
         },
       };
-
-      return config;
     },
   };
 }
@@ -77,3 +84,5 @@ export async function setupInstruments(
 
   return await mongoMeasurement.setupInstruments(body);
 }
+
+export { codspeedLaunchOptions } from "./browserCommands";
