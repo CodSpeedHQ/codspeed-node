@@ -6,3 +6,4 @@ packages:
   # copy (`file:`) so it resolves `vitest` from the example, as in a real install.
   - "!examples/with-electron-and-walltime/**"
   - "!examples/with-vitest-v3/**"
+  - "!examples/with-vitest-v4/**"
