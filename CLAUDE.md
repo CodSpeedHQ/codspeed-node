@@ -95,3 +95,24 @@ Based on the codebase analysis, to add stats access features:
   - Typecheck: `pnpm turbo run typecheck --filter=<package-name>`
   - Lint: `pnpm turbo run lint --filter=<package-name>`
   - Run a task across all packages by omitting `--filter` (e.g. `pnpm turbo run build`).
+
+## Testing a plugin during development
+
+A plugin behaves differently depending on whether CodSpeed is driving the run,
+so exercise all three of these when developing or reviewing a plugin change
+(build the plugin first — the benches import from `dist`):
+
+1. **Fallback (not under CodSpeed).** No env vars. The plugin must stay out of
+   the way and let the framework run its benchmarks normally (no instrumentation,
+   no hijacked output). e.g. `pnpm turbo run bench --filter=<package-name>`.
+2. **Instrumentation / simulation.** `CODSPEED_ENV=true CODSPEED_RUNNER_MODE=simulation`
+   (or `instrumentation`). The plugin hijacks the run to do a single instrumented
+   pass per benchmark and prints `Measured/Checked <uri>` instead of the normal
+   harness output.
+3. **Walltime.** `CODSPEED_ENV=true CODSPEED_RUNNER_MODE=walltime`. The plugin
+   instruments the framework's real benchmark loop and collects walltime results.
+
+Running these locally outside the CodSpeed runner is expected to log
+`instrument-hooks: failed to write environment.json` and skip actual measurement
+writes — the point is to verify the plugin's control flow and output per mode,
+not to produce real measurements.
