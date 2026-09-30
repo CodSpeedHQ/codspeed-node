@@ -41,10 +41,10 @@ pnpm add --save-dev @codspeed/vitest-plugin vitest
 
 ## Usage
 
-Let's create a fibonacci function and benchmark it with `vitest.bench`:
+Let's create a fibonacci function and benchmark it with Vitest's `bench` fixture:
 
 ```ts title="benches/fibo.bench.ts"
-import { describe, bench } from "vitest";
+import { describe, test } from "vitest";
 
 function fibonacci(n: number): number {
   if (n < 2) {
@@ -54,15 +54,32 @@ function fibonacci(n: number): number {
 }
 
 describe("fibonacci", () => {
-  bench("fibonacci10", () => {
-    fibonacci(10);
-  });
-
-  bench("fibonacci15", () => {
-    fibonacci(15);
+  test("depth", async ({ bench }) => {
+    await bench.compare(
+      bench("fibonacci10", () => {
+        fibonacci(10);
+      }),
+      bench("fibonacci15", () => {
+        fibonacci(15);
+      }),
+    );
   });
 });
 ```
+
+> [!NOTE]
+> The `bench` fixture is a Vitest 5 API. On Vitest 3 and 4, benchmarks are
+> declared with the top-level `bench()` export instead:
+>
+> ```ts
+> import { bench, describe } from "vitest";
+>
+> describe("fibonacci", () => {
+>   bench("fibonacci10", () => {
+>     fibonacci(10);
+>   });
+> });
+> ```
 
 Create or update your `vitest.config.ts` file to use the CodSpeed runner:
 
@@ -80,7 +97,6 @@ Finally, run your benchmarks (here with `pnpm`):
 
 ```bash
 $ pnpm vitest bench --run
-[CodSpeed] bench detected but no instrumentation found, falling back to default vitest runner
 
 ... Regular `vitest bench` output
 ```
