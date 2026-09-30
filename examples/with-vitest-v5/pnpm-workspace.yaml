@@ -1,0 +1,7 @@
+# Standalone project, outside the root workspace: the plugin is installed as a
+# copy (`file:`) so it resolves `vitest` from this example, as in a real
+# install. Reinstall after rebuilding the plugin.
+overrides:
+  "@codspeed/core": "file:../../packages/core"
+ignoredBuiltDependencies:
+  - esbuild

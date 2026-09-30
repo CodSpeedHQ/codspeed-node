@@ -7,3 +7,4 @@ packages:
   - "!examples/with-electron-and-walltime/**"
   - "!examples/with-vitest-v3/**"
   - "!examples/with-vitest-v4/**"
+  - "!examples/with-vitest-v5/**"
