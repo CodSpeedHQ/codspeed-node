@@ -1,6 +1,6 @@
 import { getV8Flags } from "@codspeed/core";
 import { fromPartial } from "@total-typescript/shoehorn";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import codspeedPlugin from "../index";
 
 const coreMocks = vi.hoisted(() => {
@@ -12,7 +12,7 @@ const coreMocks = vi.hoisted(() => {
 });
 
 const fsMocks = vi.hoisted(() => {
-  let mockVersion = "4.0.18"; // default to v4
+  let mockVersion = "";
   return {
     readFileSync: vi.fn((path: string) => {
       if (path.includes("vitest/package.json")) {
@@ -25,11 +25,6 @@ const fsMocks = vi.hoisted(() => {
     },
   };
 });
-
-const resolvedCodSpeedPlugin = codspeedPlugin();
-const applyPluginFunction = resolvedCodSpeedPlugin.apply;
-if (typeof applyPluginFunction !== "function")
-  throw new Error("applyPluginFunction is not a function");
 
 vi.mock("@codspeed/core", async (importOriginal) => {
   const mod = await importOriginal<typeof import("@codspeed/core")>();
@@ -44,114 +39,131 @@ vi.mock("fs", () => {
 
 console.warn = vi.fn();
 
+const plugin = codspeedPlugin();
+
+function apply(mode: string) {
+  if (typeof plugin.apply !== "function")
+    throw new Error("apply is not a function");
+  return plugin.apply({}, fromPartial({ mode }));
+}
+
+function config() {
+  if (typeof plugin.config !== "function")
+    throw new Error("config is not a function");
+  return plugin.config.call({} as never, {}, fromPartial({}));
+}
+
 describe("codSpeedPlugin", () => {
-  beforeAll(() => {
-    // Set environment variables to trigger instrumented mode
-    process.env.CODSPEED_ENV = "1";
-    process.env.CODSPEED_RUNNER_MODE = "instrumentation";
+  beforeEach(() => {
+    vi.stubEnv("CODSPEED_ENV", "1");
+    vi.stubEnv("CODSPEED_RUNNER_MODE", "instrumentation");
   });
 
-  afterAll(() => {
-    // Clean up environment variables
-    delete process.env.CODSPEED_ENV;
-    delete process.env.CODSPEED_RUNNER_MODE;
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
-  it("should have a name", async () => {
-    expect(resolvedCodSpeedPlugin.name).toBe("codspeed:vitest");
+  it("should enforce to run after the other plugins", () => {
+    expect(plugin.enforce).toBe("post");
   });
 
-  it("should enforce to run after the other plugins", async () => {
-    expect(resolvedCodSpeedPlugin.enforce).toBe("post");
-  });
-
-  describe("apply", () => {
-    it("should not apply the plugin when the mode is not benchmark", async () => {
-      const applyPlugin = applyPluginFunction(
-        {},
-        fromPartial({ mode: "test" }),
-      );
-
-      expect(applyPlugin).toBe(false);
+  describe("Vitest 3/4", () => {
+    beforeEach(() => {
+      fsMocks.setMockVersion("4.0.18");
     });
 
-    it("should apply the plugin when there is no instrumentation", async () => {
+    it("should not apply the plugin when the mode is not benchmark", () => {
+      expect(apply("test")).toBe(false);
+    });
+
+    it("should apply the plugin when there is no instrumentation", () => {
       coreMocks.InstrumentHooks.isInstrumented.mockReturnValue(false);
 
-      const applyPlugin = applyPluginFunction(
-        {},
-        fromPartial({ mode: "benchmark" }),
-      );
-
+      expect(apply("benchmark")).toBe(true);
       expect(console.warn).toHaveBeenCalledWith(
         "[CodSpeed] bench detected but no instrumentation found",
       );
-      expect(applyPlugin).toBe(true);
     });
 
-    it("should apply the plugin when there is instrumentation", async () => {
+    it("should apply the plugin when there is instrumentation", () => {
       coreMocks.InstrumentHooks.isInstrumented.mockReturnValue(true);
 
-      const applyPlugin = applyPluginFunction(
-        {},
-        fromPartial({ mode: "benchmark" }),
-      );
+      expect(apply("benchmark")).toBe(true);
+    });
 
-      expect(applyPlugin).toBe(true);
+    it("should apply the codspeed config for v4", () => {
+      expect(config()).toStrictEqual({
+        test: {
+          globalSetup: [
+            expect.stringContaining(
+              "packages/vitest-plugin/src/globalSetup.ts",
+            ),
+          ],
+          pool: "forks",
+          execArgv: getV8Flags(),
+          runner: expect.stringContaining(
+            "packages/vitest-plugin/src/legacy/analysis.ts",
+          ),
+        },
+      });
+    });
+
+    it("should apply the codspeed config for v3 with poolOptions", () => {
+      fsMocks.setMockVersion("3.2.0");
+
+      expect(config()).toStrictEqual({
+        test: {
+          globalSetup: [
+            expect.stringContaining(
+              "packages/vitest-plugin/src/globalSetup.ts",
+            ),
+          ],
+          pool: "forks",
+          poolOptions: {
+            forks: {
+              execArgv: getV8Flags(),
+            },
+          },
+          runner: expect.stringContaining(
+            "packages/vitest-plugin/src/legacy/analysis.ts",
+          ),
+        },
+      });
     });
   });
 
-  it("should apply the codspeed config for v4", () => {
-    const config = resolvedCodSpeedPlugin.config;
-    if (typeof config !== "function")
-      throw new Error("config is not a function");
-
-    const result = config.call({} as never, {}, fromPartial({}));
-
-    expect(result).toStrictEqual({
-      test: {
-        globalSetup: [
-          expect.stringContaining("packages/vitest-plugin/src/globalSetup.ts"),
-        ],
-        pool: "forks",
-        execArgv: getV8Flags(),
-        runner: expect.stringContaining(
-          "packages/vitest-plugin/src/analysis.ts",
-        ),
-      },
+  describe("Vitest 5", () => {
+    beforeEach(() => {
+      fsMocks.setMockVersion("5.0.0");
     });
-  });
 
-  it("should apply the codspeed config for v3 with poolOptions", () => {
-    // Set mock version to v3
-    fsMocks.setMockVersion("3.2.0");
+    it("should apply the plugin in any mode when CodSpeed drives the run", () => {
+      expect(apply("test")).toBe(true);
+    });
 
-    // Create a new plugin instance to pick up the mocked version
-    const v3Plugin = codspeedPlugin();
-    const config = v3Plugin.config;
-    if (typeof config !== "function")
-      throw new Error("config is not a function");
+    it("should not apply the plugin when CodSpeed is not driving the run", () => {
+      vi.stubEnv("CODSPEED_ENV", undefined);
 
-    const result = config.call({} as never, {}, fromPartial({}));
+      expect(apply("test")).toBe(false);
+    });
 
-    expect(result).toStrictEqual({
-      test: {
-        globalSetup: [
-          expect.stringContaining("packages/vitest-plugin/src/globalSetup.ts"),
-        ],
-        pool: "forks",
-        poolOptions: {
-          forks: {
-            execArgv: getV8Flags(),
+    it("should wire the benchmark provider", () => {
+      expect(config()).toStrictEqual({
+        test: {
+          globalSetup: [
+            expect.stringContaining(
+              "packages/vitest-plugin/src/globalSetup.ts",
+            ),
+          ],
+          pool: "forks",
+          execArgv: getV8Flags(),
+          benchmark: {
+            provider: expect.stringContaining(
+              "packages/vitest-plugin/src/v5/provider.ts",
+            ),
           },
         },
-        runner: expect.stringContaining(
-          "packages/vitest-plugin/src/analysis.ts",
-        ),
-      },
+      });
     });
-
-    // Reset mock version back to v4
-    fsMocks.setMockVersion("4.0.18");
   });
 });

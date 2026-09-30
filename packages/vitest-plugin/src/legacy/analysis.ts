@@ -7,16 +7,20 @@ import {
   teardownCore,
   wrapWithRootFrame,
 } from "@codspeed/core";
-import type * as tinybench from "tinybench";
-import { Benchmark, type RunnerTestSuite } from "vitest";
+import { type RunnerTestSuite } from "vitest";
+import { type Tinybench } from "../instrument";
+
 import {
   callSuiteHook,
   isVitestTaskBenchmark,
   patchRootSuiteWithFullFilePath,
 } from "./common";
-import { getBenchFn, getBenchOptions, NodeBenchmarkRunner } from "./compat";
-
-type Tinybench = typeof tinybench;
+import {
+  getBenchFn,
+  getBenchOptions,
+  NodeBenchmarkRunner,
+  type BenchmarkTask,
+} from "./compat";
 
 const currentFileName =
   typeof __filename === "string"
@@ -33,7 +37,7 @@ function logCodSpeed(message: string) {
 }
 
 async function runAnalysisBench(
-  benchmark: Benchmark,
+  benchmark: BenchmarkTask,
   suite: RunnerTestSuite,
   currentSuiteName: string,
   tinybenchModule: Tinybench,
@@ -50,7 +54,6 @@ async function runAnalysisBench(
   await bench.setup(task, "warmup");
   await optimizeFunction(async () => {
     await callSuiteHook(suite, benchmark, "beforeEach");
-    // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench
     await fn();
     await callSuiteHook(suite, benchmark, "afterEach");
   });
@@ -62,7 +65,6 @@ async function runAnalysisBench(
   global.gc?.();
   await wrapWithRootFrame(async () => {
     InstrumentHooks.startBenchmark();
-    // @ts-expect-error we do not need to bind the function to an instance of tinybench's Bench
     await fn();
     InstrumentHooks.stopBenchmark();
     InstrumentHooks.setExecutedBenchmark(process.pid, uri);
@@ -88,10 +90,10 @@ async function runAnalysisBenchmarkSuite(
   for (const task of suite.tasks) {
     if (task.mode !== "run") continue;
 
-    if (isVitestTaskBenchmark(task)) {
-      await runAnalysisBench(task, suite, currentSuiteName, tinybenchModule);
-    } else if (task.type === "suite") {
+    if (task.type === "suite") {
       await runAnalysisBenchmarkSuite(task, tinybenchModule, currentSuiteName);
+    } else if (isVitestTaskBenchmark(task)) {
+      await runAnalysisBench(task, suite, currentSuiteName, tinybenchModule);
     }
   }
 
