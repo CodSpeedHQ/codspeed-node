@@ -32,7 +32,6 @@
   "homepage": "https://codspeed.io",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@types/find-up": "^4.0.0",
     "@types/stack-trace": "^0.0.30",
     "node-addon-api": "^5.1.0",
     "node-gyp": "^12.2.0",
@@ -41,7 +40,6 @@
   },
   "dependencies": {
     "axios": "^1.4.0",
-    "find-up": "^6.3.0",
     "form-data": "^4.0.4",
     "node-gyp-build": "^4.6.0",
     "stack-trace": "1.0.0-pre2"

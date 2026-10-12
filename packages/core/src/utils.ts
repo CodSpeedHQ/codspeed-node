@@ -1,14 +1,22 @@
-import { Options as FindupOptions, findUpSync } from "find-up";
-import path, { dirname } from "path";
+import { existsSync } from "fs";
+import path from "path";
 import { get as getStackTrace } from "stack-trace";
 import { fileURLToPath } from "url";
 
-export function getGitDir(path: string): string | undefined {
-  const dotGitPath = findUpSync(".git", {
-    cwd: path,
-    type: "directory",
-  } as FindupOptions);
-  return dotGitPath ? dirname(dotGitPath) : undefined;
+/**
+ * Return the root of the git repository containing `from`. `.git` is a
+ * directory in a regular clone and a file in worktrees and submodules.
+ */
+export function getGitDir(from: string): string | undefined {
+  let dir = path.resolve(from);
+  while (!existsSync(path.join(dir, ".git"))) {
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      return undefined;
+    }
+    dir = parent;
+  }
+  return dir;
 }
 
 /**
