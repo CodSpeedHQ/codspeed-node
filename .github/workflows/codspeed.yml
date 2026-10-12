@@ -28,6 +28,7 @@ jobs:
             bench: |
               pnpm turbo run bench --filter=@codspeed/vitest-plugin
               pnpm --workspace-concurrency 1 -r bench-vitest
+              for ex in examples/with-vitest-*; do pnpm -C "$ex" bench-vitest || exit 1; done
           - plugin: benchmark.js
             bench: |
               pnpm turbo run bench --filter=@codspeed/benchmark.js-plugin
@@ -48,6 +49,11 @@ jobs:
           key-suffix: ${{ matrix.plugin }}
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm turbo run build
+      # Outside the root workspace; installed after the build so their copy of
+      # the plugin includes `dist/`.
+      - name: Install vitest examples
+        if: matrix.plugin == 'vitest'
+        run: for ex in examples/with-vitest-*; do pnpm -C "$ex" install --frozen-lockfile --prefer-offline; done
 
       - name: Run simulation benchmarks
         uses: CodSpeedHQ/action@main
@@ -78,6 +84,8 @@ jobs:
         uses: ./.github/actions/turbo-cache
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm turbo run build
+      - name: Install vitest examples
+        run: for ex in examples/with-vitest-*; do pnpm -C "$ex" install --frozen-lockfile --prefer-offline; done
 
       - name: Run benchmarks
         # use version from `main` branch to always test the latest version, in real projects, use a tag, like `@v2`
@@ -92,6 +100,7 @@ jobs:
             pnpm turbo run bench --filter=@codspeed/benchmark.js-plugin
             pnpm --workspace-concurrency 1 -r bench-tinybench
             pnpm --workspace-concurrency 1 -r bench-vitest
+            for ex in examples/with-vitest-*; do pnpm -C "$ex" bench-vitest || exit 1; done
 
   codspeed-walltime-macos:
     runs-on: macos-latest

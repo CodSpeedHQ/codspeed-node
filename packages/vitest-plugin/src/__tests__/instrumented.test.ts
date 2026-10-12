@@ -1,7 +1,7 @@
 import { fromPartial } from "@total-typescript/shoehorn";
 import { describe, expect, it, vi, type RunnerTestSuite } from "vitest";
-import { AnalysisRunner as CodSpeedRunner } from "../analysis";
-import { getBenchFn, getBenchOptions } from "../compat";
+import { AnalysisRunner as CodSpeedRunner } from "../legacy/analysis";
+import { getBenchFn, getBenchOptions } from "../legacy/compat";
 
 const coreMocks = vi.hoisted(() => {
   return {
@@ -28,10 +28,17 @@ vi.mock("@codspeed/core", async (importOriginal) => {
 
 console.log = vi.fn();
 
-vi.mock("../compat", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../compat")>();
+// Fully mocked: it loads the Vitest 3/4 runner, absent from the Vitest 5 devDependency.
+vi.mock("../legacy/compat", () => {
+  class NodeBenchmarkRunner {
+    async importTinybench() {
+      return import("tinybench");
+    }
+  }
+
   return {
-    ...actual,
+    NodeBenchmarkRunner,
+    getHooks: vi.fn(),
     getBenchFn: vi.fn(),
     getBenchOptions: vi.fn(),
   };

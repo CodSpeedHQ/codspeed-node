@@ -23,18 +23,26 @@ export default defineConfig([
     plugins: jsPlugins(pkg.version),
     external: ["@codspeed/core", /^vitest/],
   },
+  // Vitest imports these by file path (as `test.runner` or `benchmark.provider`), so
+  // each needs its own output; `resolveFile` expects it at the same path as in `src/`.
   {
-    input: "src/analysis.ts",
-    output: { file: "dist/analysis.mjs", format: "es" },
+    input: "src/legacy/analysis.ts",
+    output: { file: "dist/legacy/analysis.mjs", format: "es" },
     // top-level await
     plugins: jsPlugins(pkg.version, "es2022"),
     external: ["@codspeed/core", /^vitest/],
   },
   {
-    input: "src/walltime/index.ts",
-    output: { file: "dist/walltime.mjs", format: "es" },
+    input: "src/legacy/walltime.ts",
+    output: { file: "dist/legacy/walltime.mjs", format: "es" },
     // top-level await
     plugins: jsPlugins(pkg.version, "es2022"),
+    external: ["@codspeed/core", /^vitest/],
+  },
+  {
+    input: "src/v5/provider.ts",
+    output: { file: "dist/v5/provider.mjs", format: "es" },
+    plugins: jsPlugins(pkg.version),
     external: ["@codspeed/core", /^vitest/],
   },
 ]);

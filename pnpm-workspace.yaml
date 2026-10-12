@@ -1,6 +1,8 @@
 packages:
   - examples/*
   - packages/*
-  # with-electron-and-walltime is a self-contained example with its own
-  # pnpm workspace and a different Node version; keep it out of the root one.
+  # Self-contained examples with their own pnpm workspace. with-electron-and-walltime
+  # needs a different Node version; the with-vitest-* ones install the plugin as a
+  # copy (`file:`) so it resolves `vitest` from the example, as in a real install.
   - "!examples/with-electron-and-walltime/**"
+  - "!examples/with-vitest-v3/**"

@@ -9,13 +9,19 @@ function logCodSpeed(message: string) {
   console.log(`[CodSpeed] ${message}`);
 }
 
+let setupHappened = false;
 let teardownHappened = false;
 
+// Vitest 5 runs this module for the base project and for the `(bench)` project
+// it clones from it, so setup and teardown each fire twice.
 export default function () {
-  logCodSpeed(`@codspeed/vitest-plugin v${__VERSION__} - setup`);
+  if (!setupHappened) {
+    setupHappened = true;
+    logCodSpeed(`@codspeed/vitest-plugin v${__VERSION__} - setup`);
+  }
 
   return () => {
-    if (teardownHappened) throw new Error("teardown called twice");
+    if (teardownHappened) return;
     teardownHappened = true;
 
     logCodSpeed(`@codspeed/vitest-plugin v${__VERSION__} - teardown`);
