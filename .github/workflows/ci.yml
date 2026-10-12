@@ -10,7 +10,7 @@ jobs:
   check:
     strategy:
       matrix:
-        os: ["ubuntu-latest", "codspeedhq-arm64-ubuntu-22.04"]
+        os: ["ubuntu-latest", "ubuntu-26.04-arm"]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: "actions/checkout@v4"

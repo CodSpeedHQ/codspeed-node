@@ -16,7 +16,7 @@ jobs:
       matrix:
         platform:
           # The x86_64 Linux prebuild is generated when running pnpm turbo run build in the `build` job
-          - runs-on: codspeedhq-arm64-ubuntu-22.04
+          - runs-on: ubuntu-26.04-arm
             name: linux-arm
           - runs-on: macos-latest
             name: darwin-arm
