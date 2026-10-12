@@ -1,12 +1,4 @@
-const esmModules = [
-  "find-up",
-  "locate-path",
-  "p-locate",
-  "p-limit",
-  "yocto-queue",
-  "path-exists",
-  "stack-trace",
-];
+const esmModules = ["stack-trace"];
 
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
