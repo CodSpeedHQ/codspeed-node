@@ -82,6 +82,10 @@ jobs:
           node-version-file: .nvmrc
       - name: Restore turbo cache
         uses: ./.github/actions/turbo-cache
+        # The native addon prebuild links against the host's libstdc++, which
+        # Turbo does not hash; keep GitHub's arm64 runners' builds out.
+        with:
+          key-suffix: codspeed-macro
       - run: pnpm install --frozen-lockfile --prefer-offline
       - run: pnpm turbo run build
       - name: Install vitest examples
@@ -154,6 +158,8 @@ jobs:
 
       - name: Restore turbo cache
         uses: ./.github/actions/turbo-cache
+        with:
+          key-suffix: codspeed-macro
 
       - name: Install repo dependencies
         run: pnpm install --frozen-lockfile --prefer-offline
