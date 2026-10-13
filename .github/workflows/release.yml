@@ -15,8 +15,10 @@ jobs:
     strategy:
       matrix:
         platform:
-          # The x86_64 Linux prebuild is generated when running pnpm turbo run build in the `build` job
-          - runs-on: ubuntu-26.04-arm
+          # Built on the oldest supported Ubuntu so the prebuilds only require its glibc/libstdc++
+          - runs-on: ubuntu-22.04
+            name: linux-x64
+          - runs-on: ubuntu-22.04-arm
             name: linux-arm
           - runs-on: macos-latest
             name: darwin-arm
@@ -60,6 +62,9 @@ jobs:
       - run: pnpm install --frozen-lockfile --prefer-offline
       - name: Build the libraries
         run: pnpm turbo run build
+
+      # Drop the x64 prebuild built above by the runner image in favor of the build-native ones
+      - run: rm -rf packages/core/prebuilds
 
       - name: Download prebuilds
         uses: actions/download-artifact@v4
