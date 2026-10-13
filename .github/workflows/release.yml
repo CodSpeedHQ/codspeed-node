@@ -16,7 +16,7 @@ jobs:
       matrix:
         platform:
           # The x86_64 Linux prebuild is generated when running pnpm turbo run build in the `build` job
-          - runs-on: ubuntu-26.04-arm
+          - runs-on: ubuntu-22.04-arm
             name: linux-arm
           - runs-on: macos-latest
             name: darwin-arm
@@ -43,7 +43,8 @@ jobs:
           path: packages/core/prebuilds
 
   build:
-    runs-on: ubuntu-latest
+    # Oldest supported Ubuntu, so the x86_64 prebuild only requires its glibc/libstdc++
+    runs-on: ubuntu-22.04
     needs: build-native
 
     steps:
