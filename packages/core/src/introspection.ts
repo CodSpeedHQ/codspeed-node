@@ -2,6 +2,7 @@ import { writeFileSync } from "fs";
 import path from "path";
 
 import { getInstrumentMode } from "./runnerMode";
+import { findTsxPreload } from "./tsx";
 
 const CUSTOM_INTROSPECTION_EXIT_CODE = 0;
 
@@ -12,6 +13,11 @@ export const getV8Flags = () => {
   const instrumentMode = getInstrumentMode();
 
   const flags = ["--interpreted-frames-native-stack", "--allow-natives-syntax"];
+
+  if (findTsxPreload(process.execArgv) !== undefined) {
+    // `--require` preloads run before `--import` ones, such as tsx's
+    flags.push(`--require=${path.join(__dirname, "tsx-loader.cjs")}`);
+  }
 
   switch (instrumentMode) {
     case "analysis": {
