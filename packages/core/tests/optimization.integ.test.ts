@@ -21,7 +21,7 @@ describe("optimization helpers", () => {
       `const target = () => 1;
        const before = %GetOptimizationStatus(target);
        require(${corePath}).optimizeFunctionSync(target);
-       console.log("done", before, %GetOptimizationStatus(target));`,
+       console.log(\`done \${before} \${%GetOptimizationStatus(target)}\`);`,
     );
     const [, before, after] = stdout.match(/done (\d+) (\d+)/) ?? [];
     expect(stdout).toContain("done");
@@ -34,7 +34,7 @@ describe("optimization helpers", () => {
        const before = %GetOptimizationStatus(target);
        require(${corePath})
          .optimizeFunction(target)
-         .then(() => console.log("done", before, %GetOptimizationStatus(target)));`,
+         .then(() => console.log(\`done \${before} \${%GetOptimizationStatus(target)}\`));`,
     );
     const [, before, after] = stdout.match(/done (\d+) (\d+)/) ?? [];
     expect(stdout).toContain("done");
