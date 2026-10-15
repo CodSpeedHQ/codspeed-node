@@ -37,7 +37,7 @@ export default function codspeedPlugin(): Plugin {
       return true;
     },
     enforce: "post",
-    config(): ViteUserConfig {
+    config(userConfig): ViteUserConfig {
       return {
         test: {
           pool: "forks",
@@ -45,6 +45,7 @@ export default function codspeedPlugin(): Plugin {
           ...resolveVitestBackend().getBenchmarkTestConfig(
             getV8Flags(),
             resolveFile,
+            (userConfig as ViteUserConfig).test,
           ),
         },
       };

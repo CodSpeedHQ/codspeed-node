@@ -1,6 +1,7 @@
 import { getV8Flags } from "@codspeed/core";
 import { fromPartial } from "@total-typescript/shoehorn";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { type ViteUserConfig } from "vitest/config";
 import codspeedPlugin from "../index";
 
 const coreMocks = vi.hoisted(() => {
@@ -34,10 +35,10 @@ function apply(mode: string) {
   return plugin.apply({}, fromPartial({ mode }));
 }
 
-function config() {
+function config(userConfig: ViteUserConfig = {}) {
   if (typeof plugin.config !== "function")
     throw new Error("config is not a function");
-  return plugin.config.call({} as never, {}, fromPartial({}));
+  return plugin.config.call({} as never, userConfig, fromPartial({}));
 }
 
 describe("codSpeedPlugin", () => {
@@ -148,9 +149,18 @@ describe("codSpeedPlugin", () => {
             provider: expect.stringContaining(
               "packages/vitest-plugin/src/v5/provider.ts",
             ),
+            suppressExportGetterWarnings: true,
           },
         },
       });
+    });
+
+    it("should keep an explicit suppressExportGetterWarnings from the user", () => {
+      const result = config({
+        test: { benchmark: { suppressExportGetterWarnings: false } },
+      }) as ViteUserConfig;
+
+      expect(result.test?.benchmark?.suppressExportGetterWarnings).toBe(false);
     });
   });
 });

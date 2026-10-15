@@ -1,9 +1,5 @@
 import { describe, test } from "vitest";
-import parsePrExport from "./parsePr";
-
-// Imports are getters under Vite's module runner; read it once, outside the
-// measured loop.
-const parsePr = parsePrExport;
+import parsePr from "./parsePr";
 
 const LONG_BODY =
   new Array(1_000)

@@ -1,13 +1,5 @@
 import { describe, test } from "vitest";
-import {
-  iterativeFibonacci as iterativeFibonacciExport,
-  recursiveFibonacci as recursiveFibonacciExport,
-} from "./fibonacci";
-
-// Imports are getters under Vite's module runner; read them once, outside the
-// measured loop.
-const recursiveFibonacci = recursiveFibonacciExport;
-const iterativeFibonacci = iterativeFibonacciExport;
+import { iterativeFibonacci, recursiveFibonacci } from "./fibonacci";
 
 describe("fibonacci", () => {
   test("fibo 15", async ({ bench }) => {

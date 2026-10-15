@@ -10,6 +10,7 @@ export interface VitestBackend {
   getBenchmarkTestConfig(
     v8Flags: string[],
     resolveFile: (name: string) => string,
+    userTestConfig: ViteUserConfig["test"],
   ): ViteUserConfig["test"];
 }
 
@@ -36,10 +37,18 @@ class V5Backend implements VitestBackend {
   getBenchmarkTestConfig(
     v8Flags: string[],
     resolveFile: (name: string) => string,
+    userTestConfig: ViteUserConfig["test"],
   ): ViteUserConfig["test"] {
+    // Vitest's export getter tracker runs inside the measured code; keep it off
+    // unless the user explicitly configured it.
+    const suppressExportGetterWarnings =
+      userTestConfig?.benchmark?.suppressExportGetterWarnings ?? true;
     return {
       execArgv: v8Flags,
-      benchmark: { provider: resolveFile("v5/provider") },
+      benchmark: {
+        provider: resolveFile("v5/provider"),
+        suppressExportGetterWarnings,
+      },
     };
   }
 }
