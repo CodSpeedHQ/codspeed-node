@@ -1,7 +1,11 @@
+import { spawnSync } from "child_process";
 import { writeFileSync } from "fs";
+import os from "os";
 import path from "path";
+import { isMainThread } from "worker_threads";
 
-import { getInstrumentMode } from "./runnerMode";
+import { getCodspeedRunnerMode, getInstrumentMode } from "./runnerMode";
+import { findTsxPreload } from "./tsx";
 
 const CUSTOM_INTROSPECTION_EXIT_CODE = 0;
 
@@ -12,6 +16,11 @@ export const getV8Flags = () => {
   const instrumentMode = getInstrumentMode();
 
   const flags = ["--interpreted-frames-native-stack", "--allow-natives-syntax"];
+
+  if (findTsxPreload(process.execArgv) !== undefined) {
+    // `--require` preloads run before `--import` ones, such as tsx's
+    flags.push(`--require=${path.join(__dirname, "tsx-loader.cjs")}`);
+  }
 
   switch (instrumentMode) {
     case "analysis": {
@@ -70,16 +79,58 @@ export const getV8Flags = () => {
   return flags;
 };
 
+const RERUN_ENV = "__CODSPEED_NODE_CORE_RERUN__";
+const WHITESPACE = /\s/;
+
+const rerunWithFlags = (flags: string[]): never => {
+  const args = [...flags, ...process.execArgv, ...process.argv.slice(1)];
+  // `execve` keeps the pid, `spawnSync` makes it the rerun's parent pid
+  const env = { ...process.env, [RERUN_ENV]: String(process.pid) };
+  if (process.execve) {
+    process.execve(process.execPath, [process.execPath, ...args], env);
+  }
+  const { status, signal } = spawnSync(process.execPath, args, {
+    stdio: "inherit",
+    env,
+  });
+  process.exit(status ?? 128 + os.constants.signals[signal!]);
+};
+
 export const tryIntrospect = () => {
   if (process.env.__CODSPEED_NODE_CORE_INTROSPECTION_PATH__ !== undefined) {
     const introspectionMetadata = {
-      flags: getV8Flags(),
+      // The runner splits the flags on whitespace. Under tsx, the rerun below
+      // adds back the ones left out.
+      flags: getV8Flags().filter((flag) => !WHITESPACE.test(flag)),
     };
     writeFileSync(
       process.env.__CODSPEED_NODE_CORE_INTROSPECTION_PATH__,
       JSON.stringify(introspectionMetadata),
     );
     process.exit(CUSTOM_INTROSPECTION_EXIT_CODE);
+  }
+
+  const isRerun = [process.pid, process.ppid]
+    .map(String)
+    .includes(process.env[RERUN_ENV] ?? "");
+  delete process.env[RERUN_ENV];
+  // The `tsx` CLI runs the script in a child node process, without the flags
+  // given to the CLI's own process. Rerun at most once, so a flag that never
+  // shows up in `execArgv` cannot loop, and only a process that can be
+  // replaced: not a worker thread, nor one with an IPC channel to its parent.
+  const canRerunUnderTsx =
+    !isRerun &&
+    isMainThread &&
+    process.channel === undefined &&
+    getCodspeedRunnerMode() !== "disabled" &&
+    findTsxPreload(process.execArgv) !== undefined &&
+    process.argv[1] !== undefined;
+  if (!canRerunUnderTsx) {
+    return;
+  }
+  const flags = getV8Flags();
+  if (flags.some((flag) => !process.execArgv.includes(flag))) {
+    rerunWithFlags(flags);
   }
 };
 

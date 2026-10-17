@@ -36,4 +36,9 @@ export default defineConfig([
       warn(warning);
     },
   },
+  {
+    input: "src/tsxLoader.ts",
+    output: { file: "dist/tsx-loader.cjs", format: "cjs", sourcemap: true },
+    plugins: jsPlugins(pkg.version),
+  },
 ]);
