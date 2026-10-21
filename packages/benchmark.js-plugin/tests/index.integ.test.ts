@@ -11,6 +11,7 @@ jest.mock("@codspeed/core", () => {
   const actual = jest.requireActual("@codspeed/core");
   mockCore.getGitDir = actual.getGitDir;
   mockCore.getCallingFile = actual.getCallingFile;
+  mockCore.Isolation = actual.Isolation;
   mockCore.wrapWithRootFrame = actual.wrapWithRootFrame;
   mockCore.wrapWithRootFrameSync = actual.wrapWithRootFrameSync;
   return mockCore;
@@ -19,6 +20,9 @@ jest.mock("@codspeed/core", () => {
 beforeEach(() => {
   mockReset(mockCore);
   jest.clearAllMocks();
+  // These tests drive the plugin in this process against a mocked core, so
+  // there is no benchmark process to spawn.
+  process.env.CODSPEED_PROCESS_ISOLATION = "false";
 });
 
 const benchOptions: Benchmark.Options = {

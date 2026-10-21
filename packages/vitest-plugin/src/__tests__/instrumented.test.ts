@@ -6,6 +6,8 @@ import { getBenchFn, getBenchOptions } from "../legacy/compat";
 const coreMocks = vi.hoisted(() => {
   return {
     InstrumentHooks: {
+      // A plain function: the mocks above are reset between tests.
+      isInstrumented: () => true,
       startBenchmark: vi.fn(),
       stopBenchmark: vi.fn(),
       setExecutedBenchmark: vi.fn(),
@@ -20,6 +22,10 @@ const coreMocks = vi.hoisted(() => {
 });
 
 global.eval = vi.fn();
+
+// The runner is driven in this process against a mocked core, so there is no
+// benchmark process to spawn.
+process.env.CODSPEED_PROCESS_ISOLATION = "false";
 
 vi.mock("@codspeed/core", async (importOriginal) => {
   const mod = await importOriginal<typeof import("@codspeed/core")>();
