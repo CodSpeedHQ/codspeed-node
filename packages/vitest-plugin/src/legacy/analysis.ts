@@ -1,5 +1,6 @@
 import {
   InstrumentHooks,
+  Isolation,
   logDebug,
   mongoMeasurement,
   optimizeFunction,
@@ -41,44 +42,50 @@ async function runAnalysisBench(
   suite: RunnerTestSuite,
   currentSuiteName: string,
   tinybenchModule: Tinybench,
+  isolation: Isolation,
 ) {
   const uri = `${currentSuiteName}::${benchmark.name}`;
-  const fn = getBenchFn(benchmark);
+  if (!isolation.shouldRun(uri)) return;
 
-  // Constructing a Bench applies tinybench's no-op defaults for the setup and
-  // teardown hooks and gives them the Task they expect. The bench itself is
-  // never run: this runner drives the benchmark function directly.
-  const bench = new tinybenchModule.Bench(getBenchOptions(benchmark));
-  const task = new tinybenchModule.Task(bench, benchmark.name, fn);
+  await isolation.run(uri, async () => {
+    const fn = getBenchFn(benchmark);
 
-  await bench.setup(task, "warmup");
-  await optimizeFunction(async () => {
+    // Constructing a Bench applies tinybench's no-op defaults for the setup and
+    // teardown hooks and gives them the Task they expect. The bench itself is
+    // never run: this runner drives the benchmark function directly.
+    const bench = new tinybenchModule.Bench(getBenchOptions(benchmark));
+    const task = new tinybenchModule.Task(bench, benchmark.name, fn);
+
+    await bench.setup(task, "warmup");
+    await optimizeFunction(async () => {
+      await callSuiteHook(suite, benchmark, "beforeEach");
+      await fn();
+      await callSuiteHook(suite, benchmark, "afterEach");
+    });
+    await bench.teardown(task, "warmup");
+
+    await bench.setup(task, "run");
     await callSuiteHook(suite, benchmark, "beforeEach");
-    await fn();
+    await mongoMeasurement.start(uri);
+    global.gc?.();
+    await wrapWithRootFrame(async () => {
+      InstrumentHooks.startBenchmark();
+      await fn();
+      InstrumentHooks.stopBenchmark();
+      InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+    })();
+    await mongoMeasurement.stop(uri);
     await callSuiteHook(suite, benchmark, "afterEach");
+    await bench.teardown(task, "run");
+
+    logCodSpeed(`${uri} done`);
   });
-  await bench.teardown(task, "warmup");
-
-  await bench.setup(task, "run");
-  await callSuiteHook(suite, benchmark, "beforeEach");
-  await mongoMeasurement.start(uri);
-  global.gc?.();
-  await wrapWithRootFrame(async () => {
-    InstrumentHooks.startBenchmark();
-    await fn();
-    InstrumentHooks.stopBenchmark();
-    InstrumentHooks.setExecutedBenchmark(process.pid, uri);
-  })();
-  await mongoMeasurement.stop(uri);
-  await callSuiteHook(suite, benchmark, "afterEach");
-  await bench.teardown(task, "run");
-
-  logCodSpeed(`${uri} done`);
 }
 
 async function runAnalysisBenchmarkSuite(
   suite: RunnerTestSuite,
   tinybenchModule: Tinybench,
+  isolation: Isolation,
   parentSuiteName?: string,
 ) {
   const currentSuiteName = parentSuiteName
@@ -91,9 +98,20 @@ async function runAnalysisBenchmarkSuite(
     if (task.mode !== "run") continue;
 
     if (task.type === "suite") {
-      await runAnalysisBenchmarkSuite(task, tinybenchModule, currentSuiteName);
+      await runAnalysisBenchmarkSuite(
+        task,
+        tinybenchModule,
+        isolation,
+        currentSuiteName,
+      );
     } else if (isVitestTaskBenchmark(task)) {
-      await runAnalysisBench(task, suite, currentSuiteName, tinybenchModule);
+      await runAnalysisBench(
+        task,
+        suite,
+        currentSuiteName,
+        tinybenchModule,
+        isolation,
+      );
     }
   }
 
@@ -107,9 +125,24 @@ export class AnalysisRunner extends NodeBenchmarkRunner {
 
     patchRootSuiteWithFullFilePath(suite);
 
-    logCodSpeed(`running suite ${suite.name}`);
-    await runAnalysisBenchmarkSuite(suite, await this.importTinybench());
-    logCodSpeed(`running suite ${suite.name} done`);
+    // Without instrumentation nothing is measured, so there is nothing to isolate.
+    const isolation = InstrumentHooks.isInstrumented()
+      ? Isolation.current()
+      : Isolation.shared();
+    // The parent already printed the suite lines, children stay quiet.
+    const isChild = isolation.isChild();
+
+    if (!isChild) {
+      logCodSpeed(`running suite ${suite.name}`);
+    }
+    await runAnalysisBenchmarkSuite(
+      suite,
+      await this.importTinybench(),
+      isolation,
+    );
+    if (!isChild) {
+      logCodSpeed(`running suite ${suite.name} done`);
+    }
 
     teardownCore();
   }
