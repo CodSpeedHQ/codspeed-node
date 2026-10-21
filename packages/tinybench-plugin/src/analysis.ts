@@ -1,6 +1,7 @@
 import {
   getCodspeedRunnerMode,
   InstrumentHooks,
+  Isolation,
   mongoMeasurement,
   optimizeFunction,
   optimizeFunctionSync,
@@ -14,7 +15,11 @@ export function setupCodspeedAnalysisBench(
   bench: Bench,
   rootCallingFile: string,
 ): void {
-  const runner = new AnalysisBenchRunner(bench, rootCallingFile);
+  // Without instrumentation nothing is measured, so there is nothing to isolate.
+  const isolation = InstrumentHooks.isInstrumented()
+    ? Isolation.current()
+    : Isolation.shared();
+  const runner = new AnalysisBenchRunner(bench, rootCallingFile, isolation);
   runner.setupBenchMethods();
 }
 

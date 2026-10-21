@@ -3,6 +3,7 @@ import {
   getV8Flags,
   InstrumentHooks,
   mongoMeasurement,
+  recordIsolationCommand,
   SetupInstrumentsRequestBody,
   SetupInstrumentsResponse,
 } from "@codspeed/core";
@@ -38,6 +39,10 @@ export default function codspeedPlugin(): Plugin {
     },
     enforce: "post",
     config(userConfig): ViteUserConfig {
+      // Vitest measures in forked workers, whose argv is not the command that
+      // starts the benchmarks. Record the command of this main process so the
+      // workers can run it again for each benchmark. Workers inherit the env.
+      recordIsolationCommand();
       return {
         test: {
           pool: "forks",

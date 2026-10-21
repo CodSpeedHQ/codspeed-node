@@ -1,6 +1,7 @@
 import {
   getCallingFile,
   InstrumentHooks,
+  Isolation,
   mongoMeasurement,
   optimizeFunction,
   optimizeFunctionSync,
@@ -168,63 +169,92 @@ async function runBenchmarks({
   baseUri,
   benchmarkCompletedListeners,
 }: RunBenchmarksOptions): Promise<void> {
-  console.log(`[CodSpeed] running with @codspeed/benchmark.js v${__VERSION__}`);
+  const isolation = Isolation.current();
+  const isChild = isolation.isChild();
+  const selected = benches
+    .map((bench, i) => ({
+      bench,
+      uri: bench.uri ?? `${baseUri}::unknown_${i}`,
+    }))
+    .filter(({ uri }) => isolation.shouldRun(uri));
+  // A child only measures one benchmark. A run call that owns none of them
+  // must not touch the instruments, the call that owns it does.
+  if (isChild && selected.length === 0) {
+    return;
+  }
+
+  // The parent already printed the banner and the summary, children stay quiet.
+  if (!isChild) {
+    console.log(
+      `[CodSpeed] running with @codspeed/benchmark.js v${__VERSION__}`,
+    );
+  }
   setupCore();
-  for (let i = 0; i < benches.length; i++) {
-    const bench = benches[i];
-    const uri = bench.uri ?? `${baseUri}::unknown_${i}`;
-    const isAsync = bench.options.async || bench.options.defer;
-    let benchPayload;
-    if (bench.options.defer) {
-      benchPayload = () => {
-        return new Promise((resolve, reject) => {
-          (bench.fn as CallableFunction)({ resolve, reject });
-        });
-      };
-    } else if (bench.options.async) {
-      benchPayload = async () => {
-        await (bench.fn as CallableFunction)();
-      };
-    } else {
-      benchPayload = bench.fn as CallableFunction;
+  for (const { bench, uri } of selected) {
+    await isolation.run(uri, () => measureBenchmark(bench, uri));
+    // The parent reports for every benchmark, the child ran only one of them.
+    if (!isChild) {
+      benchmarkCompletedListeners.forEach((listener) => listener());
     }
-
-    if (typeof bench.options.setup === "function") {
-      await bench.options.setup();
-    }
-
-    if (isAsync) {
-      await optimizeFunction(benchPayload);
-      await mongoMeasurement.start(uri);
-      global.gc?.();
-      await wrapWithRootFrame(async () => {
-        InstrumentHooks.startBenchmark();
-        await benchPayload();
-        InstrumentHooks.stopBenchmark();
-        InstrumentHooks.setExecutedBenchmark(process.pid, uri);
-      })();
-      await mongoMeasurement.stop(uri);
-    } else {
-      optimizeFunctionSync(benchPayload);
-      await mongoMeasurement.start(uri);
-      wrapWithRootFrameSync(() => {
-        InstrumentHooks.startBenchmark();
-        benchPayload();
-        InstrumentHooks.stopBenchmark();
-        InstrumentHooks.setExecutedBenchmark(process.pid, uri);
-      })();
-      await mongoMeasurement.stop(uri);
-    }
-
-    if (typeof bench.options.teardown === "function") {
-      await bench.options.teardown();
-    }
-
-    console.log(`    ✔ Measured ${uri}`);
-    benchmarkCompletedListeners.forEach((listener) => listener());
   }
   teardownCore();
-  console.log(`[CodSpeed] Done running ${benches.length} benches.`);
+  if (!isChild) {
+    console.log(`[CodSpeed] Done running ${benches.length} benches.`);
+  }
+}
+
+async function measureBenchmark(
+  bench: BenchmarkWithOptions,
+  uri: string,
+): Promise<void> {
+  const isAsync = bench.options.async || bench.options.defer;
+  let benchPayload;
+  if (bench.options.defer) {
+    benchPayload = () => {
+      const { promise, resolve, reject } = Promise.withResolvers<unknown>();
+      (bench.fn as CallableFunction)({ resolve, reject });
+      return promise;
+    };
+  } else if (bench.options.async) {
+    benchPayload = async () => {
+      await (bench.fn as CallableFunction)();
+    };
+  } else {
+    benchPayload = bench.fn as CallableFunction;
+  }
+
+  if (typeof bench.options.setup === "function") {
+    await bench.options.setup();
+  }
+
+  if (isAsync) {
+    await optimizeFunction(benchPayload);
+    await mongoMeasurement.start(uri);
+    global.gc?.();
+    await wrapWithRootFrame(async () => {
+      InstrumentHooks.startBenchmark();
+      await benchPayload();
+      InstrumentHooks.stopBenchmark();
+      InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+    })();
+    await mongoMeasurement.stop(uri);
+  } else {
+    optimizeFunctionSync(benchPayload);
+    await mongoMeasurement.start(uri);
+    wrapWithRootFrameSync(() => {
+      InstrumentHooks.startBenchmark();
+      benchPayload();
+      InstrumentHooks.stopBenchmark();
+      InstrumentHooks.setExecutedBenchmark(process.pid, uri);
+    })();
+    await mongoMeasurement.stop(uri);
+  }
+
+  if (typeof bench.options.teardown === "function") {
+    await bench.options.teardown();
+  }
+
+  console.log(`    ✔ Measured ${uri}`);
 }
 
 /**

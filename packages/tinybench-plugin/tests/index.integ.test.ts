@@ -41,6 +41,9 @@ vi.mock("@codspeed/core", async (importOriginal) => {
 beforeEach(() => {
   process.env.CODSPEED_ENV = "true";
   process.env.CODSPEED_RUNNER_MODE = "instrumentation";
+  // These tests drive the plugin in this process against a mocked core, so
+  // there is no benchmark process to spawn.
+  process.env.CODSPEED_PROCESS_ISOLATION = "false";
   vi.clearAllMocks();
 });
 

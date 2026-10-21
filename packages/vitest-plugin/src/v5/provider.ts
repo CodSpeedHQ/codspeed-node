@@ -2,6 +2,7 @@ import {
   getGitDir,
   getInstrumentMode,
   InstrumentHooks,
+  Isolation,
   optimizeFunction,
   optimizeFunctionSync,
   setupCore,
@@ -155,12 +156,21 @@ async function runAnalysis(
   registrations: BenchRegistrationInput[],
   getUri: (name: string) => string,
 ): Promise<BenchResult[]> {
-  const label = InstrumentHooks.isInstrumented() ? "Measured" : "Checked";
+  const instrumented = InstrumentHooks.isInstrumented();
+  const label = instrumented ? "Measured" : "Checked";
+  // Without instrumentation nothing is measured, so there is nothing to isolate.
+  const isolation = instrumented ? Isolation.current() : Isolation.shared();
   const results: BenchResult[] = [];
   for (const { name, fn, fnOpts } of registrations) {
     const uri = getUri(name);
-    await runAnalysisTask(fn, fnOpts, uri);
-    console.log(`[CodSpeed] ${label} ${uri}`);
+    // An isolated child still reports every benchmark to Vitest, but it only
+    // measures its own.
+    if (isolation.shouldRun(uri)) {
+      await isolation.run(uri, async () => {
+        await runAnalysisTask(fn, fnOpts, uri);
+        console.log(`[CodSpeed] ${label} ${uri}`);
+      });
+    }
     results.push(analysisResult(name));
   }
   return results;
