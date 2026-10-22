@@ -135,6 +135,27 @@ Napi::BigInt CurrentTimestamp(const Napi::CallbackInfo &info) {
   return Napi::BigInt::New(env, ts);
 }
 
+Napi::Number CallgrindAddObjSkip(const Napi::CallbackInfo &info) {
+  Napi::Env env = info.Env();
+
+  if (info.Length() != 1) {
+    Napi::TypeError::New(env, "Expected 1 argument: path")
+        .ThrowAsJavaScriptException();
+    return Napi::Number::New(env, 1);
+  }
+
+  if (!info[0].IsString()) {
+    Napi::TypeError::New(env, "Expected string (path)")
+        .ThrowAsJavaScriptException();
+    return Napi::Number::New(env, 1);
+  }
+
+  std::string path = info[0].As<Napi::String>().Utf8Value();
+
+  uint8_t result = instrument_hooks_callgrind_add_obj_skip(path.c_str());
+  return Napi::Number::New(env, result);
+}
+
 Napi::Number AddMarker(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
 
@@ -220,6 +241,8 @@ Napi::Object Initialize(Napi::Env env, Napi::Object exports) {
                          Napi::Function::New(env, CurrentTimestamp));
   instrumentHooksObj.Set(Napi::String::New(env, "addMarker"),
                          Napi::Function::New(env, AddMarker));
+  instrumentHooksObj.Set(Napi::String::New(env, "callgrindAddObjSkip"),
+                         Napi::Function::New(env, CallgrindAddObjSkip));
   instrumentHooksObj.Set(Napi::String::New(env, "__codspeed_root_frame__"),
                          Napi::Function::New(env, __codspeed_root_frame__));
 

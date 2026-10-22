@@ -26,6 +26,10 @@ export const setupCore = () => {
   }
 
   native_core.InstrumentHooks.setIntegration("codspeed-node", __VERSION__);
+  // The runner only obj-skips the `node` it finds on PATH. Skip the executable
+  // that actually runs, since a toolchain such as Bazel's brings its own: when
+  // left in, callgrind records the whole V8 runtime between the JS frames.
+  native_core.InstrumentHooks.callgrindAddObjSkip(process.execPath);
   // In walltime, we use node's native profiling options rather than our own, cf `getV8Flags`
   if (getCodspeedRunnerMode() !== "walltime") {
     linuxPerf.start();
