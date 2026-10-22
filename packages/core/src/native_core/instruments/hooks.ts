@@ -64,6 +64,15 @@ export interface InstrumentHooks {
   addMarker(pid: number, markerType: number, timestamp: bigint): number;
 
   /**
+   * Add an object file to callgrind's obj-skip list, as `--obj-skip` does.
+   * Only affects code callgrind has not instrumented yet. No-op outside
+   * Valgrind.
+   * @param path Path of the object file, resolved to its real path
+   * @returns 0 on success, non-zero on error
+   */
+  callgrindAddObjSkip(path: string): number;
+
+  /**
    * Execute a callback function with __codspeed_root_frame__ in its stack trace
    * @param callback Function to execute
    */

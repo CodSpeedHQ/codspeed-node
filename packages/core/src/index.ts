@@ -26,6 +26,8 @@ export const setupCore = () => {
   }
 
   native_core.InstrumentHooks.setIntegration("codspeed-node", __VERSION__);
+  // The `node` on the runner's PATH may not be the one executing (e.g. Bazel), so skip the real one.
+  native_core.InstrumentHooks.callgrindAddObjSkip(process.execPath);
   // In walltime, we use node's native profiling options rather than our own, cf `getV8Flags`
   if (getCodspeedRunnerMode() !== "walltime") {
     linuxPerf.start();

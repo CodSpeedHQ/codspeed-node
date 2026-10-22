@@ -21,6 +21,7 @@ Napi::Number SetEnvironment(const Napi::CallbackInfo &info);
 Napi::Number WriteEnvironment(const Napi::CallbackInfo &info);
 Napi::BigInt CurrentTimestamp(const Napi::CallbackInfo &info);
 Napi::Number AddMarker(const Napi::CallbackInfo &info);
+Napi::Number CallgrindAddObjSkip(const Napi::CallbackInfo &info);
 Napi::Object Initialize(Napi::Env env, Napi::Object exports);
 
 } // namespace hooks_wrapper
