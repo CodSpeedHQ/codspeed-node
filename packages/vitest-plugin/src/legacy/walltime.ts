@@ -51,10 +51,10 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
   private populateBenchmarkUris(suite: RunnerTestSuite, parentPath = ""): void {
     const currentPath =
       parentPath !== "" ? `${parentPath}::${suite.name}` : suite.name;
+    this.suiteUris.set(suite.id, currentPath);
 
     for (const task of suite.tasks) {
       if (task.type === "suite") {
-        this.suiteUris.set(task.id, `${currentPath}::${task.name}`);
         this.populateBenchmarkUris(task, currentPath);
       }
     }
