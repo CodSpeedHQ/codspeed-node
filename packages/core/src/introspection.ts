@@ -2,7 +2,10 @@ import { writeFileSync } from "fs";
 import path from "path";
 
 import { getInstrumentMode } from "./runnerMode";
-import { isGcBetweenRoundsEnabled } from "./walltime/options";
+import {
+  getExtraWalltimeV8Flags,
+  isGcBetweenRoundsEnabled,
+} from "./walltime/options";
 
 const CUSTOM_INTROSPECTION_EXIT_CODE = 0;
 
@@ -68,6 +71,7 @@ export const getV8Flags = () => {
         // Just output the perf.map
         flags.push("--perf-basic-prof");
       }
+      flags.push(...getExtraWalltimeV8Flags());
     }
   }
 

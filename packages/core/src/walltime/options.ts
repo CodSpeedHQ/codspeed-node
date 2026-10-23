@@ -6,6 +6,14 @@ export const WALLTIME_FORKS_ENV = "CODSPEED_WALLTIME_FORKS";
 /** When `true`, a full GC runs before every walltime round, outside its timing. */
 export const WALLTIME_GC_BETWEEN_ROUNDS_ENV =
   "CODSPEED_WALLTIME_GC_BETWEEN_ROUNDS";
+/** Space-separated V8 flags appended to the walltime benchmark processes. */
+export const WALLTIME_V8_FLAGS_ENV = "CODSPEED_WALLTIME_V8_FLAGS";
+
+export function getExtraWalltimeV8Flags(): string[] {
+  return (process.env[WALLTIME_V8_FLAGS_ENV] ?? "")
+    .split(/\s+/)
+    .filter(Boolean);
+}
 
 /** The number of forks per walltime benchmark, or `undefined` for none. */
 export function getWalltimeForks(): number | undefined {
