@@ -20,6 +20,7 @@ export const getV8Flags = () => {
           "--hash-seed=1",
           "--random-seed=1",
           "--no-opt",
+          "--always-sparkplug",
           "--predictable",
           "--predictable-gc-schedule",
           "--expose-gc",
