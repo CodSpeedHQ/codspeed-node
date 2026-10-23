@@ -15,6 +15,27 @@ export function getExtraWalltimeV8Flags(): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Minimum measured time per walltime benchmark, in milliseconds: rounds
+ * continue past the configured iterations until it is reached.
+ */
+export const WALLTIME_MIN_TIME_MS_ENV = "CODSPEED_WALLTIME_MIN_TIME_MS";
+
+/** The minimum measured time in milliseconds, `0` when unset. */
+export function getWalltimeMinTimeMs(): number {
+  const value = process.env[WALLTIME_MIN_TIME_MS_ENV];
+  if (value === undefined || value === "") {
+    return 0;
+  }
+  const ms = Number(value);
+  if (!Number.isFinite(ms) || ms < 0) {
+    throw new Error(
+      `${WALLTIME_MIN_TIME_MS_ENV} must be a non-negative number, got \`${value}\``,
+    );
+  }
+  return ms;
+}
+
 /** The number of forks per walltime benchmark, or `undefined` for none. */
 export function getWalltimeForks(): number | undefined {
   const value = process.env[WALLTIME_FORKS_ENV];

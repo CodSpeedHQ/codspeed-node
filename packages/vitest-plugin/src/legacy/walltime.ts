@@ -1,5 +1,6 @@
 import {
   getWalltimeForks,
+  getWalltimeMinTimeMs,
   isFork,
   isGcBetweenRoundsEnabled,
   ISOLATED_BENCHMARK_ENV,
@@ -225,7 +226,8 @@ function patchTaskWithRootFrame(tinybench: Tinybench): void {
 /**
  * Forks parent: skip warmup and replace the measured loop with the samples
  * of every fork. Fork child: hand the measured samples to the parent.
- * Otherwise: optionally collect garbage before every round.
+ * Otherwise: optionally collect garbage before every round. Both measure for
+ * at least the configured minimum time.
  */
 function patchTaskRounds(tinybench: Tinybench): void {
   const originalWarmup = tinybench.Task.prototype.warmup;
@@ -272,16 +274,19 @@ function patchTaskRounds(tinybench: Tinybench): void {
       };
     } else {
       composeGc(task);
-      if (isFork()) {
-        task.loop = async (time, iterations) => {
-          const result = await originalLoop.call(task, time, iterations);
-          if (result.samples) {
-            // Copied: tinybench sorts and Vitest may truncate the array.
-            writeForkSamples([...result.samples]);
-          }
-          return result;
-        };
-      }
+      const minTimeMs = getWalltimeMinTimeMs();
+      task.loop = async (time, iterations) => {
+        const result = await originalLoop.call(
+          task,
+          Math.max(time, minTimeMs),
+          iterations,
+        );
+        if (isFork() && result.samples) {
+          // Copied: tinybench sorts and Vitest may truncate the array.
+          writeForkSamples([...result.samples]);
+        }
+        return result;
+      };
     }
 
     try {
