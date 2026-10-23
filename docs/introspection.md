@@ -8,7 +8,16 @@ benchmark is measured. TurboFan remains disabled with `--no-opt`, and Maglev is
 explicitly disabled on Node.js 24 and newer.
 
 This changes the measurement baseline compared with earlier releases. It does not
-isolate inline-cache feedback from other benchmarks. Walltime flags are unchanged.
+isolate inline-cache feedback from other benchmarks.
+
+## Seed flags
+
+Simulation, memory, and walltime mode pass `--hash-seed=1` and `--random-seed=1` (plus
+`--no-randomize-hashes` on Node.js < 18). `Math.random()` returns the same
+sequence on every run, including in worker threads, and hash tables get the same
+internal layout, so hash collisions do not change between runs. Key iteration
+order is unaffected, since it follows insertion order. `crypto` randomness stays
+random. Walltime mode uses no other analysis flags.
 
 ## Testing introspection locally
 
