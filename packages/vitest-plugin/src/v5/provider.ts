@@ -1,12 +1,15 @@
 import {
   getGitDir,
   getInstrumentMode,
+  getWalltimeForks,
   InstrumentHooks,
+  isGcBetweenRoundsEnabled,
   Isolation,
   optimizeFunction,
   optimizeFunctionSync,
   setupCore,
   teardownCore,
+  WALLTIME_FORKS_ENV,
   wrapWithRootFrame,
   wrapWithRootFrameSync,
   type Benchmark,
@@ -23,9 +26,11 @@ import type {
 import {
   installInstrumentHooks,
   tinybenchTaskToBenchmark,
+  withGcAfter,
   writeAndLogWalltimeResults,
   type TinybenchBench,
   type TinybenchOptions,
+  type TinybenchRoundHook,
   type TinybenchTask,
 } from "../instrument";
 
@@ -231,6 +236,13 @@ async function runWalltime(
   getUri: (name: string) => string,
   test: BenchmarkGroup["test"],
 ): Promise<BenchResult[]> {
+  if (getWalltimeForks() !== undefined) {
+    throw new Error(
+      `[CodSpeed] ${WALLTIME_FORKS_ENV} is not supported with Vitest 5 yet`,
+    );
+  }
+
+  const gcBetweenRounds = isGcBetweenRoundsEnabled();
   const { Bench } = await importHostTinybench();
   const bench = new Bench({
     signal: test.context.signal,
@@ -244,7 +256,15 @@ async function runWalltime(
     bench.add(
       name,
       wrapWithRootFrame(() => fn()),
-      fnOpts,
+      gcBetweenRounds
+        ? {
+            ...fnOpts,
+            // Vitest's FnHook is typed looser than tinybench's round hook
+            beforeEach: withGcAfter(
+              fnOpts?.beforeEach as TinybenchRoundHook | undefined,
+            ) as TinybenchFnOptions["beforeEach"],
+          }
+        : fnOpts,
     );
   }
 

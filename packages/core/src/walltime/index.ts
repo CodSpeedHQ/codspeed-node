@@ -60,5 +60,6 @@ export function writeWalltimeResults(
 }
 
 export * from "./interfaces";
+export * from "./options";
 export * from "./quantiles";
 export * from "./utils";
