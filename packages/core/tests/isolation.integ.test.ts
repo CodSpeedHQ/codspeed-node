@@ -2,6 +2,7 @@ import { spawnSync } from "child_process";
 import { constants } from "os";
 import { join } from "path";
 import {
+  FORK_SAMPLES_FILE_ENV,
   ISOLATED_BENCHMARK_ENV,
   Isolation,
   PROCESS_ISOLATION_ENV,
@@ -158,5 +159,87 @@ describe.each([
 
     expect(status).toBe(SIGNAL_EXIT_CODE_OFFSET + constants.signals.SIGKILL);
     expect(ran.map((match) => match[2])).toEqual(["a"]);
+  });
+});
+
+const FORKS_FIXTURE = join(__dirname, "fixtures", "forks.cjs");
+const FORK_LINE = /^fork (\d+)$/;
+const SAMPLES_LINE = /^samples (\d+)$/;
+const SAMPLES_PER_FORK = 2;
+/** More samples than fit in the arguments of one call. */
+const MANY_SAMPLES_PER_FORK = 300_000;
+
+function runForksFixture(
+  count: number,
+  action?: "exit" | "no-samples",
+  samplesPerFork = SAMPLES_PER_FORK,
+) {
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    FORKS_FIXTURE_COUNT: String(count),
+    FORKS_FIXTURE_ACTION: action,
+    FORKS_FIXTURE_SAMPLES: String(samplesPerFork),
+  };
+  delete env[PROCESS_ISOLATION_ENV];
+  delete env[ISOLATED_BENCHMARK_ENV];
+  delete env[FORK_SAMPLES_FILE_ENV];
+  const result = spawnSync(process.execPath, [FORKS_FIXTURE], {
+    env,
+    encoding: "utf8",
+    timeout: RUN_TIMEOUT_MS,
+  });
+  const lines = result.stdout.split("\n");
+  const pids = lines
+    .map((line) => FORK_LINE.exec(line))
+    .filter((match): match is RegExpExecArray => match !== null)
+    .map((match) => match[1]);
+  const samplesMatch = lines
+    .map((line) => SAMPLES_LINE.exec(line))
+    .find((match) => match !== null);
+  return {
+    status: result.status,
+    stderr: result.stderr,
+    pids,
+    sampleCount: samplesMatch ? Number(samplesMatch[1]) : undefined,
+  };
+}
+
+describe("runForks", () => {
+  it("runs each fork in a fresh process and merges their samples", () => {
+    const forks = 3;
+    const { status, pids, sampleCount } = runForksFixture(forks);
+
+    expect(status).toBe(0);
+    expect(new Set(pids).size).toBe(forks);
+    expect(sampleCount).toBe(forks * SAMPLES_PER_FORK);
+  });
+
+  it("merges forks with many samples each", () => {
+    const forks = 2;
+    const { status, sampleCount } = runForksFixture(
+      forks,
+      undefined,
+      MANY_SAMPLES_PER_FORK,
+    );
+
+    expect(status).toBe(0);
+    expect(sampleCount).toBe(forks * MANY_SAMPLES_PER_FORK);
+  });
+
+  it("fails when a fork wrote no samples", () => {
+    const { status, stderr, sampleCount } = runForksFixture(2, "no-samples");
+
+    expect(status).not.toBe(0);
+    expect(stderr).toContain("did not run the benchmark");
+    expect(sampleCount).toBeUndefined();
+  });
+
+  it("exits with the exit code of a failing fork", () => {
+    const { status, pids, sampleCount } = runForksFixture(2, "exit");
+
+    expect(status).toBe(CHILD_EXIT_CODE);
+    // The parent stops at the first failure.
+    expect(pids).toHaveLength(1);
+    expect(sampleCount).toBeUndefined();
   });
 });

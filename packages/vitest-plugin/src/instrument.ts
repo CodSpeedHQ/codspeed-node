@@ -1,5 +1,6 @@
 import {
   calculateQuantiles,
+  collectGarbage,
   InstrumentHooks,
   MARKER_TYPE_BENCHMARK_END,
   MARKER_TYPE_BENCHMARK_START,
@@ -26,6 +27,29 @@ export type TinybenchHook = (
 export interface TinybenchBench {
   setup: TinybenchHook;
   teardown: TinybenchHook;
+}
+
+/** A tinybench per-round hook (`beforeEach`/`afterEach`), called with the task as `this`. */
+export type TinybenchRoundHook = (
+  this: unknown,
+  mode: "run" | "warmup",
+) => Promise<void> | void;
+
+/**
+ * Returns a `beforeEach` hook that runs `hook` and then a full GC. tinybench
+ * calls `beforeEach` outside the timed call, so the GC starts every round on
+ * a collected heap without being measured.
+ */
+export function withGcAfter(
+  hook: TinybenchRoundHook | undefined,
+): TinybenchRoundHook {
+  return function (this: unknown, mode) {
+    const result = hook?.call(this, mode);
+    if (result instanceof Promise) {
+      return result.then(collectGarbage);
+    }
+    collectGarbage();
+  };
 }
 
 interface TinybenchStatistics {

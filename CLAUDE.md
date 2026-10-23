@@ -138,3 +138,19 @@ next. Walltime runs and runs outside CodSpeed are not affected.
 - Tests that drive a plugin in-process against a mocked core must set
   `CODSPEED_PROCESS_ISOLATION=false`, or the plugin would start the test runner
   again for every benchmark.
+
+### Walltime forks and GC between rounds
+
+Both are opt-in and only apply to walltime runs.
+
+- `CODSPEED_WALLTIME_FORKS=<N>` runs each benchmark in `N` fresh processes, one
+  after the other, and reports all their rounds together as one result. Unset
+  runs the benchmark in the benchmark process. Vitest 3/4 only. Like isolation,
+  each child re-runs the Vitest command with `CODSPEED_ISOLATED_BENCHMARK=<uri>`;
+  it writes its round samples to the file named by `CODSPEED_FORK_SAMPLES_FILE`
+  instead of reporting, and the parent merges them.
+- `CODSPEED_WALLTIME_GC_BETWEEN_ROUNDS=true` runs a full GC before every round
+  (warmup and measured). It adds `--expose-gc` to the V8 flags and collects in
+  the tinybench `beforeEach` hook, outside the timed call. Vitest 3/4/5. Meant
+  for benchmarks with long rounds: a GC costs milliseconds, so time-based
+  benchmarks of microsecond functions take far longer to finish.

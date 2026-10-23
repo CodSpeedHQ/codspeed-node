@@ -2,6 +2,7 @@ import { writeFileSync } from "fs";
 import path from "path";
 
 import { getInstrumentMode } from "./runnerMode";
+import { isGcBetweenRoundsEnabled } from "./walltime/options";
 
 const CUSTOM_INTROSPECTION_EXIT_CODE = 0;
 
@@ -49,6 +50,9 @@ export const getV8Flags = () => {
     case "walltime": {
       // Emit the V8 jitdump
       flags.push("--perf-prof");
+      if (isGcBetweenRoundsEnabled()) {
+        flags.push("--expose-gc");
+      }
 
       const v8LogDir = process.env.CODSPEED_V8_LOG;
       if (v8LogDir) {
