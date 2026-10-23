@@ -32,7 +32,6 @@ import { extractBenchmarkResults } from "./walltime-utils";
 interface TinybenchTask {
   name: string;
   fn: () => unknown;
-  mode?: string;
   opts: { beforeEach?: TinybenchRoundHook };
   loop: (time: number, iterations: number) => Promise<TinybenchLoopResult>;
 }
@@ -132,7 +131,7 @@ export class WalltimeRunner extends NodeBenchmarkRunner {
     }
   }
 
-  getBenchmarkUri(taskName: string): string {
+  private getBenchmarkUri(taskName: string): string {
     if (this.currentSuiteId === null) {
       throw new Error("currentSuiteId is null - something went wrong");
     }
