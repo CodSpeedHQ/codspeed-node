@@ -36,6 +36,27 @@ export function getWalltimeMinTimeMs(): number {
   return ms;
 }
 
+/**
+ * Minimum measured rounds per walltime benchmark: raises the configured
+ * iterations to at least this count.
+ */
+export const WALLTIME_MIN_ROUNDS_ENV = "CODSPEED_WALLTIME_MIN_ROUNDS";
+
+/** The minimum measured rounds, `0` when unset. */
+export function getWalltimeMinRounds(): number {
+  const value = process.env[WALLTIME_MIN_ROUNDS_ENV];
+  if (value === undefined || value === "") {
+    return 0;
+  }
+  const rounds = Number(value);
+  if (!Number.isInteger(rounds) || rounds < 0) {
+    throw new Error(
+      `${WALLTIME_MIN_ROUNDS_ENV} must be a non-negative integer, got \`${value}\``,
+    );
+  }
+  return rounds;
+}
+
 /** The number of forks per walltime benchmark, or `undefined` for none. */
 export function getWalltimeForks(): number | undefined {
   const value = process.env[WALLTIME_FORKS_ENV];

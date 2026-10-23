@@ -1,5 +1,6 @@
 import {
   getWalltimeForks,
+  getWalltimeMinRounds,
   getWalltimeMinTimeMs,
   isFork,
   isGcBetweenRoundsEnabled,
@@ -275,11 +276,12 @@ function patchTaskRounds(tinybench: Tinybench): void {
     } else {
       composeGc(task);
       const minTimeMs = getWalltimeMinTimeMs();
+      const minRounds = getWalltimeMinRounds();
       task.loop = async (time, iterations) => {
         const result = await originalLoop.call(
           task,
           Math.max(time, minTimeMs),
-          iterations,
+          Math.max(iterations, minRounds),
         );
         if (isFork() && result.samples) {
           // Copied: tinybench sorts and Vitest may truncate the array.
