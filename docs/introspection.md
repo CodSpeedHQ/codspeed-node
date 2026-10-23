@@ -1,3 +1,15 @@
+## Analysis-mode V8 flags
+
+Simulation (including the `instrumentation` alias) and memory mode use
+`--always-sparkplug` to compile eligible JavaScript functions directly to baseline
+machine code instead of waiting for V8's tiering and batch-compilation thresholds.
+This reduces sensitivity to unrelated code triggering compilation before a
+benchmark is measured. TurboFan remains disabled with `--no-opt`, and Maglev is
+explicitly disabled on Node.js 24 and newer.
+
+This changes the measurement baseline compared with earlier releases. It does not
+isolate inline-cache feedback from other benchmarks. Walltime flags are unchanged.
+
 ## Testing introspection locally
 
 1. Inside `codspeed-node` directory, run `export PATH="$pwd/../action/dist/bin:$PATH"`.
