@@ -131,4 +131,6 @@ Both are opt-in and only apply to walltime runs.
   (warmup and measured). It adds `--expose-gc` to the V8 flags and collects in
   the tinybench `beforeEach` hook, outside the timed call. Vitest 3/4/5. Meant
   for benchmarks with long rounds: a GC costs milliseconds, so time-based
-  benchmarks of microsecond functions take far longer to finish.
+  benchmarks of microsecond functions take far longer to finish. It also
+  changes absolute times (each round starts on a collected heap), so turning
+  it on re-baselines a benchmark.
