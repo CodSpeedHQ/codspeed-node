@@ -7,6 +7,15 @@ const CUSTOM_INTROSPECTION_EXIT_CODE = 0;
 
 const V8_LOG_FILENAME_PATTERN = "codspeed-v8-%p.log";
 
+// Fixed seeds so Math.random() and hash table layout match on every run
+const getSeedFlags = (nodeVersionMajor: number) => {
+  const flags = ["--hash-seed=1", "--random-seed=1"];
+  if (nodeVersionMajor < 18) {
+    flags.push("--no-randomize-hashes");
+  }
+  return flags;
+};
+
 export const getV8Flags = () => {
   const nodeVersionMajor = parseInt(process.version.slice(1).split(".")[0]);
   const instrumentMode = getInstrumentMode();
@@ -17,8 +26,7 @@ export const getV8Flags = () => {
     case "analysis": {
       flags.push(
         ...[
-          "--hash-seed=1",
-          "--random-seed=1",
+          ...getSeedFlags(nodeVersionMajor),
           "--no-opt",
           "--always-sparkplug",
           "--predictable",
@@ -28,9 +36,6 @@ export const getV8Flags = () => {
           "--max-old-space-size=4096",
         ],
       );
-      if (nodeVersionMajor < 18) {
-        flags.push("--no-randomize-hashes");
-      }
       if (nodeVersionMajor < 20) {
         flags.push("--no-scavenge-task");
       } else {
@@ -48,6 +53,8 @@ export const getV8Flags = () => {
     }
 
     case "walltime": {
+      flags.push(...getSeedFlags(nodeVersionMajor));
+
       // Emit the V8 jitdump
       flags.push("--perf-prof");
 
