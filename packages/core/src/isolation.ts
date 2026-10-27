@@ -22,7 +22,6 @@ const GENERIC_FAILURE_EXIT_CODE = 1;
 /** Shells report a child killed by signal N as exit code 128 + N. */
 const SIGNAL_EXIT_CODE_OFFSET = 128;
 
-/** How an integration runs each benchmark. */
 export type IsolationMode =
   /** All benchmarks share this process and its state. */
   | { kind: "SharedProcess" }
@@ -47,7 +46,6 @@ export class Isolation {
     return Isolation.sharedInstance;
   }
 
-  /** The isolation of this process, read once from the environment. */
   static current(): Isolation {
     Isolation.instance ??= new Isolation(modeFromEnv());
     return Isolation.instance;
@@ -64,13 +62,11 @@ export class Isolation {
     }
   }
 
-  /** Whether this process must run the benchmark `uri`. */
   shouldRun(uri: string): boolean {
     const only = this.onlyBenchmark();
     return only === undefined || only === uri;
   }
 
-  /** Whether this process is a child that runs one benchmark for a parent. */
   isChild(): boolean {
     return this.onlyBenchmark() !== undefined;
   }
@@ -156,8 +152,6 @@ function isolationCommand(): string[] {
  */
 function runInChildProcess(uri: string): void {
   const [executable, ...args] = isolationCommand();
-  // spawnSync blocks the event loop, so stdout written before this call is
-  // already flushed and output stays in order.
   const result = spawnSync(executable, args, {
     stdio: "inherit",
     env: { ...process.env, [ISOLATED_BENCHMARK_ENV]: uri },
@@ -173,7 +167,6 @@ function runInChildProcess(uri: string): void {
   process.exit(exitCode(result));
 }
 
-/** Exit code of a failed child, in the shell convention. */
 function exitCode(result: SpawnSyncReturns<Buffer>): number {
   if (result.signal !== null) {
     return SIGNAL_EXIT_CODE_OFFSET + constants.signals[result.signal];

@@ -116,25 +116,3 @@ Running these locally outside the CodSpeed runner is expected to log
 `instrument-hooks: failed to write environment.json` and skip actual measurement
 writes — the point is to verify the plugin's control flow and output per mode,
 not to produce real measurements.
-
-## Process isolation
-
-In instrumentation/simulation/memory runs with active instrument hooks, every
-benchmark runs in its own process (`packages/core/src/isolation.ts`), so the
-allocator and JIT state of one benchmark can't change the measurement of the
-next. Walltime runs and runs outside CodSpeed are not affected.
-
-- `CODSPEED_PROCESS_ISOLATION`: unset, `1` or `true` turns it on (default),
-  `0` or `false` runs all benchmarks in one process, any other value is an error.
-- The parent process re-runs itself (`process.execPath`, `process.execArgv` and
-  `process.argv.slice(1)`, so the V8 flags survive) once per benchmark with
-  `CODSPEED_ISOLATED_BENCHMARK=<uri>`. The child runs only that benchmark, whatever
-  the user filters are, and the parent exits with the child's exit code
-  (`128 + N` for signal `N`).
-- The child prints no banner or summary lines. They come from the parent.
-- Vitest measures in forked workers, so the plugin records the command of the
-  main Vitest process (`CODSPEED_ISOLATION_COMMAND`) and each worker runs that
-  command, i.e. one Vitest run per benchmark.
-- Tests that drive a plugin in-process against a mocked core must set
-  `CODSPEED_PROCESS_ISOLATION=false`, or the plugin would start the test runner
-  again for every benchmark.

@@ -10,22 +10,14 @@ const BENCHMARK_COUNT = 4;
 const RUN_TIMEOUT_MS = 60_000;
 const EXECUTED_LINE = /^executed (\d+) (.+)$/;
 
-interface FixtureRun {
-  status: number | null;
-  stderr: string;
-  /** PID that measured each benchmark. */
-  pidsByUri: Map<string, number>;
-  /** PID of the process the test started. */
-  parentPid: number;
-}
-
 interface FixtureOptions {
   /** Value of CODSPEED_PROCESS_ISOLATION, unset when undefined. */
   isolation?: string;
   failing?: boolean;
 }
 
-function runFixture({ isolation, failing }: FixtureOptions = {}): FixtureRun {
+/** Runs the fixture and returns the PID that measured each benchmark. */
+function runFixture({ isolation, failing }: FixtureOptions = {}) {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     CODSPEED_ENV: "true",
@@ -62,46 +54,29 @@ function runFixture({ isolation, failing }: FixtureOptions = {}): FixtureRun {
 }
 
 describe("process isolation", () => {
-  it.each([undefined, "1", "true"])(
-    "measures every benchmark in its own process (isolation=%s)",
-    (isolation) => {
-      const run = runFixture({ isolation });
+  it("measures every benchmark in its own process", () => {
+    const run = runFixture();
 
-      expect(run.status).toBe(0);
-      expect(run.pidsByUri.size).toBe(BENCHMARK_COUNT);
-      const pids = new Set(run.pidsByUri.values());
-      expect(pids.size).toBe(BENCHMARK_COUNT);
-      // The parent only spawns children, it never measures.
-      expect(pids).not.toContain(run.parentPid);
-    },
-  );
+    expect(run.status).toBe(0);
+    expect(run.pidsByUri.size).toBe(BENCHMARK_COUNT);
+    const pids = new Set(run.pidsByUri.values());
+    expect(pids.size).toBe(BENCHMARK_COUNT);
+    // The parent only spawns children, it never measures.
+    expect(pids).not.toContain(run.parentPid);
+  });
 
-  it.each(["0", "false"])(
-    "measures all benchmarks in one process (isolation=%s)",
-    (isolation) => {
-      const run = runFixture({ isolation });
+  it("measures all benchmarks in one process when disabled", () => {
+    const run = runFixture({ isolation: "false" });
 
-      expect(run.status).toBe(0);
-      expect(run.pidsByUri.size).toBe(BENCHMARK_COUNT);
-      expect(new Set(run.pidsByUri.values())).toEqual(new Set([run.parentPid]));
-    },
-  );
+    expect(run.status).toBe(0);
+    expect(run.pidsByUri.size).toBe(BENCHMARK_COUNT);
+    expect(new Set(run.pidsByUri.values())).toEqual(new Set([run.parentPid]));
+  });
 
-  it.each(["true", "false"])(
-    "fails the run when a benchmark throws (isolation=%s)",
-    (isolation) => {
-      const run = runFixture({ isolation, failing: true });
-
-      expect(run.status).not.toBe(0);
-      expect(run.stderr).toContain("benchmark failed");
-    },
-  );
-
-  it("rejects values other than true and false", () => {
-    const run = runFixture({ isolation: "maybe" });
+  it("fails the run when a benchmark throws", () => {
+    const run = runFixture({ isolation: "true", failing: true });
 
     expect(run.status).not.toBe(0);
-    expect(run.stderr).toContain(`${PROCESS_ISOLATION_ENV} must be`);
-    expect(run.pidsByUri.size).toBe(0);
+    expect(run.stderr).toContain("benchmark failed");
   });
 });

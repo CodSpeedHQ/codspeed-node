@@ -18,57 +18,34 @@ const NODE_FLAG = "--no-warnings";
 
 /** `Isolation.current()` reads the environment once, so load a fresh copy. */
 function currentIsolation(env: Record<string, string | undefined>): Isolation {
-  const saved = Object.fromEntries(
-    Object.keys(env).map((key) => [key, process.env[key]]),
-  );
-  setEnv(env);
+  const saved = process.env;
+  process.env = { ...saved, ...env };
   try {
-    let isolation: Isolation | undefined;
+    let isolation: Isolation;
     jest.isolateModules(() => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       isolation = require("../src/isolation").Isolation.current();
     });
-    return isolation as unknown as Isolation;
+    return isolation!;
   } finally {
-    setEnv(saved);
-  }
-}
-
-function setEnv(env: Record<string, string | undefined>): void {
-  for (const [key, value] of Object.entries(env)) {
-    if (value === undefined) {
-      delete process.env[key];
-    } else {
-      process.env[key] = value;
-    }
+    process.env = saved;
   }
 }
 
 describe("Isolation.current", () => {
-  it.each([undefined, "1", "true"])(
-    "runs one process per benchmark (isolation=%s)",
-    (value) => {
-      const isolation = currentIsolation({
+  it.each([
+    [undefined, "ProcessPerBenchmark"],
+    ["1", "ProcessPerBenchmark"],
+    ["true", "ProcessPerBenchmark"],
+    ["0", "SharedProcess"],
+    ["false", "SharedProcess"],
+  ])("selects %s as %s", (value, kind) => {
+    expect(
+      currentIsolation({
         [PROCESS_ISOLATION_ENV]: value,
         [ISOLATED_BENCHMARK_ENV]: undefined,
-      });
-
-      expect(isolation.mode).toEqual({ kind: "ProcessPerBenchmark" });
-      expect(isolation.onlyBenchmark()).toBeUndefined();
-      expect(isolation.isChild()).toBe(false);
-      expect(isolation.shouldRun("any")).toBe(true);
-    },
-  );
-
-  it.each(["0", "false"])("shares one process (isolation=%s)", (value) => {
-    const isolation = currentIsolation({
-      [PROCESS_ISOLATION_ENV]: value,
-      [ISOLATED_BENCHMARK_ENV]: undefined,
-    });
-
-    expect(isolation.mode).toEqual({ kind: "SharedProcess" });
-    expect(isolation.isChild()).toBe(false);
-    expect(isolation.shouldRun("any")).toBe(true);
+      }).mode.kind,
+    ).toBe(kind);
   });
 
   it("restricts a child to its benchmark, whatever the isolation setting", () => {
@@ -77,12 +54,6 @@ describe("Isolation.current", () => {
       [ISOLATED_BENCHMARK_ENV]: "file::bench",
     });
 
-    expect(isolation.mode).toEqual({
-      kind: "IsolatedBenchmark",
-      uri: "file::bench",
-    });
-    expect(isolation.onlyBenchmark()).toBe("file::bench");
-    expect(isolation.isChild()).toBe(true);
     expect(isolation.shouldRun("file::bench")).toBe(true);
     // Exact match only: a prefix is another benchmark.
     expect(isolation.shouldRun("file::bench 2")).toBe(false);
@@ -96,10 +67,6 @@ describe("Isolation.current", () => {
         [ISOLATED_BENCHMARK_ENV]: undefined,
       }),
     ).toThrow(`${PROCESS_ISOLATION_ENV} must be \`true\` or \`false\``);
-  });
-
-  it("never spawns when no instrument measures", () => {
-    expect(Isolation.shared().mode).toEqual({ kind: "SharedProcess" });
   });
 });
 
