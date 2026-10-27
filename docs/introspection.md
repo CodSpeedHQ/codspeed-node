@@ -21,5 +21,5 @@ Isolated Vitest children restrict benchmark discovery to the file named in
 in that child. The parent still discovers the full suite, and each child still
 loads the Vitest configuration and setup files.
 
-Walltime forks retain fresh processes and the profiling flags. This avoids
+Isolated children retain fresh processes and the profiling flags. This avoids
 repeated unrelated file imports; it does not remove Vitest's per-process startup.
