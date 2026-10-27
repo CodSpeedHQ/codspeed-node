@@ -13,3 +13,13 @@
 ```bash
 CI=1 CODSPEED_DEBUG=true pnpm --filter with-typescript-esm bench-tinybench
 ```
+
+## Vitest process isolation
+
+Isolated Vitest children restrict benchmark discovery to the file named in
+`CODSPEED_ISOLATED_BENCHMARK`. Other benchmark files are not transformed or imported
+in that child. The parent still discovers the full suite, and each child still
+loads the Vitest configuration and setup files.
+
+Walltime forks retain fresh processes and the profiling flags. This avoids
+repeated unrelated file imports; it does not remove Vitest's per-process startup.

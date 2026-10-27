@@ -1,7 +1,9 @@
 import {
+  getGitDir,
   getInstrumentMode,
   getV8Flags,
   InstrumentHooks,
+  ISOLATED_BENCHMARK_ENV,
   mongoMeasurement,
   recordIsolationCommand,
   SetupInstrumentsRequestBody,
@@ -38,11 +40,26 @@ export default function codspeedPlugin(): Plugin {
       return true;
     },
     enforce: "post",
-    config(userConfig): ViteUserConfig {
+    config(userConfig: ViteUserConfig): ViteUserConfig {
       // Vitest measures in forked workers, whose argv is not the command that
       // starts the benchmarks. Record the command of this main process so the
       // workers can run it again for each benchmark. Workers inherit the env.
       recordIsolationCommand();
+      const uri = process.env[ISOLATED_BENCHMARK_ENV];
+      if (uri !== undefined) {
+        const gitDir = getGitDir(userConfig.root ?? process.cwd());
+        if (gitDir === undefined) {
+          throw new Error("Could not find a git repository");
+        }
+        // Replace rather than merge include globs: isolated children must not
+        // transform and import unrelated benchmark files.
+        const file = join(gitDir, uri.split("::")[0])
+          .replace(/\\/g, "/")
+          .replace(/([*?{}()[\]!+@])/g, "\\$1");
+        userConfig.test ??= {};
+        userConfig.test.benchmark ??= {};
+        userConfig.test.benchmark.include = [file];
+      }
       return {
         test: {
           pool: "forks",
@@ -50,7 +67,7 @@ export default function codspeedPlugin(): Plugin {
           ...resolveVitestBackend().getBenchmarkTestConfig(
             getV8Flags(),
             resolveFile,
-            (userConfig as ViteUserConfig).test,
+            userConfig.test,
           ),
         },
       };
