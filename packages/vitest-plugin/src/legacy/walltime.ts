@@ -1,4 +1,5 @@
 import {
+  FORK_BUDGET_FRACTION,
   getWalltimeForks,
   isFork,
   isGcBetweenRoundsEnabled,
@@ -224,7 +225,8 @@ function patchTaskWithRootFrame(tinybench: Tinybench): void {
 
 /**
  * Forks parent: skip warmup and replace the measured loop with the samples
- * of every fork. Fork child: hand the measured samples to the parent.
+ * of every fork. Fork child: run its share of the warmup and measurement
+ * budget, then hand the measured samples to the parent.
  * Otherwise: optionally collect garbage before every round.
  */
 function patchTaskRounds(tinybench: Tinybench): void {
@@ -244,8 +246,19 @@ function patchTaskRounds(tinybench: Tinybench): void {
     if (activeRunner!.isForkParent()) {
       return;
     }
-    composeGc(this as unknown as TinybenchTask);
-    return originalWarmup.call(this);
+    const task = this as unknown as TinybenchTask;
+    composeGc(task);
+    if (!isFork()) {
+      return originalWarmup.call(this);
+    }
+    const originalLoop = task.loop;
+    task.loop = (time, iterations) =>
+      originalLoop.call(task, ...forkBudget(time, iterations));
+    try {
+      return await originalWarmup.call(this);
+    } finally {
+      task.loop = originalLoop;
+    }
   };
 
   tinybench.Task.prototype.run = async function () {
@@ -274,7 +287,10 @@ function patchTaskRounds(tinybench: Tinybench): void {
       composeGc(task);
       if (isFork()) {
         task.loop = async (time, iterations) => {
-          const result = await originalLoop.call(task, time, iterations);
+          const result = await originalLoop.call(
+            task,
+            ...forkBudget(time, iterations),
+          );
           if (result.samples) {
             // Copied: tinybench sorts and Vitest may truncate the array.
             writeForkSamples([...result.samples]);
@@ -290,6 +306,17 @@ function patchTaskRounds(tinybench: Tinybench): void {
       task.loop = originalLoop;
     }
   };
+}
+
+/** The `[time, iterations]` budget of one fork: shared when there are several. */
+function forkBudget(time: number, iterations: number): [number, number] {
+  if ((getWalltimeForks() ?? 1) <= 1) {
+    return [time, iterations];
+  }
+  return [
+    time * FORK_BUDGET_FRACTION,
+    Math.ceil(iterations * FORK_BUDGET_FRACTION),
+  ];
 }
 
 /** Every bench of `suite` with its URI, built like `extractBenchmarkResults`. */

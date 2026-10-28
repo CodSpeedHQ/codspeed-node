@@ -126,7 +126,9 @@ Both are opt-in and only apply to walltime runs.
   runs the benchmark in the benchmark process. Vitest 3/4 only. Like isolation,
   each child re-runs the Vitest command with `CODSPEED_ISOLATED_BENCHMARK=<uri>`;
   it writes its round samples to the file named by `CODSPEED_FORK_SAMPLES_FILE`
-  instead of reporting, and the parent merges them.
+  instead of reporting, and the parent merges them. With `N > 1`, each fork
+  runs half the warmup and measurement budget (`FORK_BUDGET_FRACTION`: half
+  the time, rounds rounded up), so forks mostly add process startup.
 - `CODSPEED_WALLTIME_GC_BETWEEN_ROUNDS=true` runs a full GC before every round
   (warmup and measured). It adds `--expose-gc` to the V8 flags and collects in
   the tinybench `beforeEach` hook, outside the timed call. Vitest 3/4/5. Meant

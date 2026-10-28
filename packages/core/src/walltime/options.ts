@@ -7,6 +7,13 @@ export const WALLTIME_FORKS_ENV = "CODSPEED_WALLTIME_FORKS";
 export const WALLTIME_GC_BETWEEN_ROUNDS_ENV =
   "CODSPEED_WALLTIME_GC_BETWEEN_ROUNDS";
 
+/**
+ * Share of a benchmark's warmup and measurement budget (time and rounds) that
+ * each fork runs when there are several forks. Every fork pays the process
+ * startup anyway, so full budgets would make F forks cost F full runs.
+ */
+export const FORK_BUDGET_FRACTION = 0.5;
+
 /** The number of forks per walltime benchmark, or `undefined` for none. */
 export function getWalltimeForks(): number | undefined {
   const value = process.env[WALLTIME_FORKS_ENV];

@@ -276,4 +276,19 @@ describe("WalltimeRunner", () => {
     expect(samples).toHaveLength(BENCH_OPTIONS.iterations);
     expect(coreMocks.writeWalltimeResults).not.toHaveBeenCalled();
   });
+
+  it("runs half the warmup and measured rounds in each of several forks", async () => {
+    coreMocks.isFork.mockReturnValue(true);
+    coreMocks.getWalltimeForks.mockReturnValue(3);
+    process.env.CODSPEED_ISOLATED_BENCHMARK = TOP_LEVEL_URI;
+    const runner = new WalltimeRunner(fromPartial({}));
+
+    await runner.runSuite(createSuite());
+
+    const [samples] = coreMocks.writeForkSamples.mock.calls[0];
+    expect(samples).toHaveLength(Math.ceil(BENCH_OPTIONS.iterations / 2));
+    // Warmup rounds, measured rounds, and tinybench's async probe.
+    const calls = Math.ceil(BENCH_OPTIONS.warmupIterations / 2) + Math.ceil(BENCH_OPTIONS.iterations / 2) + 1;
+    expect(events).toHaveLength(calls);
+  });
 });
