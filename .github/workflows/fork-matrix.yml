@@ -1,0 +1,43 @@
+name: Fork matrix experiment
+on:
+  push:
+    branches:
+      - "experiment/fork-matrix"
+
+permissions:
+  contents: read
+
+jobs:
+  matrix:
+    name: Fork matrix (job ${{ matrix.job }})
+    runs-on: codspeed-macro-x64-ryzen-9950x-ubuntu-24-04
+    strategy:
+      fail-fast: false
+      matrix:
+        job: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          cache: pnpm
+          node-version-file: .nvmrc
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm turbo run build --filter=@codspeed/vitest-plugin...
+      - run: pnpm -C examples/with-vitest-v3 install --frozen-lockfile --prefer-offline
+      - name: Refuse stale runner FIFOs
+        # They add one-second timeouts to every process start.
+        run: test ! -e /tmp/runner.ctl.fifo && test ! -e /tmp/runner.ack.fifo
+      - name: Run matrix
+        working-directory: examples/with-vitest-v3
+        env:
+          MATRIX_JOB: ${{ matrix.job }}
+          MATRIX_REPS: "5"
+        run: node experiments/fork-matrix/run.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fork-matrix-job-${{ matrix.job }}
+          path: examples/with-vitest-v3/experiments/fork-matrix/results
