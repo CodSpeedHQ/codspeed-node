@@ -6,13 +6,25 @@ import { bench } from "vitest";
 const countFile = process.env.MATRIX_COUNT_FILE;
 let calls = 0;
 
-// Iteration budgets per process, not time-based. Tinybench makes one warmup
-// call more than `warmupIterations`.
+// Budget mode: the tinybench 2.9 defaults (warmup 100 ms / 5 calls, measured
+// 500 ms / 10 rounds) scaled by MATRIX_BUDGET. Otherwise exact iteration
+// budgets; tinybench makes one warmup call more than `warmupIterations`.
+const budget = process.env.MATRIX_BUDGET;
+const k = Number(budget);
 const options = {
-  time: 0,
-  iterations: Number(process.env.MATRIX_MEASURE),
-  warmupTime: 0,
-  warmupIterations: Number(process.env.MATRIX_WARMUP),
+  ...(budget
+    ? {
+        time: 500 * k,
+        iterations: Math.ceil(10 * k),
+        warmupTime: 100 * k,
+        warmupIterations: Math.ceil(5 * k),
+      }
+    : {
+        time: 0,
+        iterations: Number(process.env.MATRIX_MEASURE),
+        warmupTime: 0,
+        warmupIterations: Number(process.env.MATRIX_WARMUP),
+      }),
   ...(countFile && {
     teardown: (task: { name: string } | undefined, mode: string) => {
       appendFileSync(countFile, `${process.pid} ${task?.name} ${mode} ${calls}\n`);
