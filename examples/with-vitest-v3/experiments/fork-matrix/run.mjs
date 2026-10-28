@@ -93,12 +93,13 @@ for (let i = 0; i < reps; i++) {
       ...process.env,
       CODSPEED_ENV: "true",
       CODSPEED_RUNNER_MODE: "walltime",
-      CODSPEED_WALLTIME_FORKS: String(forks),
+      // 0 = baseline: forks unset, all benchmarks run in one shared worker.
+      ...(forks > 0 && { CODSPEED_WALLTIME_FORKS: String(forks) }),
       CODSPEED_PROFILE_FOLDER: dir,
       MATRIX_WARMUP: String(warmup),
       MATRIX_MEASURE: String(measure),
     };
-    for (const key of ["CODSPEED_ISOLATED_BENCHMARK", "CODSPEED_FORK_SAMPLES_FILE", "CODSPEED_WALLTIME_GC_BETWEEN_ROUNDS", "CODSPEED_ISOLATION_COMMAND"]) {
+    for (const key of ["CODSPEED_ISOLATED_BENCHMARK", "CODSPEED_FORK_SAMPLES_FILE", "CODSPEED_WALLTIME_GC_BETWEEN_ROUNDS", "CODSPEED_ISOLATION_COMMAND", ...(forks > 0 ? [] : ["CODSPEED_WALLTIME_FORKS"])]) {
       delete env[key];
     }
 
@@ -121,7 +122,7 @@ for (let i = 0; i < reps; i++) {
       .filter((file) => file.endsWith(".json"))
       .flatMap((file) => JSON.parse(readFileSync(join(dir, "results", file), "utf8")).benchmarks);
     const names = benchmarks.map((b) => b.name).sort();
-    if (names.join() !== [...BENCHMARKS].sort().join() || benchmarks.some((b) => b.stats.rounds !== forks * measure)) {
+    if (names.join() !== [...BENCHMARKS].sort().join() || benchmarks.some((b) => b.stats.rounds !== Math.max(1, forks) * measure)) {
       throw new Error(`${id}: unexpected results ${JSON.stringify(benchmarks.map((b) => [b.name, b.stats.rounds]))}`);
     }
 

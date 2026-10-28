@@ -35,7 +35,7 @@ jobs:
         env:
           MATRIX_JOB: ${{ matrix.job }}
           MATRIX_REPS: "5"
-          MATRIX_FORKS: "1,2,3,4"
+          MATRIX_FORKS: "0,1,2"
         run: node experiments/fork-matrix/run.mjs
       - if: always()
         uses: actions/upload-artifact@v4
