@@ -3,7 +3,7 @@
  * process, so the allocator state, JIT state, and handles that other
  * benchmarks or setup code leave behind can't change its measurement.
  */
-import { spawnSync, type SpawnSyncReturns } from "child_process";
+import { spawn, spawnSync } from "child_process";
 import { constants } from "os";
 
 /** Isolation is on unless this is `0` or `false`. */
@@ -82,7 +82,7 @@ export class Isolation {
         await bench();
         return;
       case "ProcessPerBenchmark":
-        runInChildProcess(uri);
+        await runInChildProcessAsync(uri);
         return;
     }
   }
@@ -154,22 +154,53 @@ function runInChildProcess(uri: string): void {
   const [executable, ...args] = isolationCommand();
   const result = spawnSync(executable, args, {
     stdio: "inherit",
-    env: { ...process.env, [ISOLATED_BENCHMARK_ENV]: uri },
+    env: childEnv(uri),
   });
   if (result.error !== undefined) {
-    throw new Error(
-      `[CodSpeed] failed to start the process for ${uri}: ${result.error.message}`,
-    );
+    throw startError(uri, result.error);
   }
-  if (result.status === 0) {
-    return;
-  }
-  process.exit(exitCode(result));
+  exitOnFailure(result.status, result.signal);
 }
 
-function exitCode(result: SpawnSyncReturns<Buffer>): number {
-  if (result.signal !== null) {
-    return SIGNAL_EXIT_CODE_OFFSET + constants.signals[result.signal];
+/**
+ * {@link runInChildProcess} without blocking the event loop while the child
+ * runs: a Vitest worker must keep answering its main process, whose calls
+ * time out otherwise.
+ */
+async function runInChildProcessAsync(uri: string): Promise<void> {
+  const [executable, ...args] = isolationCommand();
+  const child = spawn(executable, args, {
+    stdio: "inherit",
+    env: childEnv(uri),
+  });
+  const { promise, resolve, reject } =
+    Promise.withResolvers<[number | null, NodeJS.Signals | null]>();
+  child.once("error", (error) => reject(startError(uri, error)));
+  child.once("close", (code, signal) => resolve([code, signal]));
+  const [status, signal] = await promise;
+  exitOnFailure(status, signal);
+}
+
+function childEnv(uri: string): NodeJS.ProcessEnv {
+  return { ...process.env, [ISOLATED_BENCHMARK_ENV]: uri };
+}
+
+function startError(uri: string, error: Error): Error {
+  return new Error(
+    `[CodSpeed] failed to start the process for ${uri}: ${error.message}`,
+  );
+}
+
+/** Exits with a failed child's code, in the shell convention. */
+function exitOnFailure(
+  status: number | null,
+  signal: NodeJS.Signals | null,
+): void {
+  if (status === 0) {
+    return;
   }
-  return result.status ?? GENERIC_FAILURE_EXIT_CODE;
+  if (signal !== null) {
+    process.exit(SIGNAL_EXIT_CODE_OFFSET + constants.signals[signal]);
+  }
+  process.exit(status ?? GENERIC_FAILURE_EXIT_CODE);
 }
