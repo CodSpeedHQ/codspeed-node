@@ -167,7 +167,12 @@ export function runForks(uri: string, forks: number): number[] {
     let samples: number[] = [];
     for (let fork = 0; fork < forks; fork++) {
       const file = join(dir, `${fork}.json`);
-      runInChildProcess(uri, { [FORK_SAMPLES_FILE_ENV]: file });
+      const failure = runChild(uri, { [FORK_SAMPLES_FILE_ENV]: file });
+      if (failure !== undefined) {
+        // process.exit() skips the `finally` below.
+        rmSync(dir, { recursive: true, force: true });
+        process.exit(failure);
+      }
       if (!existsSync(file)) {
         throw new Error(
           `[CodSpeed] fork ${fork + 1}/${forks} of ${uri} did not run the benchmark`,
@@ -209,7 +214,18 @@ interface ForkSamples {
  * child's code if it fails. Re-exec, not fork(): Node can't fork, and a fork
  * would only copy the calling thread.
  */
-function runInChildProcess(uri: string, env: NodeJS.ProcessEnv = {}): void {
+function runInChildProcess(uri: string): void {
+  const failure = runChild(uri);
+  if (failure !== undefined) {
+    process.exit(failure);
+  }
+}
+
+/** Runs the benchmark command limited to `uri`; the exit code if it failed. */
+function runChild(
+  uri: string,
+  env: NodeJS.ProcessEnv = {},
+): number | undefined {
   const [executable, ...args] = isolationCommand();
   const result = spawnSync(executable, args, {
     stdio: "inherit",
@@ -218,7 +234,7 @@ function runInChildProcess(uri: string, env: NodeJS.ProcessEnv = {}): void {
   if (result.error !== undefined) {
     throw startError(uri, result.error);
   }
-  exitOnFailure(result.status, result.signal);
+  return failureCode(result.status, result.signal);
 }
 
 /**
@@ -237,13 +253,13 @@ async function runInChildProcessAsync(uri: string): Promise<void> {
   child.once("error", (error) => reject(startError(uri, error)));
   child.once("close", (code, signal) => resolve([code, signal]));
   const [status, signal] = await promise;
-  exitOnFailure(status, signal);
+  const failure = failureCode(status, signal);
+  if (failure !== undefined) {
+    process.exit(failure);
+  }
 }
 
-function childEnv(
-  uri: string,
-  env: NodeJS.ProcessEnv = {},
-): NodeJS.ProcessEnv {
+function childEnv(uri: string, env: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
   return { ...process.env, ...env, [ISOLATED_BENCHMARK_ENV]: uri };
 }
 
@@ -253,16 +269,16 @@ function startError(uri: string, error: Error): Error {
   );
 }
 
-/** Exits with a failed child's code, in the shell convention. */
-function exitOnFailure(
+/** A failed child's exit code, in the shell convention. */
+function failureCode(
   status: number | null,
   signal: NodeJS.Signals | null,
-): void {
+): number | undefined {
   if (status === 0) {
-    return;
+    return undefined;
   }
   if (signal !== null) {
-    process.exit(SIGNAL_EXIT_CODE_OFFSET + constants.signals[signal]);
+    return SIGNAL_EXIT_CODE_OFFSET + constants.signals[signal];
   }
-  process.exit(status ?? GENERIC_FAILURE_EXIT_CODE);
+  return status ?? GENERIC_FAILURE_EXIT_CODE;
 }
