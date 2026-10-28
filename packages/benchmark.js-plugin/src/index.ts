@@ -171,17 +171,13 @@ async function runBenchmarks({
 }: RunBenchmarksOptions): Promise<void> {
   const isolation = Isolation.current();
   const isChild = isolation.isChild();
-  const selected = benches
-    .map((bench, i) => ({
-      bench,
-      uri: bench.uri ?? `${baseUri}::unknown_${i}`,
-    }))
-    .filter(({ uri }) => isolation.shouldRun(uri));
+  const all = benches.map((bench, i) => ({
+    bench,
+    uri: bench.uri ?? `${baseUri}::unknown_${i}`,
+  }));
   // A child only measures one benchmark. A run call that owns none of them
   // must not touch the instruments, the call that owns it does.
-  if (isChild && selected.length === 0) {
-    return;
-  }
+  const measures = all.some(({ uri }) => isolation.shouldRun(uri));
 
   // The parent already printed the banner and the summary, children stay quiet.
   if (!isChild) {
@@ -189,15 +185,20 @@ async function runBenchmarks({
       `[CodSpeed] running with @codspeed/benchmark.js v${__VERSION__}`,
     );
   }
-  setupCore();
-  for (const { bench, uri } of selected) {
-    await isolation.run(uri, () => measureBenchmark(bench, uri));
-    // The parent reports for every benchmark, the child ran only one of them.
-    if (!isChild) {
-      benchmarkCompletedListeners.forEach((listener) => listener());
-    }
+  if (measures) {
+    setupCore();
   }
-  teardownCore();
+  for (const { bench, uri } of all) {
+    if (isolation.shouldRun(uri)) {
+      await isolation.run(uri, () => measureBenchmark(bench, uri));
+    }
+    // Also in children, for benchmarks they skip: a `complete` listener may
+    // start the run that owns the child's benchmark.
+    benchmarkCompletedListeners.forEach((listener) => listener());
+  }
+  if (measures) {
+    teardownCore();
+  }
   if (!isChild) {
     console.log(`[CodSpeed] Done running ${benches.length} benches.`);
   }

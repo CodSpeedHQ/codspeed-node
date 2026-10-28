@@ -33,5 +33,18 @@ if (process.env.ISOLATION_FIXTURE_FAIL !== undefined) {
   });
 }
 
+// Started from a `complete` listener of the first suite: a child measuring
+// `chained` only reaches it through that listener.
+const chained = withCodSpeed(new Benchmark.Suite("chained"));
+chained.add("chained", () => {});
+let completed = 0;
+suite.on("complete", () => {
+  completed++;
+  if (completed === suite.length) {
+    // After the first run tears down, so the two runs don't overlap.
+    setImmediate(() => chained.run());
+  }
+});
+
 // An unhandled rejection ends the process with exit code 1.
 suite.run();

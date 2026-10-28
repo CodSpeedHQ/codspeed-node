@@ -4,8 +4,8 @@ import { join } from "path";
 
 const FIXTURE = join(__dirname, "fixtures", "isolation.cjs");
 const PROCESS_ISOLATION_ENV = "CODSPEED_PROCESS_ISOLATION";
-/** `first`, `second`, `third` and the deferred `async` benchmark. */
-const BENCHMARK_COUNT = 4;
+/** `first`, `second`, `third`, the deferred `async`, and `chained`. */
+const BENCHMARK_COUNT = 5;
 /** Fails a run whose benchmark process got stuck instead of blocking the suite. */
 const RUN_TIMEOUT_MS = 60_000;
 const EXECUTED_LINE = /^executed (\d+) (.+)$/;
