@@ -44,9 +44,10 @@ export function withGcAfter(
   hook: TinybenchRoundHook | undefined,
 ): TinybenchRoundHook {
   return function (this: unknown, mode) {
-    const result = hook?.call(this, mode);
-    if (result instanceof Promise) {
-      return result.then(collectGarbage);
+    const result: unknown = hook?.call(this, mode);
+    // Any thenable, not only this realm's Promise, so the GC waits for it.
+    if (typeof (result as PromiseLike<void> | undefined)?.then === "function") {
+      return Promise.resolve(result).then(collectGarbage);
     }
     collectGarbage();
   };
