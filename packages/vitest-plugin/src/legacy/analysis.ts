@@ -92,7 +92,13 @@ async function runAnalysisBenchmarkSuite(
     ? parentSuiteName + "::" + suite.name
     : suite.name;
 
-  await callSuiteHook(suite, suite, "beforeAll");
+  // A process that only starts children leaves the suite hooks to them:
+  // running them here too would hold their resources (e.g. a port) while a
+  // child sets them up again.
+  const runsSuiteHooks = isolation.mode.kind !== "ProcessPerBenchmark";
+  if (runsSuiteHooks) {
+    await callSuiteHook(suite, suite, "beforeAll");
+  }
 
   for (const task of suite.tasks) {
     if (task.mode !== "run") continue;
@@ -115,7 +121,9 @@ async function runAnalysisBenchmarkSuite(
     }
   }
 
-  await callSuiteHook(suite, suite, "afterAll");
+  if (runsSuiteHooks) {
+    await callSuiteHook(suite, suite, "afterAll");
+  }
 }
 
 export class AnalysisRunner extends NodeBenchmarkRunner {
