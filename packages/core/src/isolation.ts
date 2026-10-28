@@ -161,13 +161,15 @@ function isolationCommand(): string[] {
  * measures the benchmark like an isolated child and writes its samples to the
  * file named by {@link FORK_SAMPLES_FILE_ENV} instead of reporting results.
  */
-export function runForks(uri: string, forks: number): number[] {
+export async function runForks(uri: string, forks: number): Promise<number[]> {
   const dir = mkdtempSync(join(tmpdir(), "codspeed-forks-"));
   try {
     let samples: number[] = [];
     for (let fork = 0; fork < forks; fork++) {
       const file = join(dir, `${fork}.json`);
-      const failure = runChild(uri, { [FORK_SAMPLES_FILE_ENV]: file });
+      const failure = await runChildAsync(uri, {
+        [FORK_SAMPLES_FILE_ENV]: file,
+      });
       if (failure !== undefined) {
         // process.exit() skips the `finally` below.
         rmSync(dir, { recursive: true, force: true });
@@ -222,14 +224,11 @@ function runInChildProcess(uri: string): void {
 }
 
 /** Runs the benchmark command limited to `uri`; the exit code if it failed. */
-function runChild(
-  uri: string,
-  env: NodeJS.ProcessEnv = {},
-): number | undefined {
+function runChild(uri: string): number | undefined {
   const [executable, ...args] = isolationCommand();
   const result = spawnSync(executable, args, {
     stdio: "inherit",
-    env: childEnv(uri, env),
+    env: childEnv(uri),
   });
   if (result.error !== undefined) {
     throw startError(uri, result.error);
@@ -243,20 +242,28 @@ function runChild(
  * time out otherwise.
  */
 async function runInChildProcessAsync(uri: string): Promise<void> {
+  const failure = await runChildAsync(uri);
+  if (failure !== undefined) {
+    process.exit(failure);
+  }
+}
+
+/** {@link runChild} without blocking the event loop. */
+async function runChildAsync(
+  uri: string,
+  env: NodeJS.ProcessEnv = {},
+): Promise<number | undefined> {
   const [executable, ...args] = isolationCommand();
   const child = spawn(executable, args, {
     stdio: "inherit",
-    env: childEnv(uri),
+    env: childEnv(uri, env),
   });
   const { promise, resolve, reject } =
     Promise.withResolvers<[number | null, NodeJS.Signals | null]>();
   child.once("error", (error) => reject(startError(uri, error)));
   child.once("close", (code, signal) => resolve([code, signal]));
   const [status, signal] = await promise;
-  const failure = failureCode(status, signal);
-  if (failure !== undefined) {
-    process.exit(failure);
-  }
+  return failureCode(status, signal);
 }
 
 function childEnv(uri: string, env: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {

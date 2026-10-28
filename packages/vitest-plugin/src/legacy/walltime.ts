@@ -274,7 +274,7 @@ function patchTaskRounds(tinybench: Tinybench): void {
       task.loop = async () => {
         try {
           return {
-            samples: runForks(
+            samples: await runForks(
               runner.forkUri(task.name, fn),
               runner.parentForks!,
             ),

@@ -16,6 +16,8 @@ if (isFork()) {
   const count = Number(process.env.FORKS_FIXTURE_SAMPLES);
   writeForkSamples(Array.from({ length: count }, (_, i) => i));
 } else {
-  const samples = runForks("a", Number(process.env.FORKS_FIXTURE_COUNT));
-  console.log(`samples ${samples.length}`);
+  // A rejection ends the process with exit code 1.
+  runForks("a", Number(process.env.FORKS_FIXTURE_COUNT)).then((samples) => {
+    console.log(`samples ${samples.length}`);
+  });
 }
