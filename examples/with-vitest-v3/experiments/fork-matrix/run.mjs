@@ -10,6 +10,7 @@ import {
   rmSync,
   statSync,
   renameSync,
+  writeFileSync,
 } from "node:fs";
 import { cpus, hostname, loadavg, release } from "node:os";
 import { join, resolve } from "node:path";
