@@ -9,7 +9,7 @@ import {
   readFileSync,
   rmSync,
   statSync,
-  writeFileSync,
+  renameSync,
 } from "node:fs";
 import { cpus, hostname, loadavg, release } from "node:os";
 import { join, resolve } from "node:path";
@@ -17,8 +17,10 @@ import { join, resolve } from "node:path";
 const FORKS = (process.env.MATRIX_FORKS ?? "1,2,5,10").split(",").map(Number);
 const WARMUPS = [0, 20, 100];
 const MEASURES = [20, 100];
-const BENCHMARKS = ["cpu", "json", "allocation"];
-const RUN_TIMEOUT_MS = 600_000;
+// Other projects (e.g. matthias-nodejs-variance) pass their own benches and config.
+const BENCHMARKS = (process.env.MATRIX_BENCHMARKS ?? "cpu,json,allocation").split(",");
+const CONFIG = process.env.MATRIX_CONFIG ?? "experiments/fork-matrix/vitest.config.ts";
+const RUN_TIMEOUT_MS = 1_800_000;
 
 const job = Number(process.env.MATRIX_JOB ?? 0);
 const reps = Number(process.env.MATRIX_REPS ?? 5);
@@ -116,12 +118,14 @@ for (let i = 0; i < reps; i++) {
     const start = performance.now();
     const result = spawnSync(
       process.execPath,
-      ["node_modules/vitest/vitest.mjs", "bench", "--run", "--config", "experiments/fork-matrix/vitest.config.ts"],
+      ["node_modules/vitest/vitest.mjs", "bench", "--run", "--config", CONFIG],
       { cwd: root, env, encoding: "utf8", timeout: RUN_TIMEOUT_MS, maxBuffer: 64 * 1024 * 1024 },
     );
     const elapsedMs = performance.now() - start;
     writeFileSync(join(dir, "run.log"), `${result.stdout}\n${result.stderr}`);
     removeProfilingArtifacts(startedAt);
+    // Per-round recordings some projects write next to the results.
+    if (existsSync(join(root, "results/rounds"))) renameSync(join(root, "results/rounds"), join(dir, "rounds"));
     if (result.status !== 0) {
       throw new Error(`${id} failed (${result.status ?? result.signal}): ${result.error ?? result.stderr.slice(-2000)}`);
     }
