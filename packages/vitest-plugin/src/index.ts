@@ -55,7 +55,7 @@ export default function codspeedPlugin(): Plugin {
         // transform and import unrelated benchmark files.
         const file = join(gitDir, uri.split("::")[0])
           .replace(/\\/g, "/")
-          .replace(/([*?{}()[\]!+@])/g, "\\$1");
+          .replace(/[\\*?{}()[\]!+@]/g, "\\$&");
         userConfig.test ??= {};
         userConfig.test.benchmark ??= {};
         userConfig.test.benchmark.include = [file];
