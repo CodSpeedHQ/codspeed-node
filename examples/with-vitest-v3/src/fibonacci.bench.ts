@@ -18,3 +18,7 @@ describe("fibonacci", () => {
     iterativeFibonacci(20);
   });
 });
+
+bench("top-level recursive fibo 15", () => {
+  recursiveFibonacci(15);
+});

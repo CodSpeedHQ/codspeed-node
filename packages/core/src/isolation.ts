@@ -4,7 +4,15 @@
  * benchmarks or setup code leave behind can't change its measurement.
  */
 import { spawn, spawnSync } from "child_process";
-import { constants } from "os";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "fs";
+import { constants, tmpdir } from "os";
+import { join } from "path";
 
 /** Isolation is on unless this is `0` or `false`. */
 export const PROCESS_ISOLATION_ENV = "CODSPEED_PROCESS_ISOLATION";
@@ -16,6 +24,8 @@ export const ISOLATED_BENCHMARK_ENV = "CODSPEED_ISOLATED_BENCHMARK";
  * from the main process, because re-executing the worker alone can't work.
  */
 export const ISOLATION_COMMAND_ENV = "CODSPEED_ISOLATION_COMMAND";
+/** Set on each fork of {@link runForks}: where the fork writes its samples. */
+export const FORK_SAMPLES_FILE_ENV = "CODSPEED_FORK_SAMPLES_FILE";
 
 /** Exit code for a child that ended with neither an exit code nor a signal. */
 const GENERIC_FAILURE_EXIT_CODE = 1;
@@ -146,11 +156,75 @@ function isolationCommand(): string[] {
 }
 
 /**
+ * Runs the benchmark `uri` in `forks` fresh processes, one after the other,
+ * and returns the round samples of all of them, in milliseconds. Each fork
+ * measures the benchmark like an isolated child and writes its samples to the
+ * file named by {@link FORK_SAMPLES_FILE_ENV} instead of reporting results.
+ */
+export async function runForks(uri: string, forks: number): Promise<number[]> {
+  const dir = mkdtempSync(join(tmpdir(), "codspeed-forks-"));
+  try {
+    let samples: number[] = [];
+    for (let fork = 0; fork < forks; fork++) {
+      const file = join(dir, `${fork}.json`);
+      const failure = await runChildAsync(uri, {
+        [FORK_SAMPLES_FILE_ENV]: file,
+      });
+      if (failure !== undefined) {
+        // process.exit() skips the `finally` below.
+        rmSync(dir, { recursive: true, force: true });
+        process.exit(failure);
+      }
+      if (!existsSync(file)) {
+        throw new Error(
+          `[CodSpeed] fork ${fork + 1}/${forks} of ${uri} did not run the benchmark`,
+        );
+      }
+      const forkSamples = (
+        JSON.parse(readFileSync(file, "utf-8")) as ForkSamples
+      ).samples;
+      // Not push(...): spreading a time-based run's samples overflows the stack.
+      samples = samples.concat(forkSamples);
+    }
+    return samples;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/** Whether this process is a fork started by {@link runForks}. */
+export function isFork(): boolean {
+  return process.env[FORK_SAMPLES_FILE_ENV] !== undefined;
+}
+
+/** Hands the round samples (milliseconds) of this fork to its parent. */
+export function writeForkSamples(samples: number[]): void {
+  const file = process.env[FORK_SAMPLES_FILE_ENV];
+  if (file === undefined) {
+    throw new Error(`[CodSpeed] ${FORK_SAMPLES_FILE_ENV} is not set`);
+  }
+  const data: ForkSamples = { samples };
+  writeFileSync(file, JSON.stringify(data));
+}
+
+interface ForkSamples {
+  samples: number[];
+}
+
+/**
  * Runs the benchmark command again, limited to `uri`, and exits with the
  * child's code if it fails. Re-exec, not fork(): Node can't fork, and a fork
  * would only copy the calling thread.
  */
 function runInChildProcess(uri: string): void {
+  const failure = runChild(uri);
+  if (failure !== undefined) {
+    process.exit(failure);
+  }
+}
+
+/** Runs the benchmark command limited to `uri`; the exit code if it failed. */
+function runChild(uri: string): number | undefined {
   const [executable, ...args] = isolationCommand();
   const result = spawnSync(executable, args, {
     stdio: "inherit",
@@ -159,7 +233,7 @@ function runInChildProcess(uri: string): void {
   if (result.error !== undefined) {
     throw startError(uri, result.error);
   }
-  exitOnFailure(result.status, result.signal);
+  return failureCode(result.status, result.signal);
 }
 
 /**
@@ -168,21 +242,32 @@ function runInChildProcess(uri: string): void {
  * time out otherwise.
  */
 async function runInChildProcessAsync(uri: string): Promise<void> {
+  const failure = await runChildAsync(uri);
+  if (failure !== undefined) {
+    process.exit(failure);
+  }
+}
+
+/** {@link runChild} without blocking the event loop. */
+async function runChildAsync(
+  uri: string,
+  env: NodeJS.ProcessEnv = {},
+): Promise<number | undefined> {
   const [executable, ...args] = isolationCommand();
   const child = spawn(executable, args, {
     stdio: "inherit",
-    env: childEnv(uri),
+    env: childEnv(uri, env),
   });
   const { promise, resolve, reject } =
     Promise.withResolvers<[number | null, NodeJS.Signals | null]>();
   child.once("error", (error) => reject(startError(uri, error)));
   child.once("close", (code, signal) => resolve([code, signal]));
   const [status, signal] = await promise;
-  exitOnFailure(status, signal);
+  return failureCode(status, signal);
 }
 
-function childEnv(uri: string): NodeJS.ProcessEnv {
-  return { ...process.env, [ISOLATED_BENCHMARK_ENV]: uri };
+function childEnv(uri: string, env: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
+  return { ...process.env, ...env, [ISOLATED_BENCHMARK_ENV]: uri };
 }
 
 function startError(uri: string, error: Error): Error {
@@ -191,16 +276,16 @@ function startError(uri: string, error: Error): Error {
   );
 }
 
-/** Exits with a failed child's code, in the shell convention. */
-function exitOnFailure(
+/** A failed child's exit code, in the shell convention. */
+function failureCode(
   status: number | null,
   signal: NodeJS.Signals | null,
-): void {
+): number | undefined {
   if (status === 0) {
-    return;
+    return undefined;
   }
   if (signal !== null) {
-    process.exit(SIGNAL_EXIT_CODE_OFFSET + constants.signals[signal]);
+    return SIGNAL_EXIT_CODE_OFFSET + constants.signals[signal];
   }
-  process.exit(status ?? GENERIC_FAILURE_EXIT_CODE);
+  return status ?? GENERIC_FAILURE_EXIT_CODE;
 }

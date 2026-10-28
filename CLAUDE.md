@@ -116,3 +116,23 @@ Running these locally outside the CodSpeed runner is expected to log
 `instrument-hooks: failed to write environment.json` and skip actual measurement
 writes — the point is to verify the plugin's control flow and output per mode,
 not to produce real measurements.
+
+## Walltime forks and GC between rounds
+
+Both are opt-in and only apply to walltime runs.
+
+- `CODSPEED_WALLTIME_FORKS=<N>` runs each benchmark in `N` fresh processes, one
+  after the other, and reports all their rounds together as one result. Unset
+  runs the benchmark in the benchmark process. Vitest 3/4 only. Like isolation,
+  each child re-runs the Vitest command with `CODSPEED_ISOLATED_BENCHMARK=<uri>`;
+  it writes its round samples to the file named by `CODSPEED_FORK_SAMPLES_FILE`
+  instead of reporting, and the parent merges them. With `N > 1`, each fork
+  runs half the warmup and measurement budget (`FORK_BUDGET_FRACTION`: half
+  the time, rounds rounded up), so forks mostly add process startup.
+- `CODSPEED_WALLTIME_GC_BETWEEN_ROUNDS=true` runs a full GC before every round
+  (warmup and measured). It adds `--expose-gc` to the V8 flags and collects in
+  the tinybench `beforeEach` hook, outside the timed call. Vitest 3/4/5. Meant
+  for benchmarks with long rounds: a GC costs milliseconds, so time-based
+  benchmarks of microsecond functions take far longer to finish. It also
+  changes absolute times (each round starts on a collected heap), so turning
+  it on re-baselines a benchmark.
