@@ -6,7 +6,8 @@ import { bench } from "vitest";
 const countFile = process.env.MATRIX_COUNT_FILE;
 let calls = 0;
 
-// Exact budgets per process: no time-based warmup or measurement.
+// Iteration budgets per process, not time-based. Tinybench makes one warmup
+// call more than `warmupIterations`.
 const options = {
   time: 0,
   iterations: Number(process.env.MATRIX_MEASURE),

@@ -1,7 +1,6 @@
 // Runs every fork × warmup × measure cell `MATRIX_REPS` times, sequentially,
 // in a different seeded order per repetition. Run from examples/with-vitest-v3.
-import { spawnSync } from "node:child_process";
-import { execSync } from "node:child_process";
+import { execSync, spawnSync } from "node:child_process";
 import {
   appendFileSync,
   existsSync,
@@ -15,7 +14,7 @@ import {
 import { cpus, hostname, loadavg, release } from "node:os";
 import { join, resolve } from "node:path";
 
-const FORKS = [1, 2, 5, 10];
+const FORKS = (process.env.MATRIX_FORKS ?? "1,2,5,10").split(",").map(Number);
 const WARMUPS = [0, 20, 100];
 const MEASURES = [20, 100];
 const BENCHMARKS = ["cpu", "json", "allocation"];
