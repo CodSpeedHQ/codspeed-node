@@ -10,5 +10,8 @@ export default defineConfig({
   test: {
     exclude: ["**/tests/**/*", "**/.rollup.cache/**/*"],
     mockReset: true,
+    benchmark: {
+      exclude: ["**/node_modules/**", "**/tests/**/*", "**/.rollup.cache/**/*"],
+    },
   },
 });

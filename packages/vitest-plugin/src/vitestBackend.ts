@@ -1,4 +1,8 @@
-import { getInstrumentMode } from "@codspeed/core";
+import {
+  getInstrumentMode,
+  walltimeIsolation,
+  type WalltimeOptions,
+} from "@codspeed/core";
 import { join } from "path";
 import { type ViteUserConfig } from "vitest/config";
 import { version as vitestVersion } from "vitest/node";
@@ -11,6 +15,7 @@ export interface VitestBackend {
     v8Flags: string[],
     resolveFile: (name: string) => string,
     userTestConfig: ViteUserConfig["test"],
+    walltimeOptions: WalltimeOptions,
   ): ViteUserConfig["test"];
 }
 
@@ -38,6 +43,7 @@ class V5Backend implements VitestBackend {
     v8Flags: string[],
     resolveFile: (name: string) => string,
     userTestConfig: ViteUserConfig["test"],
+    walltimeOptions: WalltimeOptions,
   ): ViteUserConfig["test"] {
     // Vitest's export getter tracker runs inside the measured code; keep it off
     // unless the user explicitly configured it.
@@ -45,12 +51,37 @@ class V5Backend implements VitestBackend {
       userTestConfig?.benchmark?.suppressExportGetterWarnings ?? true;
     return {
       execArgv: v8Flags,
+      ...forkedTestTimeout(userTestConfig?.testTimeout, walltimeOptions.forks),
       benchmark: {
         provider: resolveFile("v5/provider"),
         suppressExportGetterWarnings,
       },
     };
   }
+}
+
+/** Vitest 5 times a bench test out after max(60 s, `testTimeout`). */
+const MIN_BENCH_TEST_TIMEOUT_MS = 60_000;
+
+/**
+ * Every fork of every benchmark of a test runs within that test, so its
+ * timeout scales with the forks. Per-benchmark `forks` aren't known here.
+ */
+function forkedTestTimeout(
+  userTimeout: number | undefined,
+  forksOption: number | undefined,
+): ViteUserConfig["test"] {
+  if (getInstrumentMode() !== "walltime") {
+    return {};
+  }
+  const mode = walltimeIsolation(forksOption);
+  if (mode.kind !== "Forks") {
+    return {};
+  }
+  return {
+    testTimeout:
+      Math.max(MIN_BENCH_TEST_TIMEOUT_MS, userTimeout ?? 0) * mode.forks,
+  };
 }
 
 /**
