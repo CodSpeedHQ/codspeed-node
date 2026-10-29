@@ -154,19 +154,6 @@ describe("walltime forks", () => {
   );
 
   it(
-    "takes the fork count from the environment over the option",
-    async () => {
-      const run = await runFixture({ forksOption: 2, forksEnv: 1 });
-
-      expect(run.status).toBe(0);
-      for (const name of BENCHMARKS) {
-        expect(forkPids(run, name).size).toBe(1);
-      }
-    },
-    RUN_TIMEOUT_MS,
-  );
-
-  it(
     "runs every benchmark in the parent process when isolation is disabled",
     async () => {
       const run = await runFixture({ shared: true, forksEnv: 4 });

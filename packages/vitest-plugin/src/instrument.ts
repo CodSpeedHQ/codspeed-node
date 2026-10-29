@@ -5,11 +5,13 @@ import {
   MARKER_TYPE_BENCHMARK_START,
   msToNs,
   msToS,
+  sortedSamplesNs,
   writeWalltimeResults,
   type Benchmark,
   type BenchmarkStats,
 } from "@codspeed/core";
 import type * as tinybench from "tinybench";
+import type { TaskMeta } from "vitest";
 
 export type Tinybench = typeof tinybench;
 
@@ -33,7 +35,7 @@ interface TinybenchStatistics {
   max: number;
   mean: number;
   sd: number;
-  samples: number[] | undefined;
+  samples: ArrayLike<number> | undefined;
 }
 
 interface TinybenchTaskResult {
@@ -49,6 +51,41 @@ export interface TinybenchOptions {
   warmupTime?: number;
   warmupIterations?: number;
   iterations?: number;
+}
+
+/** A benchmark the main process measures in forks once the run is over. */
+export interface ForkedBenchmark {
+  uri: string;
+  name: string;
+  /** The benchmark's own `forks` option; the plugin option applies otherwise. */
+  forks: number | undefined;
+  options: TinybenchOptions;
+}
+
+// Vitest ships a test's meta to the main process with its result, so the
+// worker hands its queued benchmarks to the reporter through it.
+const FORKED_BENCHMARKS_META = "codspeedForkedBenchmarks";
+
+type ForkMeta = TaskMeta & { [FORKED_BENCHMARKS_META]?: ForkedBenchmark[] };
+
+/**
+ * Adds benchmarks to the test's queue: a test can run several groups
+ * (`bench.compare()`, `registration.run()`), and a retried or repeated test
+ * queues the same ones again, which replace the earlier entries.
+ */
+export function queueForkedBenchmarks(
+  meta: TaskMeta,
+  benchmarks: ForkedBenchmark[],
+): void {
+  const uris = new Set(benchmarks.map(({ uri }) => uri));
+  (meta as ForkMeta)[FORKED_BENCHMARKS_META] = [
+    ...forkedBenchmarks(meta).filter(({ uri }) => !uris.has(uri)),
+    ...benchmarks,
+  ];
+}
+
+export function forkedBenchmarks(meta: TaskMeta): ForkedBenchmark[] {
+  return (meta as ForkMeta)[FORKED_BENCHMARKS_META] ?? [];
 }
 
 /**
@@ -142,7 +179,7 @@ function tinybenchResultToStats(
   const { totalTime, latency } = result;
   const { min, max, mean, sd, samples } = latency;
 
-  const sortedTimesNs = (samples ?? []).map(msToNs).sort((a, b) => a - b);
+  const sortedTimesNs = sortedSamplesNs(samples ?? []);
   const meanNs = msToNs(mean);
   const stdevNs = msToNs(sd);
 

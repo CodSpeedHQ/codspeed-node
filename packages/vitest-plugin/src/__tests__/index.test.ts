@@ -2,6 +2,7 @@ import { getV8Flags } from "@codspeed/core";
 import { fromPartial } from "@total-typescript/shoehorn";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type ViteUserConfig } from "vitest/config";
+import { type Vitest } from "vitest/node";
 import codspeedPlugin from "../index";
 
 const coreMocks = vi.hoisted(() => {
@@ -161,6 +162,18 @@ describe("codSpeedPlugin", () => {
       }) as ViteUserConfig;
 
       expect(result.test?.benchmark?.suppressExportGetterWarnings).toBe(false);
+    });
+
+    it("should register the fork reporter once across projects", () => {
+      vi.stubEnv("CODSPEED_RUNNER_MODE", "walltime");
+      if (typeof plugin.configureVitest !== "function")
+        throw new Error("configureVitest is not a function");
+      const vitest = fromPartial<Vitest>({ config: { reporters: [] } });
+      for (const name of ["a (bench)", "b (bench)"]) {
+        plugin.configureVitest(fromPartial({ vitest, project: { name } }));
+      }
+
+      expect(vitest.config.reporters).toHaveLength(1);
     });
   });
 });
