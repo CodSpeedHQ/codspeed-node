@@ -10,6 +10,7 @@ import {
   type BenchmarkStats,
 } from "@codspeed/core";
 import type * as tinybench from "tinybench";
+import type { TaskMeta } from "vitest";
 
 export type Tinybench = typeof tinybench;
 
@@ -49,6 +50,32 @@ export interface TinybenchOptions {
   warmupTime?: number;
   warmupIterations?: number;
   iterations?: number;
+}
+
+/** A benchmark the main process measures in forks once the run is over. */
+export interface ForkedBenchmark {
+  uri: string;
+  name: string;
+  /** The benchmark's own `forks` option; the plugin option applies otherwise. */
+  forks: number | undefined;
+  options: TinybenchOptions;
+}
+
+// Vitest ships a test's meta to the main process with its result, so the
+// worker hands its queued benchmarks to the reporter through it.
+const FORKED_BENCHMARKS_META = "codspeedForkedBenchmarks";
+
+type ForkMeta = TaskMeta & { [FORKED_BENCHMARKS_META]?: ForkedBenchmark[] };
+
+export function setForkedBenchmarks(
+  meta: TaskMeta,
+  benchmarks: ForkedBenchmark[],
+): void {
+  (meta as ForkMeta)[FORKED_BENCHMARKS_META] = benchmarks;
+}
+
+export function forkedBenchmarks(meta: TaskMeta): ForkedBenchmark[] {
+  return (meta as ForkMeta)[FORKED_BENCHMARKS_META] ?? [];
 }
 
 /**

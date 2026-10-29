@@ -5,11 +5,17 @@ import {
   mongoMeasurement,
   SetupInstrumentsRequestBody,
   SetupInstrumentsResponse,
+  type WalltimeOptions,
 } from "@codspeed/core";
 import { join } from "path";
 import { Plugin } from "vite";
 import { type ViteUserConfig } from "vitest/config";
+import { type Vitest } from "vitest/node";
 import { resolveVitestBackend } from "./vitestBackend";
+
+// `configureVitest` runs once per project, but one reporter sees every
+// project's modules: a second one would fork every benchmark twice.
+const vitestsWithForkReporter = new WeakSet<Vitest>();
 
 // get this file's directory path from import.meta.url
 const __dirname = new URL(".", import.meta.url).pathname;
@@ -21,7 +27,8 @@ function resolveFile(name: string): string {
   return join(__dirname, `${name}.${fileExtension}`);
 }
 
-export default function codspeedPlugin(): Plugin {
+/** `options.forks`: see {@link WalltimeOptions}; isolation requires Vitest 5. */
+export default function codspeedPlugin(options: WalltimeOptions = {}): Plugin {
   return {
     name: "codspeed:vitest",
     apply(_, { mode }) {
@@ -37,18 +44,31 @@ export default function codspeedPlugin(): Plugin {
       return true;
     },
     enforce: "post",
-    config(userConfig): ViteUserConfig {
+    config(userConfig: ViteUserConfig): ViteUserConfig {
+      const backend = resolveVitestBackend();
+      backend.configureIsolation(userConfig);
       return {
         test: {
           pool: "forks",
           globalSetup: [resolveFile("globalSetup")],
-          ...resolveVitestBackend().getBenchmarkTestConfig(
+          ...backend.getBenchmarkTestConfig(
             getV8Flags(),
             resolveFile,
-            (userConfig as ViteUserConfig).test,
+            userConfig.test,
           ),
         },
       };
+    },
+    configureVitest({ project, vitest }) {
+      const backend = resolveVitestBackend();
+      backend.configureProject(project);
+      if (vitestsWithForkReporter.has(vitest)) return;
+      vitestsWithForkReporter.add(vitest);
+      const reporter = backend.forkReporter(options);
+      // Vitest builds its reporters from the config after this hook runs.
+      if (reporter) {
+        vitest.config.reporters.push(reporter);
+      }
     },
   };
 }

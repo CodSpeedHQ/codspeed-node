@@ -2,13 +2,16 @@ import {
   getGitDir,
   getInstrumentMode,
   InstrumentHooks,
+  walltimeIsolation,
   optimizeFunction,
   optimizeFunctionSync,
   setupCore,
   teardownCore,
   wrapWithRootFrame,
   wrapWithRootFrameSync,
+  writeForkSamples,
   type Benchmark,
+  type WalltimeOptions,
 } from "@codspeed/core";
 import { createRequire } from "module";
 import path from "path";
@@ -21,6 +24,7 @@ import type {
 } from "vitest";
 import {
   installInstrumentHooks,
+  setForkedBenchmarks,
   tinybenchTaskToBenchmark,
   writeAndLogWalltimeResults,
   type TinybenchBench,
@@ -221,6 +225,16 @@ async function runWalltime(
   getUri: (name: string) => string,
   test: BenchmarkGroup["test"],
 ): Promise<BenchResult[]> {
+  const mode = walltimeIsolation();
+  if (mode.kind === "Forks") {
+    await queueForks(registrations, options, getUri, test);
+    return registrations.map(({ name }) => analysisResult(name));
+  }
+  // A fork measures only its benchmark; Vitest still gets every result.
+  const measured = registrations.filter(
+    ({ name }) => mode.kind !== "Fork" || mode.uri === getUri(name),
+  );
+
   const { Bench } = await importHostTinybench();
   const bench = new Bench({
     signal: test.context.signal,
@@ -229,7 +243,7 @@ async function runWalltime(
     retainSamples: true,
   });
 
-  for (const { name, fn, fnOpts } of registrations) {
+  for (const { name, fn, fnOpts } of measured) {
     // tinybench v6 keeps `fn` private, so the root frame is baked in here
     bench.add(
       name,
@@ -242,9 +256,48 @@ async function runWalltime(
   const tasks = await bench.run();
 
   throwOnErroredTasks(tasks);
-  collectWalltimeResults(bench, getUri);
+  if (mode.kind === "Fork") {
+    for (const task of tasks) {
+      writeForkSamples(mode.samplesFile, [
+        ...(task.result?.latency.samples ?? []),
+      ]);
+    }
+  } else {
+    collectWalltimeResults(bench, getUri);
+  }
 
-  return tasks.map(tinybenchTaskToBenchResult);
+  const results = new Map(
+    tasks.map((task) => [task.name, tinybenchTaskToBenchResult(task)]),
+  );
+  return registrations.map(
+    ({ name }) => results.get(name) ?? analysisResult(name),
+  );
+}
+
+/**
+ * Queues every benchmark for measurement in fresh processes once the run is
+ * over (see `forkReporter.ts`). Vitest gets zeroed results, like in analysis mode.
+ */
+async function queueForks(
+  registrations: BenchRegistrationInput[],
+  options: BenchRunOptions | undefined,
+  getUri: (name: string) => string,
+  test: BenchmarkGroup["test"],
+): Promise<void> {
+  const { Bench } = await importHostTinybench();
+  // Never run: it resolves tinybench's defaults for the reported config.
+  const bench = new Bench(options);
+  setForkedBenchmarks(
+    test.meta,
+    registrations.map(({ name, fnOpts }) => ({
+      uri: getUri(name),
+      name,
+      forks:
+        (fnOpts as WalltimeOptions | undefined)?.forks ??
+        (options as WalltimeOptions | undefined)?.forks,
+      options: resolvedOptions(bench),
+    })),
+  );
 }
 
 /** Fail the test like Vitest's own provider does, instead of returning empty results. */
@@ -260,11 +313,9 @@ function throwOnErroredTasks(tasks: TinybenchTask[]): void {
   }
 }
 
-function collectWalltimeResults(
-  bench: TinybenchWithTasks,
-  getUri: (name: string) => string,
-): void {
-  const options: TinybenchOptions = {
+/** The options the bench runs with, as reported to CodSpeed. */
+function resolvedOptions(bench: TinybenchWithTasks): TinybenchOptions {
+  return {
     time: bench.time,
     iterations: bench.iterations,
     // A bench with warmup turned off keeps its warmup timings, so they'd
@@ -272,6 +323,13 @@ function collectWalltimeResults(
     warmupTime: bench.warmup ? bench.warmupTime : 0,
     warmupIterations: bench.warmup ? bench.warmupIterations : 0,
   };
+}
+
+function collectWalltimeResults(
+  bench: TinybenchWithTasks,
+  getUri: (name: string) => string,
+): void {
+  const options = resolvedOptions(bench);
   const benchmarks: Benchmark[] = [];
   for (const task of bench.tasks) {
     if (task.result?.state !== "completed") continue;
