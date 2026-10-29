@@ -170,26 +170,55 @@ export async function runForks(uri: string, forks: number): Promise<number[]> {
       const failure = await runChildAsync(uri, {
         [FORK_SAMPLES_FILE_ENV]: file,
       });
-      if (failure !== undefined) {
-        // process.exit() skips the `finally` below.
-        rmSync(dir, { recursive: true, force: true });
-        process.exit(failure);
-      }
-      if (!existsSync(file)) {
-        throw new Error(
-          `[CodSpeed] fork ${fork + 1}/${forks} of ${uri} did not run the benchmark`,
-        );
-      }
-      const forkSamples = (
-        JSON.parse(readFileSync(file, "utf-8")) as ForkSamples
-      ).samples;
       // Not push(...): spreading a time-based run's samples overflows the stack.
-      samples = samples.concat(forkSamples);
+      samples = samples.concat(
+        forkSamples(dir, file, failure, uri, fork, forks),
+      );
     }
     return samples;
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+}
+
+/** {@link runForks} for synchronous runs, which block anyway. */
+export function runForksSync(uri: string, forks: number): number[] {
+  const dir = mkdtempSync(join(tmpdir(), "codspeed-forks-"));
+  try {
+    let samples: number[] = [];
+    for (let fork = 0; fork < forks; fork++) {
+      const file = join(dir, `${fork}.json`);
+      const failure = runChild(uri, { [FORK_SAMPLES_FILE_ENV]: file });
+      samples = samples.concat(
+        forkSamples(dir, file, failure, uri, fork, forks),
+      );
+    }
+    return samples;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/** The samples a finished fork wrote; exits with the fork's code if it failed. */
+function forkSamples(
+  dir: string,
+  file: string,
+  failure: number | undefined,
+  uri: string,
+  fork: number,
+  forks: number,
+): number[] {
+  if (failure !== undefined) {
+    // process.exit() skips the callers' `finally`.
+    rmSync(dir, { recursive: true, force: true });
+    process.exit(failure);
+  }
+  if (!existsSync(file)) {
+    throw new Error(
+      `[CodSpeed] fork ${fork + 1}/${forks} of ${uri} did not run the benchmark`,
+    );
+  }
+  return (JSON.parse(readFileSync(file, "utf-8")) as ForkSamples).samples;
 }
 
 /** Whether this process is a fork started by {@link runForks}. */
@@ -224,11 +253,14 @@ function runInChildProcess(uri: string): void {
 }
 
 /** Runs the benchmark command limited to `uri`; the exit code if it failed. */
-function runChild(uri: string): number | undefined {
+function runChild(
+  uri: string,
+  env: NodeJS.ProcessEnv = {},
+): number | undefined {
   const [executable, ...args] = isolationCommand();
   const result = spawnSync(executable, args, {
     stdio: "inherit",
-    env: childEnv(uri),
+    env: childEnv(uri, env),
   });
   if (result.error !== undefined) {
     throw startError(uri, result.error);
