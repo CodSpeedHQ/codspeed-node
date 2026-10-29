@@ -207,6 +207,7 @@ async function runBenchmarks({
     } else {
       optimizeFunctionSync(benchPayload);
       await mongoMeasurement.start(uri);
+      global.gc?.();
       wrapWithRootFrameSync(() => {
         InstrumentHooks.startBenchmark();
         benchPayload();

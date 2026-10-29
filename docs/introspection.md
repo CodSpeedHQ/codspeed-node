@@ -13,3 +13,10 @@
 ```bash
 CI=1 CODSPEED_DEBUG=true pnpm --filter with-typescript-esm bench-tinybench
 ```
+
+## Garbage collection
+
+Memory and simulation modes receive `--expose-gc` through introspection.
+The Benchmark.js plugin collects warmup garbage before starting instrumentation
+for both synchronous and asynchronous benchmarks. This keeps the forced
+collection outside the measured window.
