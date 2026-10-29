@@ -85,7 +85,12 @@ async function runAnalysisBenchmarkSuite(
     ? parentSuiteName + "::" + suite.name
     : suite.name;
 
-  await callSuiteHook(suite, suite, "beforeAll");
+  // Vitest runs the root (file) suite's beforeAll/afterAll itself, around
+  // `runSuite`; calling them here too would run them twice. Nested suites are
+  // only reached through this runner, so their hooks are ours to call.
+  const isRoot = parentSuiteName === undefined;
+
+  if (!isRoot) await callSuiteHook(suite, suite, "beforeAll");
 
   for (const task of suite.tasks) {
     if (task.mode !== "run") continue;
@@ -97,7 +102,7 @@ async function runAnalysisBenchmarkSuite(
     }
   }
 
-  await callSuiteHook(suite, suite, "afterAll");
+  if (!isRoot) await callSuiteHook(suite, suite, "afterAll");
 }
 
 export class AnalysisRunner extends NodeBenchmarkRunner {
