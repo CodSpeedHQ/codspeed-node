@@ -1,24 +1,33 @@
 import {
   calculateQuantiles,
   InstrumentHooks,
+  walltimeIsolation,
   MARKER_TYPE_BENCHMARK_END,
   MARKER_TYPE_BENCHMARK_START,
   mongoMeasurement,
   msToNs,
   msToS,
+  runForks,
+  runForksSync,
+  samplesToResult,
+  writeForkSamples,
   writeWalltimeResults,
   type BenchmarkStats,
   type Benchmark as CodspeedBenchmark,
+  type RoundsResult,
+  type WalltimeOptions,
 } from "@codspeed/core";
-import { Bench, Task, TaskResult } from "tinybench";
+import { Bench, Task } from "tinybench";
 import { getBenchOptions } from "./benchOptions";
 import { BaseBenchRunner } from "./shared";
 
 export function setupCodspeedWalltimeBench(
   bench: Bench,
   rootCallingFile: string,
+  options: WalltimeOptions,
 ): void {
-  const runner = new WalltimeBenchRunner(bench, rootCallingFile);
+  const mode = walltimeIsolation(options.forks);
+  const runner = new WalltimeBenchRunner(bench, rootCallingFile, mode);
   runner.installInstrumentHooks();
   runner.setupBenchMethods();
 }
@@ -91,6 +100,12 @@ class WalltimeBenchRunner extends BaseBenchRunner {
   }
 
   protected async runTaskAsync(task: Task, uri: string): Promise<void> {
+    const { mode } = this;
+    if (mode.kind === "Forks") {
+      const samples = await runForks(uri, mode.forks);
+      return this.registerCodspeedBenchmark(task, samplesToResult(samples));
+    }
+
     // run the warmup of the task right before its actual run
     if (getBenchOptions(this.bench).warmup) {
       await task.warmup();
@@ -103,8 +118,13 @@ class WalltimeBenchRunner extends BaseBenchRunner {
     this.registerCodspeedBenchmarkFromTask(task);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  protected runTaskSync(task: Task, _uri: string): void {
+  protected runTaskSync(task: Task, uri: string): void {
+    const { mode } = this;
+    if (mode.kind === "Forks") {
+      const samples = runForksSync(uri, mode.forks);
+      return this.registerCodspeedBenchmark(task, samplesToResult(samples));
+    }
+
     if (getBenchOptions(this.bench).warmup) {
       task.warmupSync();
     }
@@ -123,19 +143,28 @@ class WalltimeBenchRunner extends BaseBenchRunner {
   }
 
   private registerCodspeedBenchmarkFromTask(task: Task): void {
-    const uri = this.getTaskUri(task);
-
     if (!task.result) {
-      console.warn(`    ⚠ No result data available for ${uri}`);
+      console.warn(
+        `    ⚠ No result data available for ${this.getTaskUri(task)}`,
+      );
       return;
     }
+    // A fork hands its samples to the parent, which reports the benchmark.
+    if (this.mode.kind === "Fork") {
+      writeForkSamples(this.mode.samplesFile, [...task.result.latency.samples]);
+      return;
+    }
+    this.registerCodspeedBenchmark(task, task.result);
+  }
 
+  private registerCodspeedBenchmark(task: Task, result: RoundsResult): void {
+    const uri = this.getTaskUri(task);
     const opts = getBenchOptions(this.bench);
     const warmupIterations = opts.warmup
       ? (opts.warmupIterations ?? TINYBENCH_WARMUP_DEFAULT)
       : 0;
     const stats = convertTinybenchResultToBenchmarkStats(
-      task.result,
+      result,
       warmupIterations,
     );
 
@@ -156,6 +185,11 @@ class WalltimeBenchRunner extends BaseBenchRunner {
   }
 
   private finalizeWalltimeRun(isAsync: boolean): Task[] {
+    // A fork only hands its samples to the parent, which reports the results.
+    if (this.isChild) {
+      return this.bench.tasks;
+    }
+
     // Write results to JSON file using core function
     if (this.codspeedBenchmarks.length > 0) {
       writeWalltimeResults(this.codspeedBenchmarks, isAsync);
@@ -171,7 +205,7 @@ class WalltimeBenchRunner extends BaseBenchRunner {
 const TINYBENCH_WARMUP_DEFAULT = 16;
 
 function convertTinybenchResultToBenchmarkStats(
-  result: TaskResult,
+  result: RoundsResult,
   warmupIterations: number,
 ): BenchmarkStats {
   const { min, max, mean, sd, samples } = result.latency;
