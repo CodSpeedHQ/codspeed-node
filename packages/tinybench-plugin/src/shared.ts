@@ -9,20 +9,20 @@ export abstract class BaseBenchRunner {
   protected bench: Bench;
   protected rootCallingFile: string;
   /** Walltime runners pass the isolation of this process; analysis shares it. */
-  protected readonly mode: IsolationMode;
+  protected readonly isolationMode: IsolationMode;
 
   constructor(
     bench: Bench,
     rootCallingFile: string,
-    mode: IsolationMode = { kind: "SharedProcess" },
+    isolationMode: IsolationMode,
   ) {
     this.bench = bench;
     this.rootCallingFile = rootCallingFile;
-    this.mode = mode;
+    this.isolationMode = isolationMode;
   }
 
   protected get isChild(): boolean {
-    return this.mode.kind === "Fork";
+    return this.isolationMode.kind === "Fork";
   }
 
   private setupBenchRun(): void {
@@ -111,6 +111,9 @@ export abstract class BaseBenchRunner {
   private selectTasks(): { task: Task; uri: string }[] {
     return this.bench.tasks
       .map((task) => ({ task, uri: this.getTaskUri(task) }))
-      .filter(({ uri }) => this.mode.kind !== "Fork" || this.mode.uri === uri);
+      .filter(
+        ({ uri }) =>
+          this.isolationMode.kind !== "Fork" || this.isolationMode.uri === uri,
+      );
   }
 }

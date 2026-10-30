@@ -1,7 +1,6 @@
 import {
   calculateQuantiles,
   InstrumentHooks,
-  walltimeIsolation,
   MARKER_TYPE_BENCHMARK_END,
   MARKER_TYPE_BENCHMARK_START,
   mongoMeasurement,
@@ -10,6 +9,7 @@ import {
   runForks,
   runForksSync,
   samplesToResult,
+  walltimeIsolation,
   writeForkSamples,
   writeWalltimeResults,
   type BenchmarkStats,
@@ -26,8 +26,8 @@ export function setupCodspeedWalltimeBench(
   rootCallingFile: string,
   options: WalltimeOptions,
 ): void {
-  const mode = walltimeIsolation(options.forks);
-  const runner = new WalltimeBenchRunner(bench, rootCallingFile, mode);
+  const isolationMode = walltimeIsolation(options.forks);
+  const runner = new WalltimeBenchRunner(bench, rootCallingFile, isolationMode);
   runner.installInstrumentHooks();
   runner.setupBenchMethods();
 }
@@ -100,9 +100,9 @@ class WalltimeBenchRunner extends BaseBenchRunner {
   }
 
   protected async runTaskAsync(task: Task, uri: string): Promise<void> {
-    const { mode } = this;
-    if (mode.kind === "Forks") {
-      const samples = await runForks(uri, mode.forks);
+    const { isolationMode } = this;
+    if (isolationMode.kind === "Forks") {
+      const samples = await runForks(uri, isolationMode.forks);
       return this.registerCodspeedBenchmark(task, samplesToResult(samples));
     }
 
@@ -119,9 +119,9 @@ class WalltimeBenchRunner extends BaseBenchRunner {
   }
 
   protected runTaskSync(task: Task, uri: string): void {
-    const { mode } = this;
-    if (mode.kind === "Forks") {
-      const samples = runForksSync(uri, mode.forks);
+    const { isolationMode } = this;
+    if (isolationMode.kind === "Forks") {
+      const samples = runForksSync(uri, isolationMode.forks);
       return this.registerCodspeedBenchmark(task, samplesToResult(samples));
     }
 
@@ -150,8 +150,10 @@ class WalltimeBenchRunner extends BaseBenchRunner {
       return;
     }
     // A fork hands its samples to the parent, which reports the benchmark.
-    if (this.mode.kind === "Fork") {
-      writeForkSamples(this.mode.samplesFile, [...task.result.latency.samples]);
+    if (this.isolationMode.kind === "Fork") {
+      writeForkSamples(this.isolationMode.samplesFile, [
+        ...task.result.latency.samples,
+      ]);
       return;
     }
     this.registerCodspeedBenchmark(task, task.result);
