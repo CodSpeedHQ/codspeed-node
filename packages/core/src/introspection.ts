@@ -94,6 +94,23 @@ export const tryIntrospect = () => {
   }
 };
 
+const EVAL_FLAGS = ["-e", "--eval", "-p", "--print"];
+
+// `node -` or `node` without a script reads the script from stdin (or opens the
+// REPL). The input is consumed by then, so the restarted process would get none.
+const readsScriptFromStdin = () => {
+  const scriptPath = process.argv[1];
+  if (scriptPath === "-") {
+    return true;
+  }
+  if (scriptPath !== undefined) {
+    return false;
+  }
+  return !process.execArgv.some((arg) =>
+    EVAL_FLAGS.some((flag) => arg === flag || arg.startsWith(`${flag}=`)),
+  );
+};
+
 /**
  * Restarts the process with the V8 flags the runner mode requires when the
  * launcher did not pass them (e.g. Bazel executes node by absolute path, so the
@@ -118,6 +135,10 @@ export const ensureV8Flags = () => {
   // Worker threads and IPC children cannot replace their process, and an IPC
   // channel would be lost.
   if (!isMainThread || process.send !== undefined) {
+    return;
+  }
+
+  if (readsScriptFromStdin()) {
     return;
   }
 
