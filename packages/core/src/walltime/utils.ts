@@ -32,12 +32,22 @@ export interface RoundsResult {
 }
 
 /**
- * The result of round samples in milliseconds, e.g. the samples of several
- * forks of one benchmark.
+ * The result of nonempty round samples in milliseconds, e.g. the samples of
+ * several forks of one benchmark. Throws if no samples were recorded.
  */
 export function samplesToResult(samples: number[]): RoundsResult {
   const n = samples.length;
-  const totalTime = samples.reduce((sum, ms) => sum + ms, 0);
+  if (n === 0) {
+    throw new Error("[CodSpeed] Cannot compute statistics from empty samples");
+  }
+  let totalTime = 0;
+  let min = Infinity;
+  let max = -Infinity;
+  for (const ms of samples) {
+    totalTime += ms;
+    if (ms < min) min = ms;
+    if (ms > max) max = ms;
+  }
   const mean = totalTime / n;
   const variance =
     n > 1
@@ -46,9 +56,8 @@ export function samplesToResult(samples: number[]): RoundsResult {
   return {
     totalTime,
     latency: {
-      // Not Math.min(...samples): a time-based run overflows the stack.
-      min: samples.reduce((a, b) => Math.min(a, b), Infinity),
-      max: samples.reduce((a, b) => Math.max(a, b), -Infinity),
+      min,
+      max,
       mean,
       sd: Math.sqrt(variance),
       samples,
