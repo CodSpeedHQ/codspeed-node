@@ -1,4 +1,4 @@
-import { setupCore, teardownCore } from "@codspeed/core";
+import { setupCore, teardownCore, type IsolationMode } from "@codspeed/core";
 import { Bench, Task } from "tinybench";
 import { CapturedTaskData, getTaskData } from "./taskData";
 import { getTaskUri } from "./uri";
@@ -8,10 +8,21 @@ declare const __VERSION__: string;
 export abstract class BaseBenchRunner {
   protected bench: Bench;
   protected rootCallingFile: string;
+  /** Walltime runners pass the isolation of this process; analysis shares it. */
+  protected readonly isolationMode: IsolationMode;
 
-  constructor(bench: Bench, rootCallingFile: string) {
+  constructor(
+    bench: Bench,
+    rootCallingFile: string,
+    isolationMode: IsolationMode,
+  ) {
     this.bench = bench;
     this.rootCallingFile = rootCallingFile;
+    this.isolationMode = isolationMode;
+  }
+
+  protected get isChild(): boolean {
+    return this.isolationMode.kind === "Fork";
   }
 
   private setupBenchRun(): void {
@@ -20,6 +31,10 @@ export abstract class BaseBenchRunner {
   }
 
   private logStart(): void {
+    // The parent already printed the banner, children stay quiet.
+    if (this.isChild) {
+      return;
+    }
     console.log(
       `[CodSpeed] running with @codspeed/tinybench v${__VERSION__} (${this.getModeName()})`,
     );
@@ -45,7 +60,12 @@ export abstract class BaseBenchRunner {
 
   protected finalizeBenchRun(): Task[] {
     teardownCore();
-    console.log(`[CodSpeed] Done running ${this.bench.tasks.length} benches.`);
+    // The parent already printed the summary line, children stay quiet.
+    if (!this.isChild) {
+      console.log(
+        `[CodSpeed] Done running ${this.bench.tasks.length} benches.`,
+      );
+    }
     return this.bench.tasks;
   }
 
@@ -57,10 +77,15 @@ export abstract class BaseBenchRunner {
 
   public setupBenchMethods(): void {
     this.bench.run = async () => {
+      const tasks = this.selectTasks();
+      // A child that owns none of this bench's tasks must not touch the
+      // instruments, the bench that owns its task does.
+      if (this.isChild && tasks.length === 0) {
+        return this.bench.tasks;
+      }
       this.setupBenchRun();
 
-      for (const task of this.bench.tasks) {
-        const uri = this.getTaskUri(task);
+      for (const { task, uri } of tasks) {
         await this.runTaskAsync(task, uri);
       }
 
@@ -68,14 +93,27 @@ export abstract class BaseBenchRunner {
     };
 
     this.bench.runSync = () => {
+      const tasks = this.selectTasks();
+      if (this.isChild && tasks.length === 0) {
+        return this.bench.tasks;
+      }
       this.setupBenchRun();
 
-      for (const task of this.bench.tasks) {
-        const uri = this.getTaskUri(task);
+      for (const { task, uri } of tasks) {
         this.runTaskSync(task, uri);
       }
 
       return this.finalizeSyncRun();
     };
+  }
+
+  /** The tasks this process measures: all of them, or the isolated one. */
+  private selectTasks(): { task: Task; uri: string }[] {
+    return this.bench.tasks
+      .map((task) => ({ task, uri: this.getTaskUri(task) }))
+      .filter(
+        ({ uri }) =>
+          this.isolationMode.kind !== "Fork" || this.isolationMode.uri === uri,
+      );
   }
 }

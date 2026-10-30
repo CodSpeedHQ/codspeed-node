@@ -52,6 +52,18 @@ export interface TinybenchOptions {
 }
 
 /**
+ * The `forks` option of the plugin, set in the main process for the workers,
+ * which inherit its env. Not {@link WALLTIME_FORKS_ENV}, which overrides the
+ * per-benchmark option instead of yielding to it.
+ */
+export const PLUGIN_FORKS_ENV = "CODSPEED_VITEST_PLUGIN_FORKS";
+
+export function getPluginForks(): number | undefined {
+  const value = process.env[PLUGIN_FORKS_ENV];
+  return value === undefined ? undefined : Number(value);
+}
+
+/**
  * Drive the instrumentation window from each bench's run-mode setup/teardown
  * hooks so it brackets only tinybench's measured loop, excluding the warmup
  * before it and the statistics computation after it.

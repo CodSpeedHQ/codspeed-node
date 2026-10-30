@@ -53,6 +53,7 @@ export type {
   SetupInstrumentsResponse,
 } from "./generated/openapi";
 export { getV8Flags, tryIntrospect } from "./introspection";
+export * from "./isolation";
 export {
   getUnsupportedNodeVersionWarning,
   SUPPORTED_NODE_MAJORS,

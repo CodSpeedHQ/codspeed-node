@@ -5,11 +5,15 @@ import {
   mongoMeasurement,
   SetupInstrumentsRequestBody,
   SetupInstrumentsResponse,
+  type WalltimeOptions,
 } from "@codspeed/core";
 import { join } from "path";
 import { Plugin } from "vite";
 import { type ViteUserConfig } from "vitest/config";
-import { resolveVitestBackend } from "./vitestBackend";
+import {
+  resolveVitestBackend,
+  scaleBenchTimeoutToForks,
+} from "./vitestBackend";
 
 // get this file's directory path from import.meta.url
 const __dirname = new URL(".", import.meta.url).pathname;
@@ -21,7 +25,8 @@ function resolveFile(name: string): string {
   return join(__dirname, `${name}.${fileExtension}`);
 }
 
-export default function codspeedPlugin(): Plugin {
+/** `options.forks`: see {@link WalltimeOptions}; isolation requires Vitest 5. */
+export default function codspeedPlugin(options: WalltimeOptions = {}): Plugin {
   return {
     name: "codspeed:vitest",
     apply(_, { mode }) {
@@ -37,18 +42,23 @@ export default function codspeedPlugin(): Plugin {
       return true;
     },
     enforce: "post",
-    config(userConfig): ViteUserConfig {
+    config(userConfig: ViteUserConfig): ViteUserConfig {
+      const backend = resolveVitestBackend();
+      backend.configureIsolation(userConfig, options);
       return {
         test: {
           pool: "forks",
           globalSetup: [resolveFile("globalSetup")],
-          ...resolveVitestBackend().getBenchmarkTestConfig(
+          ...backend.getBenchmarkTestConfig(
             getV8Flags(),
             resolveFile,
-            (userConfig as ViteUserConfig).test,
+            userConfig.test,
           ),
         },
       };
+    },
+    configureVitest({ project }) {
+      scaleBenchTimeoutToForks(project.config, options.forks);
     },
   };
 }

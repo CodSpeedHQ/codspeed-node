@@ -2,13 +2,19 @@ import {
   getGitDir,
   getInstrumentMode,
   InstrumentHooks,
+  walltimeIsolation,
   optimizeFunction,
   optimizeFunctionSync,
+  resolveWalltimeForks,
+  runForks,
+  samplesToResult,
   setupCore,
   teardownCore,
   wrapWithRootFrame,
   wrapWithRootFrameSync,
+  writeForkSamples,
   type Benchmark,
+  type WalltimeOptions,
 } from "@codspeed/core";
 import { createRequire } from "module";
 import path from "path";
@@ -20,6 +26,7 @@ import type {
   BenchRunOptions,
 } from "vitest";
 import {
+  getPluginForks,
   installInstrumentHooks,
   tinybenchTaskToBenchmark,
   writeAndLogWalltimeResults,
@@ -221,6 +228,15 @@ async function runWalltime(
   getUri: (name: string) => string,
   test: BenchmarkGroup["test"],
 ): Promise<BenchResult[]> {
+  const mode = walltimeIsolation();
+  if (mode.kind === "Forks") {
+    return runForkParent(registrations, options, getUri);
+  }
+  // A fork measures only its benchmark; Vitest still gets every result.
+  const measured = registrations.filter(
+    ({ name }) => mode.kind !== "Fork" || mode.uri === getUri(name),
+  );
+
   const { Bench } = await importHostTinybench();
   const bench = new Bench({
     signal: test.context.signal,
@@ -229,7 +245,7 @@ async function runWalltime(
     retainSamples: true,
   });
 
-  for (const { name, fn, fnOpts } of registrations) {
+  for (const { name, fn, fnOpts } of measured) {
     // tinybench v6 keeps `fn` private, so the root frame is baked in here
     bench.add(
       name,
@@ -242,9 +258,56 @@ async function runWalltime(
   const tasks = await bench.run();
 
   throwOnErroredTasks(tasks);
-  collectWalltimeResults(bench, getUri);
+  if (mode.kind === "Fork") {
+    for (const task of tasks) {
+      writeForkSamples(mode.samplesFile, [
+        ...(task.result?.latency.samples ?? []),
+      ]);
+    }
+  } else {
+    collectWalltimeResults(bench, getUri);
+  }
 
-  return tasks.map(tinybenchTaskToBenchResult);
+  const results = new Map(
+    tasks.map((task) => [task.name, tinybenchTaskToBenchResult(task)]),
+  );
+  return registrations.map(
+    ({ name }) => results.get(name) ?? analysisResult(name),
+  );
+}
+
+/**
+ * Measures every benchmark in fresh processes and reports their pooled
+ * rounds. Vitest gets zeroed results, like in analysis mode.
+ */
+async function runForkParent(
+  registrations: BenchRegistrationInput[],
+  options: BenchRunOptions | undefined,
+  getUri: (name: string) => string,
+): Promise<BenchResult[]> {
+  const { Bench } = await importHostTinybench();
+  // Never run: it resolves tinybench's defaults for the reported config.
+  const bench = new Bench(options);
+  const benchmarks: Benchmark[] = [];
+  for (const { name, fnOpts } of registrations) {
+    const uri = getUri(name);
+    const forks = resolveWalltimeForks(
+      (fnOpts as WalltimeOptions | undefined)?.forks ??
+        (options as WalltimeOptions | undefined)?.forks ??
+        getPluginForks(),
+    );
+    const samples = await runForks(uri, forks);
+    const benchmark = tinybenchTaskToBenchmark(
+      { name, result: samplesToResult(samples) },
+      uri,
+      resolvedOptions(bench),
+    );
+    if (benchmark) {
+      benchmarks.push(benchmark);
+    }
+  }
+  writeAndLogWalltimeResults(benchmarks);
+  return registrations.map(({ name }) => analysisResult(name));
 }
 
 /** Fail the test like Vitest's own provider does, instead of returning empty results. */
@@ -260,11 +323,9 @@ function throwOnErroredTasks(tasks: TinybenchTask[]): void {
   }
 }
 
-function collectWalltimeResults(
-  bench: TinybenchWithTasks,
-  getUri: (name: string) => string,
-): void {
-  const options: TinybenchOptions = {
+/** The options the bench runs with, as reported to CodSpeed. */
+function resolvedOptions(bench: TinybenchWithTasks): TinybenchOptions {
+  return {
     time: bench.time,
     iterations: bench.iterations,
     // A bench with warmup turned off keeps its warmup timings, so they'd
@@ -272,6 +333,13 @@ function collectWalltimeResults(
     warmupTime: bench.warmup ? bench.warmupTime : 0,
     warmupIterations: bench.warmup ? bench.warmupIterations : 0,
   };
+}
+
+function collectWalltimeResults(
+  bench: TinybenchWithTasks,
+  getUri: (name: string) => string,
+): void {
+  const options = resolvedOptions(bench);
   const benchmarks: Benchmark[] = [];
   for (const task of bench.tasks) {
     if (task.result?.state !== "completed") continue;

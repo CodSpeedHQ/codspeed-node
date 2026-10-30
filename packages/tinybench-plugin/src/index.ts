@@ -8,6 +8,7 @@ import {
   SetupInstrumentsResponse,
   tryIntrospect,
   wrapWithRootFrameSync,
+  type WalltimeOptions,
 } from "@codspeed/core";
 import { Bench } from "tinybench";
 import { setupCodspeedAnalysisBench } from "./analysis";
@@ -17,7 +18,10 @@ import { setupCodspeedWalltimeBench } from "./walltime";
 
 tryIntrospect();
 
-export function withCodSpeed(bench: Bench): Bench {
+export function withCodSpeed(
+  bench: Bench,
+  options: WalltimeOptions = {},
+): Bench {
   const codspeedRunnerMode = getCodspeedRunnerMode();
   if (codspeedRunnerMode === "disabled") {
     return bench;
@@ -52,7 +56,7 @@ export function withCodSpeed(bench: Bench): Bench {
   if (instrumentMode === "analysis") {
     setupCodspeedAnalysisBench(bench, rootCallingFile);
   } else if (instrumentMode === "walltime") {
-    setupCodspeedWalltimeBench(bench, rootCallingFile);
+    setupCodspeedWalltimeBench(bench, rootCallingFile, options);
   }
 
   return bench;
