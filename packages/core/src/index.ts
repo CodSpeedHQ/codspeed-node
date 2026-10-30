@@ -52,7 +52,7 @@ export type {
   SetupInstrumentsRequestBody,
   SetupInstrumentsResponse,
 } from "./generated/openapi";
-export { getV8Flags, tryIntrospect } from "./introspection";
+export { ensureV8Flags, getV8Flags, tryIntrospect } from "./introspection";
 export {
   getUnsupportedNodeVersionWarning,
   SUPPORTED_NODE_MAJORS,

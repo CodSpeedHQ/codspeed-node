@@ -1,4 +1,5 @@
 import {
+  ensureV8Flags,
   getCallingFile,
   InstrumentHooks,
   mongoMeasurement,
@@ -19,6 +20,8 @@ import { CodSpeedBenchmark } from "./types";
 declare const __VERSION__: string;
 
 tryIntrospect();
+// Must run before any benchmark state exists: it may replace this process.
+ensureV8Flags();
 
 interface WithCodSpeedBenchmark extends Omit<
   Benchmark,

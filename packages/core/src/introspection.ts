@@ -1,11 +1,14 @@
-import { writeFileSync } from "fs";
+import { readlinkSync, writeFileSync } from "fs";
 import path from "path";
+import { isMainThread } from "worker_threads";
 
-import { getInstrumentMode } from "./runnerMode";
+import native_core from "./native_core";
+import { getCodspeedRunnerMode, getInstrumentMode } from "./runnerMode";
 
 const CUSTOM_INTROSPECTION_EXIT_CODE = 0;
 
 const V8_LOG_FILENAME_PATTERN = "codspeed-v8-%p.log";
+const RESTARTED_PID_ENV = "__CODSPEED_NODE_CORE_RESTARTED_PID__";
 
 // Fixed seeds so Math.random() and hash table layout match on every run
 const getSeedFlags = (nodeVersionMajor: number) => {
@@ -88,6 +91,75 @@ export const tryIntrospect = () => {
       JSON.stringify(introspectionMetadata),
     );
     process.exit(CUSTOM_INTROSPECTION_EXIT_CODE);
+  }
+};
+
+/**
+ * Restarts the process with the V8 flags the runner mode requires when the
+ * launcher did not pass them (e.g. Bazel executes node by absolute path, so the
+ * runner's `node` wrapper never runs). Must be called before instrument-hooks
+ * is used: the restart replaces this process.
+ *
+ * Cases that cannot restart safely, including a failed exec, run without the
+ * flags; `checkV8Flags` warns once instrument-hooks is set up.
+ */
+export const ensureV8Flags = () => {
+  if (getCodspeedRunnerMode() === "disabled" || !native_core.isBound) {
+    return;
+  }
+
+  const missingFlags = getV8Flags().filter(
+    (flag) => !process.execArgv.includes(flag),
+  );
+  if (missingFlags.length === 0) {
+    return;
+  }
+
+  // Worker threads and IPC children cannot replace their process, and an IPC
+  // channel would be lost.
+  if (!isMainThread || process.send !== undefined) {
+    return;
+  }
+
+  // The restart did not help (its launcher stripped the flags again): do not
+  // restart in a loop.
+  if (process.env[RESTARTED_PID_ENV] === String(process.pid)) {
+    return;
+  }
+
+  const getExecutable = () => {
+    switch (process.platform) {
+      case "linux":
+        // rules_js replaces process.execPath with its shell shim.
+        return readlinkSync("/proc/self/exe");
+      case "darwin":
+        return process.execPath;
+      default:
+        return undefined;
+    }
+  };
+
+  try {
+    const executable = getExecutable();
+    if (executable === undefined) {
+      return;
+    }
+
+    process.env[RESTARTED_PID_ENV] = String(process.pid);
+    // The runner's wrapper passes its flags before the user's, so user flags win.
+    native_core.restart(executable, [
+      executable,
+      ...missingFlags,
+      ...process.execArgv,
+      ...process.argv.slice(1),
+    ]);
+  } catch (error) {
+    // No /proc, or exec failed: the current image is still usable, so measure
+    // without the flags and let checkV8Flags warn.
+    delete process.env[RESTARTED_PID_ENV];
+    console.warn(
+      `[CodSpeed] failed to restart node with the required V8 flags: ${String(error)}`,
+    );
   }
 };
 
