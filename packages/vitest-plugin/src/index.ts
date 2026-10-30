@@ -1,11 +1,8 @@
 import {
-  getGitDir,
   getInstrumentMode,
   getV8Flags,
   InstrumentHooks,
-  ISOLATED_BENCHMARK_ENV,
   mongoMeasurement,
-  recordIsolationCommand,
   SetupInstrumentsRequestBody,
   SetupInstrumentsResponse,
   type WalltimeOptions,
@@ -13,8 +10,10 @@ import {
 import { join } from "path";
 import { Plugin } from "vite";
 import { type ViteUserConfig } from "vitest/config";
-import { PLUGIN_FORKS_ENV } from "./instrument";
-import { resolveVitestBackend } from "./vitestBackend";
+import {
+  resolveVitestBackend,
+  scaleBenchTimeoutToForks,
+} from "./vitestBackend";
 
 // get this file's directory path from import.meta.url
 const __dirname = new URL(".", import.meta.url).pathname;
@@ -26,10 +25,7 @@ function resolveFile(name: string): string {
   return join(__dirname, `${name}.${fileExtension}`);
 }
 
-/**
- * `options.forks`: fresh processes per walltime benchmark (Vitest 5). A
- * benchmark's own `forks` option and `CODSPEED_WALLTIME_FORKS` override it.
- */
+/** `options.forks`: see {@link WalltimeOptions}; isolation requires Vitest 5. */
 export default function codspeedPlugin(options: WalltimeOptions = {}): Plugin {
   return {
     name: "codspeed:vitest",
@@ -47,40 +43,22 @@ export default function codspeedPlugin(options: WalltimeOptions = {}): Plugin {
     },
     enforce: "post",
     config(userConfig: ViteUserConfig): ViteUserConfig {
-      // Vitest measures in forked workers, whose argv is not the command that
-      // starts the benchmarks. Record the command of this main process so the
-      // workers can run it again for each benchmark. Workers inherit the env.
-      recordIsolationCommand();
-      if (options.forks !== undefined) {
-        process.env[PLUGIN_FORKS_ENV] = String(options.forks);
-      }
-      const uri = process.env[ISOLATED_BENCHMARK_ENV];
-      if (uri !== undefined) {
-        const gitDir = getGitDir(userConfig.root ?? process.cwd());
-        if (gitDir === undefined) {
-          throw new Error("Could not find a git repository");
-        }
-        // Replace rather than merge include globs: isolated children must not
-        // transform and import unrelated benchmark files.
-        const file = join(gitDir, uri.split("::")[0])
-          .replace(/\\/g, "/")
-          .replace(/[\\*?{}()[\]!+@]/g, "\\$&");
-        userConfig.test ??= {};
-        userConfig.test.benchmark ??= {};
-        userConfig.test.benchmark.include = [file];
-      }
+      const backend = resolveVitestBackend();
+      backend.configureIsolation(userConfig, options);
       return {
         test: {
           pool: "forks",
           globalSetup: [resolveFile("globalSetup")],
-          ...resolveVitestBackend().getBenchmarkTestConfig(
+          ...backend.getBenchmarkTestConfig(
             getV8Flags(),
             resolveFile,
             userConfig.test,
-            options,
           ),
         },
       };
+    },
+    configureVitest({ project }) {
+      scaleBenchTimeoutToForks(project.config, options.forks);
     },
   };
 }
