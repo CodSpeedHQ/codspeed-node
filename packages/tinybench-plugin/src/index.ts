@@ -1,4 +1,5 @@
 import {
+  ensureV8Flags,
   getCallingFile,
   getCodspeedRunnerMode,
   getInstrumentMode,
@@ -20,6 +21,8 @@ import { getOrCreateUriMap } from "./uri";
 import { runsTaskFn, setupCodspeedWalltimeBench } from "./walltime";
 
 tryIntrospect();
+// Must run before any benchmark state exists: it may replace this process.
+ensureV8Flags();
 
 export function withCodSpeed(
   bench: Bench,
