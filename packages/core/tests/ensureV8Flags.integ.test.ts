@@ -6,6 +6,12 @@ import path from "path";
 
 export {}; // Make this a module
 
+enum ScriptEntry {
+  File,
+  Stdin,
+  Eval,
+}
+
 interface BenchmarkProcess {
   spawnedPid: number | undefined;
   pid: number;
@@ -17,6 +23,7 @@ const runBenchmarkProcess = (
   env: NodeJS.ProcessEnv,
   nodeArgs: string[] = [],
   prelude = "",
+  entry = ScriptEntry.File,
 ): BenchmarkProcess => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "codspeed-ensure-v8-"));
   const script = path.join(dir, "bench.js");
@@ -34,9 +41,15 @@ process.stdout.write(
     const baseEnv = { ...process.env };
     delete baseEnv.CODSPEED_ENV;
     delete baseEnv.CODSPEED_RUNNER_MODE;
-    const result = spawnSync(process.execPath, [...nodeArgs, script], {
+    const entryArgs = {
+      [ScriptEntry.File]: [script],
+      [ScriptEntry.Stdin]: ["-"],
+      [ScriptEntry.Eval]: ["-e", `require(${JSON.stringify(script)})`],
+    }[entry];
+    const result = spawnSync(process.execPath, [...nodeArgs, ...entryArgs], {
       env: { ...baseEnv, ...env },
       encoding: "utf8",
+      input: entry === ScriptEntry.Stdin ? fs.readFileSync(script) : undefined,
     });
     if (result.status !== 0) {
       throw new Error(`child failed: ${result.stderr}`);
@@ -62,6 +75,31 @@ describe("ensureV8Flags", () => {
     expect(pid).toBe(spawnedPid);
     expect(execArgv.filter((flag) => flag === "--no-opt")).toHaveLength(1);
     expect(execArgv).toContain("--predictable");
+  });
+
+  it("restarts a process started with -e", () => {
+    const { spawnedPid, pid, execArgv } = runBenchmarkProcess(
+      { CODSPEED_ENV: "runner", CODSPEED_RUNNER_MODE: "instrumentation" },
+      [],
+      "",
+      ScriptEntry.Eval,
+    );
+
+    expect(pid).toBe(spawnedPid);
+    expect(execArgv).toContain("--no-opt");
+  });
+
+  it("keeps a process that read its script from stdin", () => {
+    // Parsing the output proves the script ran instead of an empty restart.
+    const { spawnedPid, pid, execArgv } = runBenchmarkProcess(
+      { CODSPEED_ENV: "runner", CODSPEED_RUNNER_MODE: "instrumentation" },
+      [],
+      "",
+      ScriptEntry.Stdin,
+    );
+
+    expect(pid).toBe(spawnedPid);
+    expect(execArgv).not.toContain("--no-opt");
   });
 
   it("adds the flags before the user's so user flags win", () => {
