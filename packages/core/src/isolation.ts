@@ -6,7 +6,7 @@
  * sizing), so the rounds of several forks are pooled into one result.
  */
 import { spawn, spawnSync } from "child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "fs";
+import { readFileSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 
@@ -126,37 +126,31 @@ function isolationCommand(): string[] {
  * calls time out otherwise.
  */
 export async function runForks(uri: string, forks: number): Promise<number[]> {
-  const dir = mkdtempSync(join(tmpdir(), SAMPLES_DIR_PREFIX));
-  try {
-    let samples: number[] = [];
-    for (let fork = 0; fork < forks; fork++) {
-      // Not push(...): spreading a time-based run's samples overflows the stack.
-      samples = samples.concat(await runFork(uri, join(dir, `${fork}.json`)));
-    }
-    return samples;
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
+  let samples: number[] = [];
+  for (let fork = 0; fork < forks; fork++) {
+    // Not push(...): spreading a time-based run's samples overflows the stack.
+    samples = samples.concat(await runFork(uri, samplesFile()));
   }
+  return samples;
 }
 
 /** {@link runForks} for synchronous runs, which block anyway. */
 export function runForksSync(uri: string, forks: number): number[] {
-  const dir = mkdtempSync(join(tmpdir(), SAMPLES_DIR_PREFIX));
-  try {
-    let samples: number[] = [];
-    for (let fork = 0; fork < forks; fork++) {
-      samples = samples.concat(runForkSync(uri, join(dir, `${fork}.json`)));
-    }
-    return samples;
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
+  let samples: number[] = [];
+  for (let fork = 0; fork < forks; fork++) {
+    samples = samples.concat(runForkSync(uri, samplesFile()));
   }
+  return samples;
 }
 
-const SAMPLES_DIR_PREFIX = "codspeed-forks-";
+/** Forks run one after the other, so one file per parent process suffices. */
+function samplesFile(): string {
+  return join(tmpdir(), `codspeed-samples-${process.pid}.json`);
+}
 
 /** Runs one fork of `uri` and returns the samples it wrote to `file`. */
 async function runFork(uri: string, file: string): Promise<number[]> {
+  rmSync(file, { force: true }); // a leftover file must not pass as this fork's
   const [executable, ...args] = isolationCommand();
   const child = spawn(executable, args, {
     stdio: "inherit",
@@ -171,6 +165,7 @@ async function runFork(uri: string, file: string): Promise<number[]> {
 }
 
 function runForkSync(uri: string, file: string): number[] {
+  rmSync(file, { force: true });
   const [executable, ...args] = isolationCommand();
   const result = spawnSync(executable, args, {
     stdio: "inherit",
@@ -196,24 +191,28 @@ function startError(uri: string, error: Error): Error {
   );
 }
 
-/** The samples a finished fork wrote; throws if it failed. */
+/** The samples a finished fork wrote, deleting the file; throws if it failed. */
 function forkSamples(
   uri: string,
   file: string,
   status: number | null,
   signal: NodeJS.Signals | null,
 ): number[] {
-  if (status !== 0) {
-    throw new Error(
-      `[CodSpeed] the process for ${uri} failed with ${signal ?? `exit code ${status}`}`,
-    );
-  }
   try {
-    return JSON.parse(readFileSync(file, "utf-8")) as number[];
-  } catch (error) {
-    throw new Error(
-      `[CodSpeed] the process for ${uri} did not report its samples: ${(error as Error).message}`,
-    );
+    if (status !== 0) {
+      throw new Error(
+        `[CodSpeed] the process for ${uri} failed with ${signal ?? `exit code ${status}`}`,
+      );
+    }
+    try {
+      return JSON.parse(readFileSync(file, "utf-8")) as number[];
+    } catch (error) {
+      throw new Error(
+        `[CodSpeed] the process for ${uri} did not report its samples: ${(error as Error).message}`,
+      );
+    }
+  } finally {
+    rmSync(file, { force: true });
   }
 }
 
