@@ -129,7 +129,7 @@ export async function runForks(uri: string, forks: number): Promise<number[]> {
   let samples: number[] = [];
   for (let fork = 0; fork < forks; fork++) {
     // Not push(...): spreading a time-based run's samples overflows the stack.
-    samples = samples.concat(await runFork(uri, samplesFile()));
+    samples = samples.concat(await runFork(uri));
   }
   return samples;
 }
@@ -138,50 +138,48 @@ export async function runForks(uri: string, forks: number): Promise<number[]> {
 export function runForksSync(uri: string, forks: number): number[] {
   let samples: number[] = [];
   for (let fork = 0; fork < forks; fork++) {
-    samples = samples.concat(runForkSync(uri, samplesFile()));
+    samples = samples.concat(runForkSync(uri));
   }
   return samples;
 }
 
 /** Forks run one after the other, so one file per parent process suffices. */
-function samplesFile(): string {
-  return join(tmpdir(), `codspeed-samples-${process.pid}.json`);
-}
+const SAMPLES_FILE = join(tmpdir(), `codspeed-samples-${process.pid}.json`);
 
-/** Runs one fork of `uri` and returns the samples it wrote to `file`. */
-async function runFork(uri: string, file: string): Promise<number[]> {
-  rmSync(file, { force: true }); // a leftover file must not pass as this fork's
+/** Runs one fork of `uri` and returns the samples it wrote. */
+async function runFork(uri: string): Promise<number[]> {
+  rmSync(SAMPLES_FILE, { force: true }); // a leftover file must not pass as this fork's
   const [executable, ...args] = isolationCommand();
   const child = spawn(executable, args, {
     stdio: "inherit",
-    env: forkEnv(uri, file),
+    env: forkEnv(uri),
   });
   const { promise, resolve, reject } =
     Promise.withResolvers<[number | null, NodeJS.Signals | null]>();
   child.once("error", (error) => reject(startError(uri, error)));
   child.once("close", (status, signal) => resolve([status, signal]));
   const [status, signal] = await promise;
-  return forkSamples(uri, file, status, signal);
+  return forkSamples(uri, status, signal);
 }
 
-function runForkSync(uri: string, file: string): number[] {
-  rmSync(file, { force: true });
+function runForkSync(uri: string): number[] {
+  rmSync(SAMPLES_FILE, { force: true });
   const [executable, ...args] = isolationCommand();
   const result = spawnSync(executable, args, {
     stdio: "inherit",
-    env: forkEnv(uri, file),
+    env: forkEnv(uri),
   });
   if (result.error !== undefined) {
     throw startError(uri, result.error);
   }
-  return forkSamples(uri, file, result.status, result.signal);
+  return forkSamples(uri, result.status, result.signal);
 }
 
-function forkEnv(uri: string, samplesFile: string): NodeJS.ProcessEnv {
+function forkEnv(uri: string): NodeJS.ProcessEnv {
   return {
     ...process.env,
     [ISOLATED_BENCHMARK_ENV]: uri,
-    [FORK_SAMPLES_FILE_ENV]: samplesFile,
+    [FORK_SAMPLES_FILE_ENV]: SAMPLES_FILE,
   };
 }
 
@@ -194,7 +192,6 @@ function startError(uri: string, error: Error): Error {
 /** The samples a finished fork wrote, deleting the file; throws if it failed. */
 function forkSamples(
   uri: string,
-  file: string,
   status: number | null,
   signal: NodeJS.Signals | null,
 ): number[] {
@@ -205,14 +202,14 @@ function forkSamples(
       );
     }
     try {
-      return JSON.parse(readFileSync(file, "utf-8")) as number[];
+      return JSON.parse(readFileSync(SAMPLES_FILE, "utf-8")) as number[];
     } catch (error) {
       throw new Error(
         `[CodSpeed] the process for ${uri} did not report its samples: ${(error as Error).message}`,
       );
     }
   } finally {
-    rmSync(file, { force: true });
+    rmSync(SAMPLES_FILE, { force: true });
   }
 }
 
