@@ -6,32 +6,35 @@ namespace codspeed_native {
 namespace instruments {
 namespace hooks_wrapper {
 
-static InstrumentHooks *hooks = nullptr;
+namespace {
 
-void InitializeGlobal() {
-  if (!hooks) {
-    hooks = instrument_hooks_init();
-  }
+// Created on first use: init opens the runner FIFO, so importing the module must
+// not trigger it.
+InstrumentHooks *GetHooks() {
+  static InstrumentHooks *hooks = instrument_hooks_init();
+  return hooks;
 }
+
+} // namespace
 
 Napi::Boolean IsInstrumented(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
 
-  bool instrumented = instrument_hooks_is_instrumented(hooks);
+  bool instrumented = instrument_hooks_is_instrumented(GetHooks());
   return Napi::Boolean::New(env, instrumented);
 }
 
 Napi::Number StartBenchmark(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
 
-  uint8_t result = instrument_hooks_start_benchmark(hooks);
+  uint8_t result = instrument_hooks_start_benchmark(GetHooks());
   return Napi::Number::New(env, result);
 }
 
 Napi::Number StopBenchmark(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
 
-  uint8_t result = instrument_hooks_stop_benchmark(hooks);
+  uint8_t result = instrument_hooks_stop_benchmark(GetHooks());
   return Napi::Number::New(env, result);
 }
 
@@ -54,7 +57,7 @@ Napi::Number SetExecutedBenchmark(const Napi::CallbackInfo &info) {
   std::string uri = info[1].As<Napi::String>().Utf8Value();
 
   uint8_t result =
-      instrument_hooks_set_executed_benchmark(hooks, pid, uri.c_str());
+      instrument_hooks_set_executed_benchmark(GetHooks(), pid, uri.c_str());
   return Napi::Number::New(env, result);
 }
 
@@ -76,8 +79,8 @@ Napi::Number SetIntegration(const Napi::CallbackInfo &info) {
   std::string name = info[0].As<Napi::String>().Utf8Value();
   std::string version = info[1].As<Napi::String>().Utf8Value();
 
-  uint8_t result =
-      instrument_hooks_set_integration(hooks, name.c_str(), version.c_str());
+  uint8_t result = instrument_hooks_set_integration(
+      GetHooks(), name.c_str(), version.c_str());
   return Napi::Number::New(env, result);
 }
 
@@ -104,7 +107,7 @@ Napi::Number SetEnvironment(const Napi::CallbackInfo &info) {
   std::string value = info[2].As<Napi::String>().Utf8Value();
 
   uint8_t result = instrument_hooks_set_environment(
-      hooks, section_name.c_str(), key.c_str(), value.c_str());
+      GetHooks(), section_name.c_str(), key.c_str(), value.c_str());
   return Napi::Number::New(env, result);
 }
 
@@ -125,7 +128,7 @@ Napi::Number WriteEnvironment(const Napi::CallbackInfo &info) {
 
   int32_t pid = info[0].As<Napi::Number>().Int32Value();
 
-  uint8_t result = instrument_hooks_write_environment(hooks, pid);
+  uint8_t result = instrument_hooks_write_environment(GetHooks(), pid);
   return Napi::Number::New(env, result);
 }
 
@@ -193,7 +196,7 @@ Napi::Number AddMarker(const Napi::CallbackInfo &info) {
   }
 
   uint8_t result =
-      instrument_hooks_add_marker(hooks, pid, marker_type, timestamp);
+      instrument_hooks_add_marker(GetHooks(), pid, marker_type, timestamp);
   return Napi::Number::New(env, result);
 }
 
@@ -220,8 +223,6 @@ Napi::Value __attribute__ ((noinline)) __codspeed_root_frame__(const Napi::Callb
 
 Napi::Object Initialize(Napi::Env env, Napi::Object exports) {
   Napi::Object instrumentHooksObj = Napi::Object::New(env);
-
-  InitializeGlobal();
 
   instrumentHooksObj.Set(Napi::String::New(env, "isInstrumented"),
                          Napi::Function::New(env, IsInstrumented));
