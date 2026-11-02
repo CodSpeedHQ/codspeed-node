@@ -2,6 +2,8 @@
  * Majors CodSpeed is tested against. The native addon itself is built as a
  * single Node-API binary and loads on any major, so this only gates the
  * warning about measurement stability.
+ *
+ * IMPORTANT: Keep in sync with the support matrix on the backend!
  */
 export const SUPPORTED_NODE_MAJORS = [22, 24, 26];
 
