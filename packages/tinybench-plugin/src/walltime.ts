@@ -18,6 +18,7 @@ import {
   type WalltimeOptions,
 } from "@codspeed/core";
 import { Bench, Task } from "tinybench";
+import { MIN_ROUND_TIME_NS } from "./batching";
 import { getBenchOptions } from "./benchOptions";
 import { BaseBenchRunner } from "./shared";
 
@@ -102,8 +103,15 @@ class WalltimeBenchRunner extends BaseBenchRunner {
   protected async runTaskAsync(task: Task, uri: string): Promise<void> {
     const { isolationMode } = this;
     if (isolationMode.kind === "Forks") {
-      const samples = await runForks(uri, isolationMode.forks);
-      return this.registerCodspeedBenchmark(task, samplesToResult(samples));
+      const { samples, iterationsPerRound } = await runForks(
+        uri,
+        isolationMode.forks,
+      );
+      return this.registerCodspeedBenchmark(
+        task,
+        samplesToResult(samples),
+        iterationsPerRound,
+      );
     }
 
     // run the warmup of the task right before its actual run
@@ -121,8 +129,15 @@ class WalltimeBenchRunner extends BaseBenchRunner {
   protected runTaskSync(task: Task, uri: string): void {
     const { isolationMode } = this;
     if (isolationMode.kind === "Forks") {
-      const samples = runForksSync(uri, isolationMode.forks);
-      return this.registerCodspeedBenchmark(task, samplesToResult(samples));
+      const { samples, iterationsPerRound } = runForksSync(
+        uri,
+        isolationMode.forks,
+      );
+      return this.registerCodspeedBenchmark(
+        task,
+        samplesToResult(samples),
+        iterationsPerRound,
+      );
     }
 
     if (getBenchOptions(this.bench).warmup) {
@@ -149,18 +164,25 @@ class WalltimeBenchRunner extends BaseBenchRunner {
       );
       return;
     }
+    const iterationsPerRound =
+      this.getTaskData(task).batching?.iterationsPerRound ?? 1;
     // A fork hands its samples to the parent, which reports the benchmark.
     if (this.isolationMode.kind === "Fork") {
       writeForkSamples(
         this.isolationMode.samplesFile,
         task.result.latency.samples,
+        iterationsPerRound,
       );
       return;
     }
-    this.registerCodspeedBenchmark(task, task.result);
+    this.registerCodspeedBenchmark(task, task.result, iterationsPerRound);
   }
 
-  private registerCodspeedBenchmark(task: Task, result: RoundsResult): void {
+  private registerCodspeedBenchmark(
+    task: Task,
+    result: RoundsResult,
+    iterationsPerRound: number,
+  ): void {
     const uri = this.getTaskUri(task);
     const opts = getBenchOptions(this.bench);
     const warmupIterations = opts.warmup
@@ -169,6 +191,7 @@ class WalltimeBenchRunner extends BaseBenchRunner {
     const stats = convertTinybenchResultToBenchmarkStats(
       result,
       warmupIterations,
+      iterationsPerRound,
     );
 
     this.codspeedBenchmarks.push({
@@ -177,7 +200,7 @@ class WalltimeBenchRunner extends BaseBenchRunner {
       config: {
         max_rounds: opts.iterations ?? null,
         max_time_ns: opts.time ? msToNs(opts.time) : null,
-        min_round_time_ns: null, // tinybench does not have an option for this
+        min_round_time_ns: iterationsPerRound > 1 ? MIN_ROUND_TIME_NS : null,
         warmup_time_ns:
           opts.warmup && opts.warmupTime ? msToNs(opts.warmupTime) : null,
       },
@@ -210,27 +233,30 @@ const TINYBENCH_WARMUP_DEFAULT = 16;
 function convertTinybenchResultToBenchmarkStats(
   result: RoundsResult,
   warmupIterations: number,
+  iterationsPerRound: number,
 ): BenchmarkStats {
   const { min, max, mean, sd, samples } = result.latency;
 
   // Get individual sample times in nanoseconds and sort them
-  const sortedTimesNs = samples.map(msToNs).sort((a, b) => a - b);
-  const meanNs = msToNs(mean);
-  const stdevNs = msToNs(sd);
+  const sortedTimesNs = samples
+    .map((sample) => msToNs(sample) / iterationsPerRound)
+    .sort((a, b) => a - b);
+  const meanNs = msToNs(mean) / iterationsPerRound;
+  const stdevNs = msToNs(sd) / iterationsPerRound;
 
   const { q1_ns, q3_ns, median_ns, iqr_outlier_rounds, stdev_outlier_rounds } =
     calculateQuantiles({ meanNs, stdevNs, sortedTimesNs });
 
   return {
-    min_ns: msToNs(min),
-    max_ns: msToNs(max),
+    min_ns: msToNs(min) / iterationsPerRound,
+    max_ns: msToNs(max) / iterationsPerRound,
     mean_ns: meanNs,
     stdev_ns: stdevNs,
     q1_ns,
     median_ns,
     q3_ns,
     total_time: msToS(result.totalTime),
-    iter_per_round: 1, // as there is only one round in tinybench, we define that there were n rounds of 1 iteration
+    iter_per_round: iterationsPerRound,
     rounds: sortedTimesNs.length,
     iqr_outlier_rounds,
     stdev_outlier_rounds,
