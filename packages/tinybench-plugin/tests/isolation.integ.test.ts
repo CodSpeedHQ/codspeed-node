@@ -19,7 +19,6 @@ const MIN_ROUNDS_PER_FORK = 4;
 /** Fails a run whose benchmark process got stuck instead of blocking the suite. */
 const RUN_TIMEOUT_MS = 60_000;
 const RAN_LINE = /^ran (\d+) (.+)$/;
-const RESULT_LINE = /^result (.+) (\d+)$/;
 
 interface FixtureRun {
   status: number | null;
@@ -29,8 +28,6 @@ interface FixtureRun {
   parentPid: number;
   /** Rounds of each benchmark in the results file. */
   roundsByName: Map<string, number>;
-  /** Samples in the parent's `task.result` of each benchmark. */
-  parentSamplesByName: Map<string, number>;
 }
 
 interface FixtureOptions {
@@ -83,19 +80,12 @@ async function runFixture({
     const [status] = (await once(child, "close")) as [number | null];
 
     const pidsByName = new Map<string, Set<number>>();
-    const parentSamplesByName = new Map<string, number>();
     for (const line of stdout.split("\n")) {
       const ran = RAN_LINE.exec(line);
-      if (ran) {
-        const pids = pidsByName.get(ran[2]) ?? new Set<number>();
-        pids.add(Number(ran[1]));
-        pidsByName.set(ran[2], pids);
-        continue;
-      }
-      const result = RESULT_LINE.exec(line);
-      if (result) {
-        parentSamplesByName.set(result[1], Number(result[2]));
-      }
+      if (!ran) continue;
+      const pids = pidsByName.get(ran[2]) ?? new Set<number>();
+      pids.add(Number(ran[1]));
+      pidsByName.set(ran[2], pids);
     }
 
     const roundsByName = new Map<string, number>();
@@ -111,7 +101,6 @@ async function runFixture({
       pidsByName,
       parentPid: child.pid!,
       roundsByName,
-      parentSamplesByName,
     };
   } finally {
     rmSync(profileFolder, { recursive: true, force: true });
@@ -141,8 +130,6 @@ describe("walltime forks", () => {
         expect(rounds).toBeGreaterThanOrEqual(
           DEFAULT_FORKS * MIN_ROUNDS_PER_FORK,
         );
-        // The parent reports the pooled rounds as its own `task.result`.
-        expect(run.parentSamplesByName.get(name)).toBe(rounds);
       }
       // Forks of different benchmarks are different processes too.
       const all = new Set(

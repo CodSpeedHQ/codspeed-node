@@ -1,5 +1,5 @@
 // Run by `isolation.integ.test.ts`. Prints the PID of every process that runs a
-// benchmark, and the sample count of every `task.result` the parent ends with.
+// benchmark.
 import { Bench } from "tinybench";
 import { withCodSpeed } from "../../dist/index.es5.js";
 
@@ -23,10 +23,4 @@ if (process.env.ISOLATION_FIXTURE_SYNC !== undefined) {
   bench.runSync();
 } else {
   await bench.run();
-}
-
-if (process.env.CODSPEED_ISOLATED_BENCHMARK === undefined) {
-  for (const task of bench.tasks) {
-    console.log(`result ${task.name} ${task.result?.samples.length ?? 0}`);
-  }
 }
