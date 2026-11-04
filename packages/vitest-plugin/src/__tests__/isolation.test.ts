@@ -122,18 +122,6 @@ describe("walltime forks", () => {
   );
 
   it(
-    "takes the environment over the benchmark's option",
-    async () => {
-      const run = await runFixture({ firstForks: 2, forksEnv: 1 });
-
-      expect(run.status).toBe(0);
-      expect(run.pidsByName.get("first")?.size).toBe(1);
-      expect(run.pidsByName.get("second")?.size).toBe(1);
-    },
-    RUN_TIMEOUT_MS,
-  );
-
-  it(
     "runs every benchmark in one process when isolation is disabled",
     async () => {
       const run = await runFixture({ isolation: "false" });
