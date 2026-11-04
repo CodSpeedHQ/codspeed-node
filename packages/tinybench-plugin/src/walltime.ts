@@ -103,6 +103,7 @@ class WalltimeBenchRunner extends BaseBenchRunner {
     const { isolationMode } = this;
     if (isolationMode.kind === "Forks") {
       const samples = await runForks(uri, isolationMode.forks);
+      setTaskResult(task, samples);
       return this.registerCodspeedBenchmark(task, samplesToResult(samples));
     }
 
@@ -122,6 +123,7 @@ class WalltimeBenchRunner extends BaseBenchRunner {
     const { isolationMode } = this;
     if (isolationMode.kind === "Forks") {
       const samples = runForksSync(uri, isolationMode.forks);
+      setTaskResult(task, samples);
       return this.registerCodspeedBenchmark(task, samplesToResult(samples));
     }
 
@@ -151,10 +153,9 @@ class WalltimeBenchRunner extends BaseBenchRunner {
     }
     // A fork hands its samples to the parent, which reports the benchmark.
     if (this.isolationMode.kind === "Fork") {
-      writeForkSamples(
-        this.isolationMode.samplesFile,
-        task.result.latency.samples,
-      );
+      writeForkSamples(this.isolationMode.samplesFile, [
+        ...task.result.latency.samples,
+      ]);
       return;
     }
     this.registerCodspeedBenchmark(task, task.result);
@@ -236,4 +237,17 @@ function convertTinybenchResultToBenchmarkStats(
     stdev_outlier_rounds,
     warmup_iters: warmupIterations,
   };
+}
+
+/**
+ * Fills `task.result` from the pooled fork samples so `bench.table()` and
+ * `bench.results` work. Only tinybench 4/5 expose a way in; v6 keeps the
+ * result `#private`.
+ */
+function setTaskResult(task: Task, samples: number[]): void {
+  const { processRunResult } = task as unknown as {
+    processRunResult?: (run: { latencySamples: number[] }) => void;
+  };
+  // tinybench sorts the samples in place.
+  processRunResult?.call(task, { latencySamples: [...samples] });
 }
