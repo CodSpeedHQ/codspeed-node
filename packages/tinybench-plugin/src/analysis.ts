@@ -14,9 +14,7 @@ export function setupCodspeedAnalysisBench(
   bench: Bench,
   rootCallingFile: string,
 ): void {
-  const runner = new AnalysisBenchRunner(bench, rootCallingFile, {
-    kind: "SharedProcess",
-  });
+  const runner = new AnalysisBenchRunner(bench, rootCallingFile);
   runner.setupBenchMethods();
 }
 

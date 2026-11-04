@@ -8,17 +8,15 @@ declare const __VERSION__: string;
 export abstract class BaseBenchRunner {
   protected bench: Bench;
   protected rootCallingFile: string;
-  /** Walltime runners pass the isolation of this process; analysis shares it. */
-  protected readonly isolationMode: IsolationMode;
 
   constructor(
     bench: Bench,
     rootCallingFile: string,
-    isolationMode: IsolationMode,
+    /** Only walltime runs are isolated. */
+    protected readonly isolationMode: IsolationMode = { kind: "SharedProcess" },
   ) {
     this.bench = bench;
     this.rootCallingFile = rootCallingFile;
-    this.isolationMode = isolationMode;
   }
 
   protected get isChild(): boolean {
@@ -85,7 +83,8 @@ export abstract class BaseBenchRunner {
       }
       this.setupBenchRun();
 
-      for (const { task, uri } of tasks) {
+      for (const task of tasks) {
+        const uri = this.getTaskUri(task);
         await this.runTaskAsync(task, uri);
       }
 
@@ -99,7 +98,8 @@ export abstract class BaseBenchRunner {
       }
       this.setupBenchRun();
 
-      for (const { task, uri } of tasks) {
+      for (const task of tasks) {
+        const uri = this.getTaskUri(task);
         this.runTaskSync(task, uri);
       }
 
@@ -108,12 +108,11 @@ export abstract class BaseBenchRunner {
   }
 
   /** The tasks this process measures: all of them, or the isolated one. */
-  private selectTasks(): { task: Task; uri: string }[] {
-    return this.bench.tasks
-      .map((task) => ({ task, uri: this.getTaskUri(task) }))
-      .filter(
-        ({ uri }) =>
-          this.isolationMode.kind !== "Fork" || this.isolationMode.uri === uri,
-      );
+  private selectTasks(): Task[] {
+    const { isolationMode } = this;
+    if (isolationMode.kind !== "Fork") return this.bench.tasks;
+    return this.bench.tasks.filter(
+      (task) => this.getTaskUri(task) === isolationMode.uri,
+    );
   }
 }
