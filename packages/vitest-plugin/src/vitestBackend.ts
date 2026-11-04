@@ -7,8 +7,8 @@ import {
 import { join } from "path";
 import { type ViteUserConfig } from "vitest/config";
 import {
-  type Reporter,
   type TestProject,
+  type Vitest,
   version as vitestVersion,
 } from "vitest/node";
 import { provideParentContext } from "./v5/forkContext";
@@ -20,10 +20,11 @@ export interface VitestBackend {
   configureIsolation(userConfig: ViteUserConfig): void;
 
   /** Runs per project, before Vitest initializes its global setup. */
-  configureProject(project: TestProject): void;
-
-  /** The reporter that measures the queued benchmarks in forks, if any. */
-  forkReporter(options: WalltimeOptions): Reporter | undefined;
+  configureVitest(
+    project: TestProject,
+    vitest: Vitest,
+    options: WalltimeOptions,
+  ): void;
 
   getBenchmarkTestConfig(
     v8Flags: string[],
@@ -40,6 +41,10 @@ export function resolveVitestBackend(): VitestBackend {
   const major = parseInt(vitestVersion, 10);
   return major >= 5 ? new V5Backend() : new LegacyBackend(major);
 }
+
+// `configureVitest` runs once per project, but one reporter sees every
+// project's modules: a second one would fork every benchmark twice.
+const vitestsWithForkReporter = new WeakSet<Vitest>();
 
 /** Vitest 5+: benchmarks run through a `benchmark.provider` (`v5/provider.ts`). */
 class V5Backend implements VitestBackend {
@@ -63,26 +68,26 @@ class V5Backend implements VitestBackend {
     userConfig.test!.globalSetup = [];
   }
 
-  configureProject(project: TestProject): void {
-    if (getInstrumentMode() !== "walltime") return;
-    if (walltimeIsolation().kind !== "Fork") return;
-    provideParentContext(project);
-  }
-
   /**
    * The parent of a forked walltime run measures nothing in its workers: they
    * queue the benchmarks, and the main process forks them once the run is over.
    */
-  forkReporter(options: WalltimeOptions): Reporter | undefined {
-    if (getInstrumentMode() !== "walltime") return undefined;
+  configureVitest(
+    project: TestProject,
+    vitest: Vitest,
+    options: WalltimeOptions,
+  ): void {
+    if (getInstrumentMode() !== "walltime") return;
     const isolationMode = walltimeIsolation();
-    switch (isolationMode.kind) {
-      case "Forks":
-        return forkReporter(options);
-      case "SharedProcess":
-      case "Fork":
-        return undefined;
+    if (isolationMode.kind === "Fork") {
+      provideParentContext(project);
+      return;
     }
+    if (isolationMode.kind !== "Forks") return;
+    if (vitestsWithForkReporter.has(vitest)) return;
+    vitestsWithForkReporter.add(vitest);
+    // Vitest builds its reporters from the config after this hook runs.
+    vitest.config.reporters.push(forkReporter(options));
   }
 
   getBenchmarkTestConfig(
@@ -135,8 +140,7 @@ class LegacyBackend implements VitestBackend {
 
   // Vitest 3/4 do not support process isolation.
   configureIsolation(): void {}
-  configureProject(): void {}
-  forkReporter(): undefined {}
+  configureVitest(): void {}
 
   getBenchmarkTestConfig(
     v8Flags: string[],

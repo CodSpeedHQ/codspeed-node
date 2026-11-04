@@ -10,12 +10,7 @@ import {
 import { join } from "path";
 import { Plugin } from "vite";
 import { type ViteUserConfig } from "vitest/config";
-import { type Vitest } from "vitest/node";
 import { resolveVitestBackend } from "./vitestBackend";
-
-// `configureVitest` runs once per project, but one reporter sees every
-// project's modules: a second one would fork every benchmark twice.
-const vitestsWithForkReporter = new WeakSet<Vitest>();
 
 // get this file's directory path from import.meta.url
 const __dirname = new URL(".", import.meta.url).pathname;
@@ -60,15 +55,7 @@ export default function codspeedPlugin(options: WalltimeOptions = {}): Plugin {
       };
     },
     configureVitest({ project, vitest }) {
-      const backend = resolveVitestBackend();
-      backend.configureProject(project);
-      if (vitestsWithForkReporter.has(vitest)) return;
-      vitestsWithForkReporter.add(vitest);
-      const reporter = backend.forkReporter(options);
-      // Vitest builds its reporters from the config after this hook runs.
-      if (reporter) {
-        vitest.config.reporters.push(reporter);
-      }
+      resolveVitestBackend().configureVitest(project, vitest, options);
     },
   };
 }
