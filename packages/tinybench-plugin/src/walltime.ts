@@ -9,6 +9,7 @@ import {
   runForks,
   runForksSync,
   samplesToResult,
+  sortedSamplesNs,
   walltimeIsolation,
   writeForkSamples,
   writeWalltimeResults,
@@ -213,8 +214,7 @@ function convertTinybenchResultToBenchmarkStats(
 ): BenchmarkStats {
   const { min, max, mean, sd, samples } = result.latency;
 
-  // Get individual sample times in nanoseconds and sort them
-  const sortedTimesNs = samples.map(msToNs).sort((a, b) => a - b);
+  const sortedTimesNs = sortedSamplesNs(samples);
   const meanNs = msToNs(mean);
   const stdevNs = msToNs(sd);
 
