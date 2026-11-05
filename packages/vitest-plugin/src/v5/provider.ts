@@ -2,11 +2,11 @@ import {
   getGitDir,
   getInstrumentMode,
   InstrumentHooks,
-  walltimeIsolation,
   optimizeFunction,
   optimizeFunctionSync,
   setupCore,
   teardownCore,
+  walltimeIsolation,
   wrapWithRootFrame,
   wrapWithRootFrameSync,
   writeForkSamples,
@@ -258,9 +258,7 @@ async function runWalltime(
   throwOnErroredTasks(tasks);
   if (mode.kind === "Fork") {
     for (const task of tasks) {
-      writeForkSamples(mode.samplesFile, [
-        ...(task.result?.latency.samples ?? []),
-      ]);
+      writeForkSamples(mode.samplesFile, task.result?.latency.samples ?? []);
     }
   } else {
     collectWalltimeResults(bench, getUri);

@@ -5,6 +5,7 @@ import {
   MARKER_TYPE_BENCHMARK_START,
   msToNs,
   msToS,
+  sortedSamplesNs,
   writeWalltimeResults,
   type Benchmark,
   type BenchmarkStats,
@@ -34,7 +35,7 @@ interface TinybenchStatistics {
   max: number;
   mean: number;
   sd: number;
-  samples: number[] | undefined;
+  samples: ArrayLike<number> | undefined;
 }
 
 interface TinybenchTaskResult {
@@ -169,7 +170,7 @@ function tinybenchResultToStats(
   const { totalTime, latency } = result;
   const { min, max, mean, sd, samples } = latency;
 
-  const sortedTimesNs = (samples ?? []).map(msToNs).sort((a, b) => a - b);
+  const sortedTimesNs = sortedSamplesNs(samples ?? []);
   const meanNs = msToNs(mean);
   const stdevNs = msToNs(sd);
 
