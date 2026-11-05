@@ -110,20 +110,37 @@ function currentCommand(): string[] {
  * fork would only copy the calling thread. Call it from the process whose
  * command runs the benchmarks: Vitest's main process, not a worker.
  */
-export async function runForks(uri: string, forks: number): Promise<number[]> {
-  let samples: number[] = [];
+export async function runForks(
+  uri: string,
+  forks: number,
+): Promise<Float64Array> {
+  const samples: Float64Array[] = [];
   for (let fork = 0; fork < forks; fork++) {
-    // Not push(...): spreading a time-based run's samples overflows the stack.
-    samples = samples.concat(await runFork(uri));
+    samples.push(await runFork(uri));
   }
-  return samples;
+  return concatSamples(samples);
 }
 
 /** {@link runForks} for synchronous runs, which block anyway. */
-export function runForksSync(uri: string, forks: number): number[] {
-  let samples: number[] = [];
+export function runForksSync(uri: string, forks: number): Float64Array {
+  const samples: Float64Array[] = [];
   for (let fork = 0; fork < forks; fork++) {
-    samples = samples.concat(runForkSync(uri));
+    samples.push(runForkSync(uri));
+  }
+  return concatSamples(samples);
+}
+
+/**
+ * Samples stay in typed arrays: a fast benchmark records tens of millions of
+ * them per fork, which as JS numbers exceed the V8 heap limit of the parent.
+ */
+function concatSamples(chunks: Float64Array[]): Float64Array {
+  const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const samples = new Float64Array(length);
+  let offset = 0;
+  for (const chunk of chunks) {
+    samples.set(chunk, offset);
+    offset += chunk.length;
   }
   return samples;
 }
@@ -137,7 +154,7 @@ function newSamplesFile(): string {
 }
 
 /** Runs one fork of `uri` and returns the samples it wrote. */
-async function runFork(uri: string): Promise<number[]> {
+async function runFork(uri: string): Promise<Float64Array> {
   const samplesFile = newSamplesFile();
   const [executable, ...args] = currentCommand();
   const child = spawn(executable, args, {
@@ -152,7 +169,7 @@ async function runFork(uri: string): Promise<number[]> {
   return forkSamples(uri, samplesFile, status, signal);
 }
 
-function runForkSync(uri: string): number[] {
+function runForkSync(uri: string): Float64Array {
   const samplesFile = newSamplesFile();
   const [executable, ...args] = currentCommand();
   const result = spawnSync(executable, args, {
@@ -185,7 +202,7 @@ function forkSamples(
   samplesFile: string,
   status: number | null,
   signal: NodeJS.Signals | null,
-): number[] {
+): Float64Array {
   try {
     if (status !== 0) {
       throw new Error(
@@ -193,7 +210,7 @@ function forkSamples(
       );
     }
     try {
-      return deserialize(gunzipSync(readFileSync(samplesFile))) as number[];
+      return deserialize(gunzipSync(readFileSync(samplesFile))) as Float64Array;
     } catch (error) {
       throw new Error(
         `[CodSpeed] the process for ${uri} did not report its samples: ${(error as Error).message}`,
@@ -205,9 +222,14 @@ function forkSamples(
 }
 
 /** Hands round samples (milliseconds) to the parent as gzip-compressed V8 data. */
-export function writeForkSamples(samplesFile: string, samples: number[]) {
+export function writeForkSamples(
+  samplesFile: string,
+  samples: ArrayLike<number>,
+) {
   writeFileSync(
     samplesFile,
-    gzipSync(serialize(samples), { level: constants.Z_BEST_SPEED }),
+    gzipSync(serialize(Float64Array.from(samples)), {
+      level: constants.Z_BEST_SPEED,
+    }),
   );
 }

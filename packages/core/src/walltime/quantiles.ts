@@ -3,7 +3,7 @@ export function calculateQuantiles({
   stdevNs,
   meanNs,
 }: {
-  sortedTimesNs: number[];
+  sortedTimesNs: ArrayLike<number>;
   stdevNs: number;
   meanNs: number;
 }): {
@@ -41,17 +41,16 @@ export function calculateQuantiles({
   const iqr_ns = q3_ns - q1_ns;
 
   // Calculate outliers using same algorithm as pytest-codspeed
-  const iqr_outlier_rounds = sortedTimesNs.filter(
-    (t) =>
-      t < q1_ns - IQR_OUTLIER_FACTOR * iqr_ns ||
-      t > q3_ns + IQR_OUTLIER_FACTOR * iqr_ns,
-  ).length;
-
-  const stdev_outlier_rounds = sortedTimesNs.filter(
-    (t) =>
-      t < meanNs - STDEV_OUTLIER_FACTOR * stdevNs ||
-      t > meanNs + STDEV_OUTLIER_FACTOR * stdevNs,
-  ).length;
+  const iqr_outlier_rounds = countOutside(
+    sortedTimesNs,
+    q1_ns - IQR_OUTLIER_FACTOR * iqr_ns,
+    q3_ns + IQR_OUTLIER_FACTOR * iqr_ns,
+  );
+  const stdev_outlier_rounds = countOutside(
+    sortedTimesNs,
+    meanNs - STDEV_OUTLIER_FACTOR * stdevNs,
+    meanNs + STDEV_OUTLIER_FACTOR * stdevNs,
+  );
 
   return {
     q1_ns,
@@ -62,7 +61,22 @@ export function calculateQuantiles({
   };
 }
 
-function interpolateQuantile(sortedArray: number[], index: number): number {
+function countOutside(
+  times: ArrayLike<number>,
+  low: number,
+  high: number,
+): number {
+  let count = 0;
+  for (let i = 0; i < times.length; i++) {
+    if (times[i] < low || times[i] > high) count++;
+  }
+  return count;
+}
+
+function interpolateQuantile(
+  sortedArray: ArrayLike<number>,
+  index: number,
+): number {
   const lowerIndex = Math.floor(index);
   const upperIndex = Math.ceil(index);
 
