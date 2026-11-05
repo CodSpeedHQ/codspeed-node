@@ -190,4 +190,4 @@ jobs:
           working-directory: examples/with-electron-and-walltime
           run: xvfb-run -a pnpm bench:electron
           mode: walltime
-          runner-version: v4.17.7-alpha.2
+          runner-version: latest
