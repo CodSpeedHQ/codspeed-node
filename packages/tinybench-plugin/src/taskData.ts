@@ -7,6 +7,7 @@ import { Bench, Fn, FnOptions } from "tinybench";
 export interface CapturedTaskData {
   fn: Fn;
   fnOpts?: FnOptions;
+  batching?: { iterationsPerRound: number };
 }
 
 const taskDataMap = new WeakMap<Bench, Map<string, CapturedTaskData>>();

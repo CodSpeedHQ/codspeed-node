@@ -7,17 +7,25 @@ import {
   SetupInstrumentsRequestBody,
   SetupInstrumentsResponse,
   tryIntrospect,
+  walltimeIsolation,
   wrapWithRootFrameSync,
   type WalltimeOptions,
 } from "@codspeed/core";
 import { Bench } from "tinybench";
 import { setupCodspeedAnalysisBench } from "./analysis";
+import { batchTask } from "./batching";
 import { getOrCreateTaskDataMap } from "./taskData";
 import { getOrCreateUriMap } from "./uri";
 import { setupCodspeedWalltimeBench } from "./walltime";
 
 tryIntrospect();
 
+/**
+ * Walltime rounds batch sequential invocations toward a 1 ms target, estimated
+ * from warmup (or a short calibration when disabled). Forks share one batch size.
+ * Per-invocation hooks and task concurrency stay unbatched. CodSpeed reports
+ * per-invocation batch averages; total time is the sum of measured round durations.
+ */
 export function withCodSpeed(
   bench: Bench,
   options: WalltimeOptions = {},
@@ -42,15 +50,24 @@ export function withCodSpeed(
     }
     uri += `::${name}`;
     uriMap.set(name, uri);
-    taskDataMap.set(name, { fn, fnOpts: opts });
-    // In walltime mode the task is driven by tinybench's own measured loop, so
-    // the root frame must be baked into the function tinybench stores rather
-    // than injected later (the function is an inaccessible private field on the
-    // task from tinybench v6 onwards). The sync wrapper is transparent to the
-    // function's return value, so it preserves tinybench's sync/async handling.
-    const registeredFn =
-      instrumentMode === "walltime" ? wrapWithRootFrameSync(fn) : fn;
-    return rawAdd.bind(bench)(name, registeredFn, opts);
+    if (instrumentMode !== "walltime") {
+      taskDataMap.set(name, { fn, fnOpts: opts });
+      return rawAdd.call(bench, name, fn, opts);
+    }
+    const isolation = walltimeIsolation(options.forks);
+    let inheritedIterations: number | undefined;
+    if (isolation.kind === "Fork") {
+      inheritedIterations = isolation.iterationsPerRound;
+    }
+    const batching = batchTask(bench, fn, opts, inheritedIterations);
+    taskDataMap.set(name, { fn, fnOpts: opts, batching });
+    // Tinybench v6 stores the function in a private field, so wrap at registration.
+    return rawAdd.call(
+      bench,
+      name,
+      wrapWithRootFrameSync(batching.fn),
+      batching.options,
+    );
   };
 
   if (instrumentMode === "analysis") {

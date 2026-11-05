@@ -1,6 +1,7 @@
 import { spawnSync } from "child_process";
 import { join } from "path";
 import {
+  FORK_ITERATIONS_PER_ROUND_ENV,
   FORK_SAMPLES_FILE_ENV,
   ISOLATED_BENCHMARK_ENV,
   PROCESS_ISOLATION_ENV,
@@ -15,6 +16,10 @@ const RUN_TIMEOUT_MS = 60_000;
 const CHILD_EXIT_CODE = 3;
 const RAN_LINE = /^ran (\d+) (.+)$/;
 const SAMPLES_LINE = /^samples (\d+)$/;
+/** A fork tells whether it picked the iterations per round or reused them. */
+const CALIBRATED_LINE = /^calibrated (\d+)$/;
+const REUSED_LINE = /^reused (\d+)$/;
+const ITERATIONS_LINE = /^iterations (\d+)$/;
 /** Passed to Node to check that forks keep the flags of their parent. */
 const NODE_FLAG = "--no-warnings";
 /** Each fork of the fixture reports two samples. */
@@ -24,6 +29,7 @@ const ENV_KEYS = [
   PROCESS_ISOLATION_ENV,
   ISOLATED_BENCHMARK_ENV,
   FORK_SAMPLES_FILE_ENV,
+  FORK_ITERATIONS_PER_ROUND_ENV,
   WALLTIME_FORKS_ENV,
 ];
 const savedEnv = Object.fromEntries(
@@ -104,19 +110,48 @@ describe("walltimeIsolation", () => {
       samplesFile: "samples.json",
     });
   });
+
+  it("tells a fork the iterations per round of the first fork", () => {
+    setEnv({
+      [ISOLATED_BENCHMARK_ENV]: "file::bench",
+      [FORK_SAMPLES_FILE_ENV]: "samples.json",
+      [FORK_ITERATIONS_PER_ROUND_ENV]: "4",
+    });
+    expect(walltimeIsolation()).toEqual({
+      kind: "Fork",
+      uri: "file::bench",
+      samplesFile: "samples.json",
+      iterationsPerRound: 4,
+    });
+  });
+
+  it.each(["0", "-1", "1.5", "abc"])(
+    "rejects the iterations per round %p",
+    (value) => {
+      setEnv({
+        [ISOLATED_BENCHMARK_ENV]: "file::bench",
+        [FORK_SAMPLES_FILE_ENV]: "samples.json",
+        [FORK_ITERATIONS_PER_ROUND_ENV]: value,
+      });
+      expect(() => walltimeIsolation()).toThrow(FORK_ITERATIONS_PER_ROUND_ENV);
+    },
+  );
 });
 
 interface FixtureOptions {
   forks: number;
-  action?: "exit" | "no-samples";
+  /** The iterations per round the first fork reports. Defaults to 1. */
+  iterations?: number;
+  action?: "exit" | "no-samples" | "mismatch";
   sync?: boolean;
 }
 
-function runFixture({ forks, action, sync }: FixtureOptions) {
+function runFixture({ forks, iterations, action, sync }: FixtureOptions) {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     ISOLATION_FIXTURE_ACTION: action,
     ISOLATION_FIXTURE_FORKS: String(forks),
+    ISOLATION_FIXTURE_ITERATIONS: iterations?.toString(),
   };
   for (const key of ENV_KEYS) {
     delete env[key];
@@ -141,7 +176,17 @@ function runFixture({ forks, action, sync }: FixtureOptions) {
     stderr: result.stderr,
     ran,
     samples: samples ? Number(samples[1]) : undefined,
+    calibrated: counts(CALIBRATED_LINE, lines),
+    reused: counts(REUSED_LINE, lines),
+    iterations: counts(ITERATIONS_LINE, lines)[0],
   };
+}
+
+function counts(pattern: RegExp, lines: string[]): number[] {
+  return lines
+    .map((line) => pattern.exec(line))
+    .filter((match): match is RegExpExecArray => match !== null)
+    .map((match) => Number(match[1]));
 }
 
 describe.each([
@@ -159,6 +204,44 @@ describe.each([
       expect(JSON.parse(match[2])).toEqual([NODE_FLAG]);
     }
     expect(samples).toBe(forks * SAMPLES_PER_FORK);
+  });
+
+  it("reports one iteration per round when nothing batches", () => {
+    const { status, calibrated, reused, iterations } = runFixture({
+      forks: 2,
+      sync,
+    });
+
+    expect(status).toBe(0);
+    expect(calibrated).toEqual([1]);
+    expect(reused).toEqual([1]);
+    expect(iterations).toBe(1);
+  });
+
+  it("runs the forks after the first one with its iterations per round", () => {
+    const forks = 3;
+    const { status, calibrated, reused, iterations } = runFixture({
+      forks,
+      sync,
+      iterations: 4,
+    });
+
+    expect(status).toBe(0);
+    expect(calibrated).toEqual([4]);
+    expect(reused).toEqual(Array(forks - 1).fill(4));
+    expect(iterations).toBe(4);
+  });
+
+  it("fails when a fork measures a different number of iterations per round", () => {
+    const { status, stderr } = runFixture({
+      forks: 2,
+      sync,
+      iterations: 2,
+      action: "mismatch",
+    });
+
+    expect(status).not.toBe(0);
+    expect(stderr).toContain("a different number of iterations per round");
   });
 
   it("fails on a failing fork and runs no further fork", () => {
