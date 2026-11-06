@@ -30,6 +30,8 @@ await bench(
       kind: "electron",
       appPath: path.join(appRoot, "out/main/index.js"),
       cwd: appRoot,
+      // Keep Chromium's shared memory in /tmp: CI runners may lack /dev/shm.
+      electronArgs: ["--disable-dev-shm-usage"],
     },
     beforeRound: async ({ page }) => {
       page.setDefaultTimeout(180_000);
