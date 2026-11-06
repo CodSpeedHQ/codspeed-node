@@ -12,8 +12,7 @@ export abstract class BaseBenchRunner {
   constructor(
     bench: Bench,
     rootCallingFile: string,
-    /** Only walltime runs are isolated. */
-    protected readonly isolationMode: IsolationMode = { kind: "SharedProcess" },
+    protected readonly isolationMode: IsolationMode,
   ) {
     this.bench = bench;
     this.rootCallingFile = rootCallingFile;
