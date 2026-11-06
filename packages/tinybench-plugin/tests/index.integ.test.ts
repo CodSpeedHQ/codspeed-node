@@ -41,6 +41,8 @@ vi.mock("@codspeed/core", async (importOriginal) => {
 beforeEach(() => {
   process.env.CODSPEED_ENV = "true";
   process.env.CODSPEED_RUNNER_MODE = "instrumentation";
+  // The mocked core only exists in this process, forks would not see it.
+  process.env.CODSPEED_PROCESS_ISOLATION = "false";
   vi.clearAllMocks();
 });
 

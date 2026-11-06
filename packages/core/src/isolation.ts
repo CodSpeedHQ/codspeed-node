@@ -1,9 +1,10 @@
 /**
- * Process isolation for walltime runs: every benchmark runs in fresh copies
- * of the benchmark process (forks), so the allocator state, JIT state, and
- * handles that other benchmarks or setup code leave behind can't change its
- * measurement. Rounds within one process are correlated (JIT tier-up, heap
- * sizing), so the rounds of several forks are pooled into one result.
+ * Process isolation: every benchmark runs in fresh copies of the benchmark
+ * process (forks), so the allocator state, JIT state, and handles that other
+ * benchmarks or setup code leave behind can't change its measurement. Walltime
+ * rounds within one process are correlated (JIT tier-up, heap sizing), so the
+ * rounds of several forks are pooled into one result. Analysis runs measure
+ * each benchmark once, in one fork.
  */
 import { spawn, spawnSync } from "child_process";
 import { randomUUID } from "crypto";
@@ -48,6 +49,19 @@ export type IsolationMode =
  * integration's option, which {@link WALLTIME_FORKS_ENV} overrides.
  */
 export function walltimeIsolation(forks?: number): IsolationMode {
+  return isolationFromEnv(() => resolveWalltimeForks(forks));
+}
+
+/**
+ * The isolation of an analysis (simulation, memory) run, from the environment.
+ * The instruments hold the measurement, so its forks write empty samples,
+ * which only tell the parent that they measured their benchmark.
+ */
+export function analysisIsolation(): IsolationMode {
+  return isolationFromEnv(() => 1);
+}
+
+function isolationFromEnv(forks: () => number): IsolationMode {
   const uri = process.env[ISOLATED_BENCHMARK_ENV];
   if (uri !== undefined) {
     const samplesFile = process.env[FORK_SAMPLES_FILE_ENV];
@@ -67,7 +81,7 @@ export function walltimeIsolation(forks?: number): IsolationMode {
       `[CodSpeed] ${PROCESS_ISOLATION_ENV} must be 0, false, 1, or true, got \`${isolation}\``,
     );
   }
-  return { kind: "Forks", forks: resolveWalltimeForks(forks) };
+  return { kind: "Forks", forks: forks() };
 }
 
 /**

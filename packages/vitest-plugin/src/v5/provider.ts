@@ -1,4 +1,5 @@
 import {
+  analysisIsolation,
   getGitDir,
   getInstrumentMode,
   InstrumentHooks,
@@ -152,21 +153,42 @@ const provider: BenchmarkProvider = {
     if (isWalltime) {
       return runWalltime(registrations, options, getUri, test);
     }
-    return runAnalysis(registrations, getUri);
+    return runAnalysis(registrations, getUri, test);
   },
 };
 
 async function runAnalysis(
   registrations: BenchRegistrationInput[],
   getUri: (name: string) => string,
+  test: BenchmarkGroup["test"],
 ): Promise<BenchResult[]> {
+  const mode = analysisIsolation();
+  if (mode.kind === "Forks") {
+    queueForkedBenchmarks(
+      test.meta,
+      registrations.map(({ name }) => ({
+        uri: getUri(name),
+        name,
+        forks: undefined,
+        options: {},
+      })),
+    );
+    return registrations.map(({ name }) => analysisResult(name));
+  }
+
   const label = InstrumentHooks.isInstrumented() ? "Measured" : "Checked";
   const results: BenchResult[] = [];
   for (const { name, fn, fnOpts } of registrations) {
     const uri = getUri(name);
+    results.push(analysisResult(name));
+    // A fork measures only its benchmark; Vitest still gets every result.
+    if (mode.kind === "Fork" && mode.uri !== uri) continue;
     await runAnalysisTask(fn, fnOpts, uri);
     console.log(`[CodSpeed] ${label} ${uri}`);
-    results.push(analysisResult(name));
+    if (mode.kind === "Fork") {
+      // The empty samples tell the parent that this fork measured its benchmark.
+      writeForkSamples(mode.samplesFile, []);
+    }
   }
   return results;
 }

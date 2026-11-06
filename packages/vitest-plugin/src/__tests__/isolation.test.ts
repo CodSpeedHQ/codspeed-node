@@ -1,6 +1,7 @@
 import { spawn } from "child_process";
 import { once } from "events";
 import {
+  existsSync,
   mkdtempSync,
   readdirSync,
   readFileSync,
@@ -44,6 +45,7 @@ interface FixtureOptions {
   pluginForks?: number;
   firstForks?: number;
   failing?: boolean;
+  mode?: "walltime" | "simulation";
 }
 
 async function runFixture(options: FixtureOptions = {}) {
@@ -53,7 +55,7 @@ async function runFixture(options: FixtureOptions = {}) {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     CODSPEED_ENV: "true",
-    CODSPEED_RUNNER_MODE: "walltime",
+    CODSPEED_RUNNER_MODE: options.mode ?? "walltime",
     CODSPEED_PROFILE_FOLDER: profileFolder,
     ISOLATION_LOG_FILE: logFile,
     [PROCESS_ISOLATION_ENV]: options.isolation,
@@ -85,7 +87,9 @@ async function runFixture(options: FixtureOptions = {}) {
 
   const roundsByName = new Map<string, number>();
   const resultsDir = join(profileFolder, "results");
-  for (const file of status === 0 ? readdirSync(resultsDir) : []) {
+  // Only walltime runs write results: the instruments hold analysis ones.
+  const resultFiles = existsSync(resultsDir) ? readdirSync(resultsDir) : [];
+  for (const file of resultFiles) {
     const data = JSON.parse(readFileSync(join(resultsDir, file), "utf8"));
     for (const benchmark of data.benchmarks) {
       roundsByName.set(benchmark.name, benchmark.stats.rounds);
@@ -143,6 +147,23 @@ describe("walltime forks", () => {
       const run = await runFixture({ failing: true, forksEnv: 1 });
 
       expect(run.status).not.toBe(0);
+    },
+    RUN_TIMEOUT_MS,
+  );
+});
+
+describe("simulation isolation", () => {
+  it(
+    "runs every benchmark in its own process",
+    async () => {
+      const run = await runFixture({ mode: "simulation", forksEnv: 2 });
+
+      expect(run.status, run.stderr).toBe(0);
+      const pids = ["first", "second", "third"].map((name) => {
+        expect(run.pidsByName.get(name)?.size).toBe(1);
+        return [...run.pidsByName.get(name)!][0];
+      });
+      expect(new Set(pids).size).toBe(pids.length);
     },
     RUN_TIMEOUT_MS,
   );

@@ -1,11 +1,15 @@
 import {
+  analysisIsolation,
   getCodspeedRunnerMode,
   InstrumentHooks,
   mongoMeasurement,
   optimizeFunction,
   optimizeFunctionSync,
+  runForks,
+  runForksSync,
   wrapWithRootFrame,
   wrapWithRootFrameSync,
+  writeForkSamples,
 } from "@codspeed/core";
 import { Bench, Task } from "tinybench";
 import { BaseBenchRunner } from "./shared";
@@ -14,7 +18,11 @@ export function setupCodspeedAnalysisBench(
   bench: Bench,
   rootCallingFile: string,
 ): void {
-  const runner = new AnalysisBenchRunner(bench, rootCallingFile);
+  const runner = new AnalysisBenchRunner(
+    bench,
+    rootCallingFile,
+    analysisIsolation(),
+  );
   runner.setupBenchMethods();
 }
 
@@ -28,7 +36,20 @@ class AnalysisBenchRunner extends BaseBenchRunner {
     return InstrumentHooks.isInstrumented() ? "Measured" : "Checked";
   }
 
+  /** A fork's empty samples tell its parent that it measured its task. */
+  private completeTask(uri: string): void {
+    this.logTaskCompletion(uri, this.taskCompletionMessage());
+    if (this.isolationMode.kind === "Fork") {
+      writeForkSamples(this.isolationMode.samplesFile, []);
+    }
+  }
+
   protected async runTaskAsync(task: Task, uri: string): Promise<void> {
+    if (this.isolationMode.kind === "Forks") {
+      await runForks(uri, this.isolationMode.forks);
+      return;
+    }
+
     const { fnOpts, fn } = this.getTaskData(task);
 
     await fnOpts?.beforeAll?.call(task, "run");
@@ -56,10 +77,15 @@ class AnalysisBenchRunner extends BaseBenchRunner {
     await fnOpts?.afterEach?.call(task, "run");
     await fnOpts?.afterAll?.call(task, "run");
 
-    this.logTaskCompletion(uri, this.taskCompletionMessage());
+    this.completeTask(uri);
   }
 
   protected runTaskSync(task: Task, uri: string): void {
+    if (this.isolationMode.kind === "Forks") {
+      runForksSync(uri, this.isolationMode.forks);
+      return;
+    }
+
     const { fnOpts, fn } = this.getTaskData(task);
 
     fnOpts?.beforeAll?.call(task, "run");
@@ -85,7 +111,7 @@ class AnalysisBenchRunner extends BaseBenchRunner {
     fnOpts?.afterEach?.call(task, "run");
     fnOpts?.afterAll?.call(task, "run");
 
-    this.logTaskCompletion(uri, this.taskCompletionMessage());
+    this.completeTask(uri);
   }
 
   protected finalizeAsyncRun(): Task[] {

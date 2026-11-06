@@ -1,15 +1,17 @@
 import {
+  analysisIsolation,
   getGitDir,
   getInstrumentMode,
   walltimeIsolation,
+  type IsolationMode,
   type WalltimeOptions,
 } from "@codspeed/core";
 import { join } from "path";
 import { type ViteUserConfig } from "vitest/config";
 import {
+  version as vitestVersion,
   type TestProject,
   type Vitest,
-  version as vitestVersion,
 } from "vitest/node";
 import { provideParentContext } from "./v5/forkContext";
 import { forkReporter } from "./v5/forkReporter";
@@ -58,9 +60,7 @@ class V5Backend implements VitestBackend {
   }
 
   configureIsolation(userConfig: ViteUserConfig): void {
-    if (getInstrumentMode() !== "walltime") return;
-
-    const isolationMode = walltimeIsolation();
+    const isolationMode = isolation();
     if (isolationMode.kind !== "Fork") return;
     restrictToBenchmarkFile(userConfig, isolationMode.uri);
     // The parent's global setup is still up while its forks run: forks skip
@@ -69,16 +69,15 @@ class V5Backend implements VitestBackend {
   }
 
   /**
-   * The parent of a forked walltime run measures nothing in its workers: they
-   * queue the benchmarks, and the main process forks them once the run is over.
+   * The parent of a forked run measures nothing in its workers: they queue the
+   * benchmarks, and the main process forks them once the run is over.
    */
   configureVitest(
     project: TestProject,
     vitest: Vitest,
     options: WalltimeOptions,
   ): void {
-    if (getInstrumentMode() !== "walltime") return;
-    const isolationMode = walltimeIsolation();
+    const isolationMode = isolation();
     if (isolationMode.kind === "Fork") {
       provideParentContext(project);
       return;
@@ -106,6 +105,17 @@ class V5Backend implements VitestBackend {
         suppressExportGetterWarnings,
       },
     };
+  }
+}
+
+function isolation(): IsolationMode {
+  switch (getInstrumentMode()) {
+    case "walltime":
+      return walltimeIsolation();
+    case "analysis":
+      return analysisIsolation();
+    case "disabled":
+      return { kind: "SharedProcess" };
   }
 }
 

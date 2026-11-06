@@ -1,4 +1,5 @@
 import {
+  getInstrumentMode,
   resolveWalltimeForks,
   runForks,
   samplesToResult,
@@ -15,7 +16,8 @@ import { withForkContext } from "./forkContext";
 
 /**
  * Measures the benchmarks the workers queued (see `provider.ts`) in fresh
- * processes and reports their pooled rounds. Runs in the main process once the
+ * processes and reports their pooled walltime rounds; analysis forks report to
+ * the instruments themselves. Runs in the main process once the
  * run is over: every file has torn down, so resources its hooks held (ports,
  * databases, ...) are free for the forks. The global setup is still up (it
  * tears down on close), so the forks skip it and inherit what it provided.
@@ -40,6 +42,11 @@ async function measureInForks(
   for (const module of modules) {
     for (const test of module.children.allTests()) {
       for (const queued of forkedBenchmarks(test.meta())) {
+        if (getInstrumentMode() !== "walltime") {
+          // Analysis measures a benchmark once, so it needs only one fork.
+          await runForks(queued.uri, 1);
+          continue;
+        }
         const forks = resolveWalltimeForks(queued.forks ?? options.forks);
         const samples = await runForks(queued.uri, forks);
         const benchmark = tinybenchTaskToBenchmark(
