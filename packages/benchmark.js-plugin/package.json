@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit --pretty",
     "format": "prettier --config ../../.prettierrc.json --ignore-path ../../.prettierignore --check .",
     "fix-format": "prettier --config ../../.prettierrc.json --ignore-path ../../.prettierignore --write .",
-    "bench": "node -r esbuild-register benches/sample.ts",
+    "bench": "node --import tsx benches/sample.ts",
     "clean": "rm -rf dist"
   },
   "author": "Arthur Pastel <arthur@codspeed.io>",
@@ -34,7 +34,8 @@
     "@types/benchmark": "^2.1.2",
     "@types/lodash": "^4.14.195",
     "benchmark": "^2.1.4",
-    "jest-mock-extended": "^3.0.4"
+    "jest-mock-extended": "^3.0.4",
+    "tsx": "^4.23.12"
   },
   "dependencies": {
     "@codspeed/core": "workspace:^6.1.0",
