@@ -36,6 +36,12 @@
         "-Wno-unused-but-set-variable",
         "-Wno-type-limits"
       ],
+      # Resolve symbols at load: lazy binding would resolve
+      # instrument_hooks_stop_benchmark on its first call, inside the
+      # first measured benchmark.
+      "ldflags": [
+        "-Wl,-z,now"
+      ],
       "sources": [
         "src/native_core/linux_perf/linux_perf.cc",
         "src/native_core/linux_perf/linux_perf_listener.cc",
