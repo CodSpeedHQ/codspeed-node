@@ -32,16 +32,18 @@ class AnalysisBenchRunner extends BaseBenchRunner {
     const { fnOpts, fn } = this.getTaskData(task);
 
     await fnOpts?.beforeAll?.call(task, "run");
+    // Warm up through the root frame: V8 compiles it on its first call, which
+    // must not land in the measurement.
+    const rootFrame = wrapWithRootFrame(fn);
     await optimizeFunction(async () => {
       await fnOpts?.beforeEach?.call(task, "run");
-      await fn();
+      await rootFrame();
       await fnOpts?.afterEach?.call(task, "run");
     });
     await fnOpts?.beforeEach?.call(task, "run");
     await mongoMeasurement.start(uri);
 
     global.gc?.();
-    const rootFrame = wrapWithRootFrame(fn);
     InstrumentHooks.startBenchmark();
     try {
       await rootFrame();
@@ -62,16 +64,16 @@ class AnalysisBenchRunner extends BaseBenchRunner {
 
     fnOpts?.beforeAll?.call(task, "run");
 
+    const rootFrame = wrapWithRootFrameSync(fn);
     optimizeFunctionSync(async () => {
       fnOpts?.beforeEach?.call(task, "run");
-      await fn();
+      await rootFrame();
       fnOpts?.afterEach?.call(task, "run");
     });
 
     fnOpts?.beforeEach?.call(task, "run");
 
     global.gc?.();
-    const rootFrame = wrapWithRootFrameSync(fn);
     InstrumentHooks.startBenchmark();
     try {
       rootFrame();
