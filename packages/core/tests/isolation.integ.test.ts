@@ -1,6 +1,7 @@
 import { spawnSync } from "child_process";
 import { join } from "path";
 import {
+  analysisIsolation,
   FORK_SAMPLES_FILE_ENV,
   ISOLATED_BENCHMARK_ENV,
   PROCESS_ISOLATION_ENV,
@@ -103,6 +104,13 @@ describe("walltimeIsolation", () => {
       uri: "file::bench",
       samplesFile: "samples.json",
     });
+  });
+});
+
+describe("analysisIsolation", () => {
+  it("runs every benchmark in one fork, whatever the walltime fork count", () => {
+    setEnv({ [WALLTIME_FORKS_ENV]: "4" });
+    expect(analysisIsolation()).toEqual({ kind: "Forks", forks: 1 });
   });
 });
 
