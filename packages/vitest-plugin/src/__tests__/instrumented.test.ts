@@ -1,7 +1,7 @@
 import { fromPartial } from "@total-typescript/shoehorn";
 import { describe, expect, it, vi, type RunnerTestSuite } from "vitest";
 import { AnalysisRunner as CodSpeedRunner } from "../legacy/analysis";
-import { getBenchFn, getBenchOptions } from "../legacy/compat";
+import { getBenchFn, getBenchOptions, getHooks } from "../legacy/compat";
 
 const coreMocks = vi.hoisted(() => {
   return {
@@ -45,6 +45,7 @@ vi.mock("../legacy/compat", () => {
 });
 const mockedGetBenchFn = vi.mocked(getBenchFn);
 const mockedGetBenchOptions = vi.mocked(getBenchOptions);
+const mockedGetHooks = vi.mocked(getHooks);
 
 describe("CodSpeedRunner", () => {
   it("should run the bench function", async () => {
@@ -187,5 +188,45 @@ describe("CodSpeedRunner", () => {
       "stopBenchmark",
       "teardown:run:test bench",
     ]);
+  });
+  it("should leave the root suite's beforeAll/afterAll to vitest", async () => {
+    mockedGetBenchFn.mockReturnValue(vi.fn());
+    const calls: string[] = [];
+    const hooksFor = (name: string) => ({
+      beforeAll: [() => calls.push(`beforeAll:${name}`)],
+      afterAll: [() => calls.push(`afterAll:${name}`)],
+      beforeEach: [],
+      afterEach: [],
+    });
+    mockedGetHooks.mockImplementation((suite) =>
+      hooksFor((suite as RunnerTestSuite).name),
+    );
+
+    const runner = new CodSpeedRunner(fromPartial({}));
+    const rootSuite = fromPartial<RunnerTestSuite>({
+      file: { filepath: __filename },
+      name: "root",
+      tasks: [
+        {
+          type: "suite",
+          name: "nested",
+          mode: "run",
+          tasks: [
+            {
+              type: "test",
+              mode: "run",
+              meta: { benchmark: true },
+              name: "test bench",
+            },
+          ],
+        },
+      ],
+    });
+
+    await runner.runSuite(rootSuite);
+
+    // Vitest calls the root suite's hooks around `runSuite`, so the runner
+    // must only call the nested suite's, once each.
+    expect(calls).toEqual(["beforeAll:nested", "afterAll:nested"]);
   });
 });
