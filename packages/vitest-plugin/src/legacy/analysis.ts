@@ -45,6 +45,16 @@ async function runAnalysisBench(
   const uri = `${currentSuiteName}::${benchmark.name}`;
   const fn = getBenchFn(benchmark);
 
+  // The registry `getBenchFn` reads lives in the vitest instance this plugin
+  // imports. When the benchmark file registered its benches in another copy
+  // (pnpm installs one per set of peers, e.g. per vite major), it is empty
+  // here, and calling it fails with a bare "fn is not a function".
+  if (typeof fn !== "function") {
+    throw new Error(
+      `[CodSpeed] no benchmark function found for "${uri}". The benchmark file and @codspeed/vitest-plugin most likely resolved different copies of vitest, so the plugin cannot see the registered benchmarks. Install @codspeed/vitest-plugin in the package that runs the benchmarks and import it from that package's vitest config, so both resolve the same vitest.`,
+    );
+  }
+
   // Constructing a Bench applies tinybench's no-op defaults for the setup and
   // teardown hooks and gives them the Task they expect. The bench itself is
   // never run: this runner drives the benchmark function directly.
