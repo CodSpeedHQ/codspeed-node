@@ -1,7 +1,7 @@
 import {
   getGitDir,
   getInstrumentMode,
-  walltimeIsolation,
+  processIsolation,
   type WalltimeOptions,
 } from "@codspeed/core";
 import { join } from "path";
@@ -60,7 +60,7 @@ class V5Backend implements VitestBackend {
   configureIsolation(userConfig: ViteUserConfig): void {
     if (getInstrumentMode() !== "walltime") return;
 
-    const isolationMode = walltimeIsolation();
+    const isolationMode = processIsolation();
     if (isolationMode.kind !== "Fork") return;
     restrictToBenchmarkFile(userConfig, isolationMode.uri);
     // The parent's global setup is still up while its forks run: forks skip
@@ -78,7 +78,7 @@ class V5Backend implements VitestBackend {
     options: WalltimeOptions,
   ): void {
     if (getInstrumentMode() !== "walltime") return;
-    const isolationMode = walltimeIsolation();
+    const isolationMode = processIsolation();
     if (isolationMode.kind === "Fork") {
       provideParentContext(project);
       return;

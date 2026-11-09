@@ -7,7 +7,7 @@ import {
   SetupInstrumentsRequestBody,
   SetupInstrumentsResponse,
   tryIntrospect,
-  walltimeIsolation,
+  processIsolation,
   wrapWithRootFrameSync,
   type InstrumentMode,
   type IsolationMode,
@@ -84,7 +84,7 @@ function getIsolationMode(
 ): IsolationMode | undefined {
   switch (instrumentMode) {
     case "walltime":
-      return walltimeIsolation(options.forks);
+      return processIsolation(options.forks);
     case "analysis":
     case "disabled":
       return undefined;

@@ -6,7 +6,7 @@ import {
   optimizeFunctionSync,
   setupCore,
   teardownCore,
-  walltimeIsolation,
+  processIsolation,
   wrapWithRootFrame,
   wrapWithRootFrameSync,
   writeForkSamples,
@@ -245,7 +245,7 @@ async function runWalltime(
   getUri: (name: string) => string,
   test: BenchmarkGroup["test"],
 ): Promise<BenchResult[]> {
-  const mode = walltimeIsolation();
+  const mode = processIsolation();
   if (mode.kind === "Forks") {
     await queueForks(registrations, options, getUri, test);
     return registrations.map(({ name }) => analysisResult(name));
