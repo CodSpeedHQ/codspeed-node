@@ -3,7 +3,6 @@ import {
   getInstrumentMode,
   InstrumentHooks,
   optimizeFunction,
-  optimizeFunctionSync,
   setupCore,
   teardownCore,
   walltimeIsolation,
@@ -180,8 +179,11 @@ async function runAnalysisTask(
   fnOpts: TinybenchFnOptions | undefined,
   uri: string,
 ): Promise<void> {
-  if (fn.constructor?.name === "AsyncFunction") {
-    await fnOpts?.beforeAll?.("run");
+  await fnOpts?.beforeAll?.("run");
+  if (
+    fn.constructor?.name === "AsyncFunction" ||
+    (await returnsPromise(fn, fnOpts))
+  ) {
     await optimizeFunction(async () => {
       await fnOpts?.beforeEach?.("run");
       await fn();
@@ -201,14 +203,15 @@ async function runAnalysisTask(
     return;
   }
 
-  fnOpts?.beforeAll?.("run");
-  optimizeFunctionSync(() => {
-    fnOpts?.beforeEach?.("run");
+  // tinybench awaits hooks even for a sync function. Only the measured call
+  // must stay synchronous.
+  await optimizeFunction(async () => {
+    await fnOpts?.beforeEach?.("run");
     fn();
-    fnOpts?.afterEach?.("run");
+    await fnOpts?.afterEach?.("run");
   });
 
-  fnOpts?.beforeEach?.("run");
+  await fnOpts?.beforeEach?.("run");
   global.gc?.();
   wrapWithRootFrameSync(() => {
     InstrumentHooks.startBenchmark();
@@ -216,8 +219,25 @@ async function runAnalysisTask(
     InstrumentHooks.stopBenchmark();
     InstrumentHooks.setExecutedBenchmark(process.pid, uri);
   })();
-  fnOpts?.afterEach?.("run");
-  fnOpts?.afterAll?.("run");
+  await fnOpts?.afterEach?.("run");
+  await fnOpts?.afterAll?.("run");
+}
+
+/**
+ * Calls `fn` once between its hooks, like tinybench does for functions that
+ * aren't declared `async`, to tell whether it must be awaited.
+ */
+async function returnsPromise(
+  fn: BenchFn,
+  fnOpts: TinybenchFnOptions | undefined,
+): Promise<boolean> {
+  await fnOpts?.beforeEach?.("run");
+  const result = fn();
+  await result;
+  await fnOpts?.afterEach?.("run");
+  return (
+    typeof (result as PromiseLike<unknown> | undefined)?.then === "function"
+  );
 }
 
 async function runWalltime(
