@@ -58,8 +58,6 @@ class V5Backend implements VitestBackend {
   }
 
   configureIsolation(userConfig: ViteUserConfig): void {
-    if (getInstrumentMode() !== "walltime") return;
-
     const isolationMode = processIsolation();
     if (isolationMode.kind !== "Fork") return;
     restrictToBenchmarkFile(userConfig, isolationMode.uri);
@@ -69,15 +67,14 @@ class V5Backend implements VitestBackend {
   }
 
   /**
-   * The parent of a forked walltime run measures nothing in its workers: they
-   * queue the benchmarks, and the main process forks them once the run is over.
+   * The parent of a forked run measures nothing in its workers: they queue the
+   * benchmarks, and the main process forks them once the run is over.
    */
   configureVitest(
     project: TestProject,
     vitest: Vitest,
     options: WalltimeOptions,
   ): void {
-    if (getInstrumentMode() !== "walltime") return;
     const isolationMode = processIsolation();
     if (isolationMode.kind === "Fork") {
       provideParentContext(project);
