@@ -1,4 +1,10 @@
-import { setupCore, teardownCore, type IsolationMode } from "@codspeed/core";
+import {
+  runForks,
+  runForksSync,
+  setupCore,
+  teardownCore,
+  type IsolationMode,
+} from "@codspeed/core";
 import { Bench, Task } from "tinybench";
 import { CapturedTaskData, getTaskData } from "./taskData";
 import { getTaskUri } from "./uri";
@@ -12,8 +18,7 @@ export abstract class BaseBenchRunner {
   constructor(
     bench: Bench,
     rootCallingFile: string,
-    /** Only walltime runs are isolated. */
-    protected readonly isolationMode: IsolationMode = { kind: "SharedProcess" },
+    protected readonly isolationMode: IsolationMode,
   ) {
     this.bench = bench;
     this.rootCallingFile = rootCallingFile;
@@ -72,6 +77,7 @@ export abstract class BaseBenchRunner {
   protected abstract runTaskSync(task: Task, uri: string): void;
   protected abstract finalizeAsyncRun(): Task[];
   protected abstract finalizeSyncRun(): Task[];
+  protected abstract collectForks(task: Task, samples: Float64Array): void;
 
   public setupBenchMethods(): void {
     this.bench.run = async () => {
@@ -85,7 +91,12 @@ export abstract class BaseBenchRunner {
 
       for (const task of tasks) {
         const uri = this.getTaskUri(task);
-        await this.runTaskAsync(task, uri);
+        if (this.isolationMode.kind === "Forks") {
+          const samples = await runForks(uri, this.isolationMode.forks);
+          this.collectForks(task, samples);
+        } else {
+          await this.runTaskAsync(task, uri);
+        }
       }
 
       return this.finalizeAsyncRun();
@@ -100,7 +111,12 @@ export abstract class BaseBenchRunner {
 
       for (const task of tasks) {
         const uri = this.getTaskUri(task);
-        this.runTaskSync(task, uri);
+        if (this.isolationMode.kind === "Forks") {
+          const samples = runForksSync(uri, this.isolationMode.forks);
+          this.collectForks(task, samples);
+        } else {
+          this.runTaskSync(task, uri);
+        }
       }
 
       return this.finalizeSyncRun();
