@@ -62,9 +62,9 @@ class AnalysisBenchRunner extends BaseBenchRunner {
 
     fnOpts?.beforeAll?.call(task, "run");
 
-    optimizeFunctionSync(async () => {
+    optimizeFunctionSync(() => {
       fnOpts?.beforeEach?.call(task, "run");
-      await fn();
+      fn();
       fnOpts?.afterEach?.call(task, "run");
     });
 
