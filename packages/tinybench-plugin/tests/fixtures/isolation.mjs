@@ -1,5 +1,5 @@
-// Run by `isolation.integ.test.ts`. Prints the PID of every process that runs a
-// benchmark.
+// Run by `isolation.integ.test.ts`. Prints the PID of every process that calls
+// a benchmark's function, and of every process that runs the benchmark.
 import { Bench } from "tinybench";
 import { withCodSpeed } from "../../dist/index.es5.js";
 
@@ -10,10 +10,15 @@ const bench = withCodSpeed(
 );
 
 for (const name of ["first", "second"]) {
-  // tinybench calls the function once when it is added, in every process.
   let calls = 0;
   bench.add(name, () => {
-    if (++calls === 2) {
+    calls++;
+    if (calls === 1) {
+      console.log(`called ${process.pid} ${name}`);
+    }
+    // tinybench calls the function once when it is added, to tell whether it
+    // returns a promise.
+    if (calls === 2) {
       console.log(`ran ${process.pid} ${name}`);
     }
   });
