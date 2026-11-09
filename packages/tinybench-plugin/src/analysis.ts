@@ -7,7 +7,7 @@ import {
   wrapWithRootFrame,
   wrapWithRootFrameSync,
 } from "@codspeed/core";
-import { Bench, Task } from "tinybench";
+import { Bench, Task, type FnOptions } from "tinybench";
 import { BaseBenchRunner } from "./shared";
 
 export function setupCodspeedAnalysisBench(
@@ -60,15 +60,15 @@ class AnalysisBenchRunner extends BaseBenchRunner {
   protected runTaskSync(task: Task, uri: string): void {
     const { fnOpts, fn } = this.getTaskData(task);
 
-    fnOpts?.beforeAll?.call(task, "run");
+    callSyncHook(task, fnOpts, "beforeAll");
 
-    optimizeFunctionSync(async () => {
-      fnOpts?.beforeEach?.call(task, "run");
-      await fn();
-      fnOpts?.afterEach?.call(task, "run");
+    optimizeFunctionSync(() => {
+      callSyncHook(task, fnOpts, "beforeEach");
+      fn();
+      callSyncHook(task, fnOpts, "afterEach");
     });
 
-    fnOpts?.beforeEach?.call(task, "run");
+    callSyncHook(task, fnOpts, "beforeEach");
 
     global.gc?.();
     const rootFrame = wrapWithRootFrameSync(fn);
@@ -80,8 +80,8 @@ class AnalysisBenchRunner extends BaseBenchRunner {
       InstrumentHooks.setExecutedBenchmark(process.pid, uri);
     }
 
-    fnOpts?.afterEach?.call(task, "run");
-    fnOpts?.afterAll?.call(task, "run");
+    callSyncHook(task, fnOpts, "afterEach");
+    callSyncHook(task, fnOpts, "afterAll");
 
     this.logTaskCompletion(uri, this.taskCompletionMessage());
   }
@@ -92,5 +92,21 @@ class AnalysisBenchRunner extends BaseBenchRunner {
 
   protected finalizeSyncRun(): Task[] {
     return this.finalizeBenchRun();
+  }
+}
+
+type HookName = "beforeAll" | "beforeEach" | "afterEach" | "afterAll";
+
+/** Like tinybench's own `runSync()`: async hooks can't be awaited here. */
+function callSyncHook(
+  task: Task,
+  fnOpts: FnOptions | undefined,
+  hook: HookName,
+): void {
+  const result: unknown = fnOpts?.[hook]?.call(task, "run");
+  if (typeof (result as PromiseLike<void> | undefined)?.then === "function") {
+    throw new Error(
+      `[CodSpeed] \`${hook}\` function must be sync when using \`runSync()\``,
+    );
   }
 }

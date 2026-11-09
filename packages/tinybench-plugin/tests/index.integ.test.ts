@@ -24,6 +24,9 @@ const mockCore = vi.hoisted(() => {
       .mockImplementation(async (fn: () => Promise<void>) => {
         await fn();
       }),
+    optimizeFunctionSync: vi.fn().mockImplementation((fn: () => void) => {
+      fn();
+    }),
     setupCore: vi.fn(),
     teardownCore: vi.fn(),
     writeWalltimeResults: vi.fn(),
@@ -206,6 +209,53 @@ describe("Benchmark.Suite", () => {
 
     expect(beforeAll).toHaveBeenCalledTimes(2);
     expect(afterAll).toHaveBeenCalledTimes(2);
+  });
+
+  it("should run each runSync call between its own hooks", () => {
+    mockCore.InstrumentHooks.isInstrumented.mockReturnValue(true);
+    mockCore.optimizeFunctionSync.mockImplementation((fn: () => void) => {
+      fn();
+    });
+    const calls: string[] = [];
+    const bench = withCodSpeed(new Bench()).add(
+      "RegExp",
+      () => {
+        calls.push("fn");
+      },
+      {
+        beforeEach: () => {
+          calls.push("beforeEach");
+        },
+        afterEach: () => {
+          calls.push("afterEach");
+        },
+      },
+    );
+    // tinybench calls the function once when it's added
+    calls.length = 0;
+
+    bench.runSync();
+
+    // the optimization run, then the measured run
+    expect(calls).toEqual([
+      "beforeEach",
+      "fn",
+      "afterEach",
+      "beforeEach",
+      "fn",
+      "afterEach",
+    ]);
+  });
+
+  it("should reject an async hook in runSync like tinybench does", () => {
+    mockCore.InstrumentHooks.isInstrumented.mockReturnValue(true);
+    const bench = withCodSpeed(new Bench()).add("RegExp", () => {}, {
+      beforeEach: async () => {},
+    });
+
+    expect(() => bench.runSync()).toThrow(
+      "`beforeEach` function must be sync when using `runSync()`",
+    );
   });
 
   it("should call setupCore and teardownCore only once", async () => {
