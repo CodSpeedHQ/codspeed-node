@@ -4,13 +4,11 @@ import {
   getInstrumentMode,
   InstrumentHooks,
   mongoMeasurement,
+  processIsolation,
   SetupInstrumentsRequestBody,
   SetupInstrumentsResponse,
   tryIntrospect,
-  walltimeIsolation,
   wrapWithRootFrameSync,
-  type InstrumentMode,
-  type IsolationMode,
   type WalltimeOptions,
 } from "@codspeed/core";
 import { Bench, type FnOptions } from "tinybench";
@@ -32,7 +30,7 @@ export function withCodSpeed(
 
   const rootCallingFile = getCallingFile(1);
   const instrumentMode = getInstrumentMode();
-  const isolationMode = getIsolationMode(instrumentMode, options);
+  const isolationMode = processIsolation(options.forks);
 
   // Compute and register URI for bench
   const uriMap = getOrCreateUriMap(bench);
@@ -48,14 +46,15 @@ export function withCodSpeed(
     uriMap.set(name, uri);
     taskDataMap.set(name, { fn, fnOpts: opts });
     const add = rawAdd.bind(bench);
-    if (isolationMode === undefined) {
-      return add(name, fn, opts);
-    }
     // tinybench calls a function that isn't `async` once when it's added, to
     // tell whether it returns a promise. A process that doesn't run the task
     // registers a stub instead, so the user's function isn't called there.
     if (!runsTaskFn(isolationMode, uri)) {
       return add(name, notRunHere, opts);
+    }
+    // The analysis runner calls the captured function itself.
+    if (instrumentMode === "analysis") {
+      return add(name, fn, opts);
     }
     // The task is driven by tinybench's own measured loop, so the root frame
     // must be baked into the function tinybench stores rather than injected
@@ -69,26 +68,12 @@ export function withCodSpeed(
   };
 
   if (instrumentMode === "analysis") {
-    setupCodspeedAnalysisBench(bench, rootCallingFile);
-  } else if (isolationMode !== undefined) {
+    setupCodspeedAnalysisBench(bench, rootCallingFile, isolationMode);
+  } else {
     setupCodspeedWalltimeBench(bench, rootCallingFile, isolationMode);
   }
 
   return bench;
-}
-
-/** Only walltime runs are isolated. */
-function getIsolationMode(
-  instrumentMode: InstrumentMode,
-  options: WalltimeOptions,
-): IsolationMode | undefined {
-  switch (instrumentMode) {
-    case "walltime":
-      return walltimeIsolation(options.forks);
-    case "analysis":
-    case "disabled":
-      return undefined;
-  }
 }
 
 /** Registered for tasks this process never runs; `async` so tinybench doesn't call it. */

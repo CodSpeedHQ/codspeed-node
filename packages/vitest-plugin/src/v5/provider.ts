@@ -4,13 +4,14 @@ import {
   InstrumentHooks,
   optimizeFunction,
   optimizeFunctionSync,
+  processIsolation,
   setupCore,
   teardownCore,
-  walltimeIsolation,
   wrapWithRootFrame,
   wrapWithRootFrameSync,
   writeForkSamples,
   type Benchmark,
+  type IsolationMode,
   type WalltimeOptions,
 } from "@codspeed/core";
 import { createRequire } from "module";
@@ -149,24 +150,35 @@ const provider: BenchmarkProvider = {
     const groupUri = buildGroupUri(test);
     const getUri = (name: string) => `${groupUri}::${name}`;
 
-    if (isWalltime) {
-      return runWalltime(registrations, options, getUri, test);
+    const mode = processIsolation();
+    if (mode.kind === "Forks") {
+      await queueForks(registrations, options, getUri, test);
+      return registrations.map(({ name }) => analysisResult(name));
     }
-    return runAnalysis(registrations, getUri);
+    if (isWalltime) {
+      return runWalltime(registrations, options, getUri, test, mode);
+    }
+    return runAnalysis(registrations, getUri, mode);
   },
 };
 
 async function runAnalysis(
   registrations: BenchRegistrationInput[],
   getUri: (name: string) => string,
+  mode: IsolationMode,
 ): Promise<BenchResult[]> {
   const label = InstrumentHooks.isInstrumented() ? "Measured" : "Checked";
   const results: BenchResult[] = [];
   for (const { name, fn, fnOpts } of registrations) {
     const uri = getUri(name);
+    results.push(analysisResult(name));
+    // A fork measures only its benchmark; Vitest still gets every result.
+    if (mode.kind === "Fork" && mode.uri !== uri) continue;
     await runAnalysisTask(fn, fnOpts, uri);
     console.log(`[CodSpeed] ${label} ${uri}`);
-    results.push(analysisResult(name));
+    if (mode.kind === "Fork") {
+      writeForkSamples(mode.samplesFile, []);
+    }
   }
   return results;
 }
@@ -244,12 +256,8 @@ async function runWalltime(
   options: BenchRunOptions | undefined,
   getUri: (name: string) => string,
   test: BenchmarkGroup["test"],
+  mode: IsolationMode,
 ): Promise<BenchResult[]> {
-  const mode = walltimeIsolation();
-  if (mode.kind === "Forks") {
-    await queueForks(registrations, options, getUri, test);
-    return registrations.map(({ name }) => analysisResult(name));
-  }
   // A fork measures only its benchmark; Vitest still gets every result.
   const measured = registrations.filter(
     ({ name }) => mode.kind !== "Fork" || mode.uri === getUri(name),
@@ -296,7 +304,7 @@ async function runWalltime(
 
 /**
  * Queues every benchmark for measurement in fresh processes once the run is
- * over (see `forkReporter.ts`). Vitest gets zeroed results, like in analysis mode.
+ * over (see `forkReporter.ts`). Vitest gets zeroed results.
  */
 async function queueForks(
   registrations: BenchRegistrationInput[],

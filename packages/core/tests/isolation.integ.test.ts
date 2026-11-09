@@ -4,9 +4,9 @@ import {
   FORK_SAMPLES_FILE_ENV,
   ISOLATED_BENCHMARK_ENV,
   PROCESS_ISOLATION_ENV,
+  processIsolation,
   resolveWalltimeForks,
   WALLTIME_FORKS_ENV,
-  walltimeIsolation,
 } from "../src/isolation";
 
 const FIXTURE = join(__dirname, "fixtures", "isolation.cjs");
@@ -21,6 +21,8 @@ const NODE_FLAG = "--no-warnings";
 const SAMPLES_PER_FORK = 2;
 
 const ENV_KEYS = [
+  "CODSPEED_ENV",
+  "CODSPEED_RUNNER_MODE",
   PROCESS_ISOLATION_ENV,
   ISOLATED_BENCHMARK_ENV,
   FORK_SAMPLES_FILE_ENV,
@@ -75,7 +77,7 @@ describe("resolveWalltimeForks", () => {
   });
 });
 
-describe("walltimeIsolation", () => {
+describe("processIsolation", () => {
   it.each([
     [undefined, "Forks"],
     ["1", "Forks"],
@@ -84,12 +86,12 @@ describe("walltimeIsolation", () => {
     ["false", "SharedProcess"],
   ])("selects %s as %s", (value, kind) => {
     setEnv({ [PROCESS_ISOLATION_ENV]: value });
-    expect(walltimeIsolation().kind).toBe(kind);
+    expect(processIsolation().kind).toBe(kind);
   });
 
   it("runs everything in this process when isolation is off, whatever the fork count", () => {
     setEnv({ [PROCESS_ISOLATION_ENV]: "false", [WALLTIME_FORKS_ENV]: "4" });
-    expect(walltimeIsolation(2).kind).toBe("SharedProcess");
+    expect(processIsolation(2).kind).toBe("SharedProcess");
   });
 
   it("restricts a fork to its benchmark, whatever the isolation setting", () => {
@@ -98,11 +100,20 @@ describe("walltimeIsolation", () => {
       [ISOLATED_BENCHMARK_ENV]: "file::bench",
       [FORK_SAMPLES_FILE_ENV]: "samples.json",
     });
-    expect(walltimeIsolation()).toEqual({
+    expect(processIsolation()).toEqual({
       kind: "Fork",
       uri: "file::bench",
       samplesFile: "samples.json",
     });
+  });
+
+  it("runs an analysis benchmark in one fork, whatever the walltime fork count", () => {
+    setEnv({
+      CODSPEED_ENV: "true",
+      CODSPEED_RUNNER_MODE: "simulation",
+      [WALLTIME_FORKS_ENV]: "4",
+    });
+    expect(processIsolation(2)).toEqual({ kind: "Forks", forks: 1 });
   });
 });
 

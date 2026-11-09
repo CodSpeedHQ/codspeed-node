@@ -6,6 +6,8 @@ import {
   optimizeFunctionSync,
   wrapWithRootFrame,
   wrapWithRootFrameSync,
+  writeForkSamples,
+  type IsolationMode,
 } from "@codspeed/core";
 import { Bench, Task } from "tinybench";
 import { BaseBenchRunner } from "./shared";
@@ -13,8 +15,9 @@ import { BaseBenchRunner } from "./shared";
 export function setupCodspeedAnalysisBench(
   bench: Bench,
   rootCallingFile: string,
+  isolationMode: IsolationMode,
 ): void {
-  const runner = new AnalysisBenchRunner(bench, rootCallingFile);
+  const runner = new AnalysisBenchRunner(bench, rootCallingFile, isolationMode);
   runner.setupBenchMethods();
 }
 
@@ -27,6 +30,16 @@ class AnalysisBenchRunner extends BaseBenchRunner {
   private taskCompletionMessage() {
     return InstrumentHooks.isInstrumented() ? "Measured" : "Checked";
   }
+
+  private completeTask(uri: string): void {
+    this.logTaskCompletion(uri, this.taskCompletionMessage());
+    if (this.isolationMode.kind === "Fork") {
+      writeForkSamples(this.isolationMode.samplesFile, []);
+    }
+  }
+
+  /** The instruments hold the measurement of the forks. */
+  protected collectForks(): void {}
 
   protected async runTaskAsync(task: Task, uri: string): Promise<void> {
     const { fnOpts, fn } = this.getTaskData(task);
@@ -54,7 +67,7 @@ class AnalysisBenchRunner extends BaseBenchRunner {
     await fnOpts?.afterEach?.call(task, "run");
     await fnOpts?.afterAll?.call(task, "run");
 
-    this.logTaskCompletion(uri, this.taskCompletionMessage());
+    this.completeTask(uri);
   }
 
   protected runTaskSync(task: Task, uri: string): void {
@@ -83,7 +96,7 @@ class AnalysisBenchRunner extends BaseBenchRunner {
     fnOpts?.afterEach?.call(task, "run");
     fnOpts?.afterAll?.call(task, "run");
 
-    this.logTaskCompletion(uri, this.taskCompletionMessage());
+    this.completeTask(uri);
   }
 
   protected finalizeAsyncRun(): Task[] {

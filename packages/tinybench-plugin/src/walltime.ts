@@ -6,8 +6,6 @@ import {
   mongoMeasurement,
   msToNs,
   msToS,
-  runForks,
-  runForksSync,
   samplesToResult,
   sortedSamplesNs,
   writeForkSamples,
@@ -110,12 +108,6 @@ class WalltimeBenchRunner extends BaseBenchRunner {
   }
 
   protected async runTaskAsync(task: Task, uri: string): Promise<void> {
-    const { isolationMode } = this;
-    if (isolationMode.kind === "Forks") {
-      const samples = await runForks(uri, isolationMode.forks);
-      return this.registerForkedBenchmark(task, samples);
-    }
-
     // run the warmup of the task right before its actual run
     if (getBenchOptions(this.bench).warmup) {
       await task.warmup();
@@ -128,13 +120,7 @@ class WalltimeBenchRunner extends BaseBenchRunner {
     this.registerCodspeedBenchmarkFromTask(task);
   }
 
-  protected runTaskSync(task: Task, uri: string): void {
-    const { isolationMode } = this;
-    if (isolationMode.kind === "Forks") {
-      const samples = runForksSync(uri, isolationMode.forks);
-      return this.registerForkedBenchmark(task, samples);
-    }
-
+  protected runTaskSync(task: Task): void {
     if (getBenchOptions(this.bench).warmup) {
       task.warmupSync();
     }
@@ -168,7 +154,7 @@ class WalltimeBenchRunner extends BaseBenchRunner {
     this.registerCodspeedBenchmark(task, task.result);
   }
 
-  private registerForkedBenchmark(task: Task, samples: Float64Array): void {
+  protected collectForks(task: Task, samples: Float64Array): void {
     if (samples.length === 0) {
       return this.warnNoResult(task);
     }

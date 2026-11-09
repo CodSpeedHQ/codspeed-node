@@ -1,7 +1,7 @@
 import { getV8Flags } from "@codspeed/core";
 import { spawn } from "child_process";
 import { once } from "events";
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from "fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { fileURLToPath } from "url";
@@ -40,6 +40,7 @@ interface FixtureOptions {
   /** `CODSPEED_WALLTIME_FORKS`. */
   forksEnv?: number;
   sync?: boolean;
+  mode?: "walltime" | "simulation";
 }
 
 async function runFixture({
@@ -47,13 +48,14 @@ async function runFixture({
   forksOption,
   forksEnv,
   sync,
+  mode = "walltime",
 }: FixtureOptions = {}): Promise<FixtureRun> {
   const profileFolder = mkdtempSync(join(tmpdir(), "codspeed-tinybench-"));
   try {
     const env: NodeJS.ProcessEnv = {
       ...process.env,
       CODSPEED_ENV: "true",
-      CODSPEED_RUNNER_MODE: "walltime",
+      CODSPEED_RUNNER_MODE: mode,
       CODSPEED_PROFILE_FOLDER: profileFolder,
     };
     delete env[PROCESS_ISOLATION_ENV];
@@ -95,7 +97,9 @@ async function runFixture({
 
     const roundsByName = new Map<string, number>();
     const resultsDir = join(profileFolder, "results");
-    for (const file of readdirSync(resultsDir)) {
+    // Only walltime runs write results: the instruments hold analysis ones.
+    const resultFiles = existsSync(resultsDir) ? readdirSync(resultsDir) : [];
+    for (const file of resultFiles) {
       const data = JSON.parse(readFileSync(join(resultsDir, file), "utf8"));
       for (const benchmark of data.benchmarks) {
         roundsByName.set(benchmark.name, benchmark.stats.rounds);
@@ -181,6 +185,28 @@ describe("walltime forks", () => {
       for (const name of BENCHMARKS) {
         expect(run.pidsByName.get(name)).toEqual(new Set([run.parentPid]));
       }
+    },
+    RUN_TIMEOUT_MS,
+  );
+});
+
+describe("simulation isolation", () => {
+  it.each([
+    { name: "async", sync: false },
+    { name: "sync", sync: true },
+  ])(
+    "runs every benchmark in its own process ($name run)",
+    async ({ sync }) => {
+      const run = await runFixture({ sync, mode: "simulation" });
+
+      expect(run.status).toBe(0);
+      for (const name of BENCHMARKS) {
+        expect(forkPids(run, name).size).toBe(1);
+      }
+      const all = new Set(
+        BENCHMARKS.flatMap((name) => [...forkPids(run, name)]),
+      );
+      expect(all.size).toBe(BENCHMARKS.length);
     },
     RUN_TIMEOUT_MS,
   );

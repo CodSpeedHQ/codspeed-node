@@ -1,12 +1,12 @@
 // Run by `isolation.integ.test.ts`. Measures benchmark "a" in forks.
 const {
+  processIsolation,
   runForks,
   runForksSync,
-  walltimeIsolation,
   writeForkSamples,
 } = require("../../dist/index.cjs.js");
 
-const mode = walltimeIsolation();
+const mode = processIsolation();
 
 function measure() {
   console.log(`ran ${process.pid} ${JSON.stringify(process.execArgv)}`);

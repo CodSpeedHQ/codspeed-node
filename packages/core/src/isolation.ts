@@ -1,9 +1,10 @@
 /**
- * Process isolation for walltime runs: every benchmark runs in fresh copies
- * of the benchmark process (forks), so the allocator state, JIT state, and
- * handles that other benchmarks or setup code leave behind can't change its
- * measurement. Rounds within one process are correlated (JIT tier-up, heap
- * sizing), so the rounds of several forks are pooled into one result.
+ * Process isolation: every benchmark runs in fresh copies of the benchmark
+ * process (forks), so the allocator state, JIT state, and handles that other
+ * benchmarks or setup code leave behind can't change its measurement. Walltime
+ * rounds within one process are correlated (JIT tier-up, heap sizing), so the
+ * rounds of several forks are pooled into one result. Analysis runs measure
+ * each benchmark once, in one fork.
  */
 import { spawn, spawnSync } from "child_process";
 import { randomUUID } from "crypto";
@@ -12,6 +13,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { deserialize, serialize } from "v8";
 import { constants, gunzipSync, gzipSync } from "zlib";
+import { getInstrumentMode } from "./runnerMode";
 
 /** Accepts `0`, `false`, `1`, or `true`; defaults to enabled. */
 export const PROCESS_ISOLATION_ENV = "CODSPEED_PROCESS_ISOLATION";
@@ -44,10 +46,11 @@ export type IsolationMode =
   | { kind: "Fork"; uri: string; samplesFile: string };
 
 /**
- * The isolation of a walltime run, from the environment. `forks` is the
- * integration's option, which {@link WALLTIME_FORKS_ENV} overrides.
+ * The isolation of this run, from the environment. A walltime benchmark runs
+ * in `forks` forks, the integration's option, which {@link WALLTIME_FORKS_ENV}
+ * overrides; an analysis benchmark is measured once, so it runs in one.
  */
-export function walltimeIsolation(forks?: number): IsolationMode {
+export function processIsolation(forks?: number): IsolationMode {
   const uri = process.env[ISOLATED_BENCHMARK_ENV];
   if (uri !== undefined) {
     const samplesFile = process.env[FORK_SAMPLES_FILE_ENV];
@@ -67,7 +70,8 @@ export function walltimeIsolation(forks?: number): IsolationMode {
       `[CodSpeed] ${PROCESS_ISOLATION_ENV} must be 0, false, 1, or true, got \`${isolation}\``,
     );
   }
-  return { kind: "Forks", forks: resolveWalltimeForks(forks) };
+  const analysis = getInstrumentMode() === "analysis";
+  return { kind: "Forks", forks: analysis ? 1 : resolveWalltimeForks(forks) };
 }
 
 /**
@@ -221,7 +225,11 @@ function forkSamples(
   }
 }
 
-/** Hands round samples (milliseconds) to the parent as gzip-compressed V8 data. */
+/**
+ * Hands round samples (milliseconds) to the parent as gzip-compressed V8 data.
+ * Analysis forks hand none: the instruments hold their measurement, and the
+ * file only tells the parent that they measured their benchmark.
+ */
 export function writeForkSamples(
   samplesFile: string,
   samples: ArrayLike<number>,
