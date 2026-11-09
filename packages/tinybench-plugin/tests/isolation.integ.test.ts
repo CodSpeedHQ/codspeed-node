@@ -18,12 +18,14 @@ const DEFAULT_FORKS = 3;
 const MIN_ROUNDS_PER_FORK = 4;
 /** Fails a run whose benchmark process got stuck instead of blocking the suite. */
 const RUN_TIMEOUT_MS = 60_000;
-const RAN_LINE = /^ran (\d+) (.+)$/;
+const PID_LINE = /^(ran|called) (\d+) (.+)$/;
 
 interface FixtureRun {
   status: number | null;
   /** PIDs that ran each benchmark. */
   pidsByName: Map<string, Set<number>>;
+  /** PIDs that called each benchmark's function, to run it or not. */
+  callerPidsByName: Map<string, Set<number>>;
   /** PID of the process the test started. */
   parentPid: number;
   /** Rounds of each benchmark in the results file. */
@@ -80,12 +82,15 @@ async function runFixture({
     const [status] = (await once(child, "close")) as [number | null];
 
     const pidsByName = new Map<string, Set<number>>();
+    const callerPidsByName = new Map<string, Set<number>>();
     for (const line of stdout.split("\n")) {
-      const ran = RAN_LINE.exec(line);
-      if (!ran) continue;
-      const pids = pidsByName.get(ran[2]) ?? new Set<number>();
-      pids.add(Number(ran[1]));
-      pidsByName.set(ran[2], pids);
+      const match = PID_LINE.exec(line);
+      if (!match) continue;
+      const [, event, pid, name] = match;
+      const byName = event === "ran" ? pidsByName : callerPidsByName;
+      const pids = byName.get(name) ?? new Set<number>();
+      pids.add(Number(pid));
+      byName.set(name, pids);
     }
 
     const roundsByName = new Map<string, number>();
@@ -99,6 +104,7 @@ async function runFixture({
     return {
       status,
       pidsByName,
+      callerPidsByName,
       parentPid: child.pid!,
       roundsByName,
     };
@@ -148,6 +154,19 @@ describe("walltime forks", () => {
       expect(run.status).toBe(0);
       for (const name of BENCHMARKS) {
         expect(forkPids(run, name).size).toBe(2);
+      }
+    },
+    RUN_TIMEOUT_MS,
+  );
+
+  it(
+    "calls a benchmark's function only in the forks that measure it",
+    async () => {
+      const run = await runFixture();
+
+      expect(run.status).toBe(0);
+      for (const name of BENCHMARKS) {
+        expect(run.callerPidsByName.get(name)).toEqual(forkPids(run, name));
       }
     },
     RUN_TIMEOUT_MS,
