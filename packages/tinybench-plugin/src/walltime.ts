@@ -10,13 +10,12 @@ import {
   runForksSync,
   samplesToResult,
   sortedSamplesNs,
-  walltimeIsolation,
   writeForkSamples,
   writeWalltimeResults,
   type BenchmarkStats,
   type Benchmark as CodspeedBenchmark,
+  type IsolationMode,
   type RoundsResult,
-  type WalltimeOptions,
 } from "@codspeed/core";
 import { Bench, Task } from "tinybench";
 import { getBenchOptions } from "./benchOptions";
@@ -25,12 +24,22 @@ import { BaseBenchRunner } from "./shared";
 export function setupCodspeedWalltimeBench(
   bench: Bench,
   rootCallingFile: string,
-  options: WalltimeOptions,
+  isolationMode: IsolationMode,
 ): void {
-  const isolationMode = walltimeIsolation(options.forks);
   const runner = new WalltimeBenchRunner(bench, rootCallingFile, isolationMode);
   runner.installInstrumentHooks();
   runner.setupBenchMethods();
+}
+
+/**
+ * Whether this process runs the task's function: a fork only runs its own
+ * task, and the parent of the forks only collects their samples.
+ */
+export function runsTaskFn(isolationMode: IsolationMode, uri: string): boolean {
+  return (
+    isolationMode.kind === "SharedProcess" ||
+    (isolationMode.kind === "Fork" && isolationMode.uri === uri)
+  );
 }
 
 class WalltimeBenchRunner extends BaseBenchRunner {

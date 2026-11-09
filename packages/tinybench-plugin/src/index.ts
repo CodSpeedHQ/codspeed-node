@@ -7,14 +7,17 @@ import {
   SetupInstrumentsRequestBody,
   SetupInstrumentsResponse,
   tryIntrospect,
+  walltimeIsolation,
   wrapWithRootFrameSync,
+  type InstrumentMode,
+  type IsolationMode,
   type WalltimeOptions,
 } from "@codspeed/core";
-import { Bench } from "tinybench";
+import { Bench, type FnOptions } from "tinybench";
 import { setupCodspeedAnalysisBench } from "./analysis";
 import { getOrCreateTaskDataMap } from "./taskData";
 import { getOrCreateUriMap } from "./uri";
-import { setupCodspeedWalltimeBench } from "./walltime";
+import { runsTaskFn, setupCodspeedWalltimeBench } from "./walltime";
 
 tryIntrospect();
 
@@ -29,6 +32,7 @@ export function withCodSpeed(
 
   const rootCallingFile = getCallingFile(1);
   const instrumentMode = getInstrumentMode();
+  const isolationMode = getIsolationMode(instrumentMode, options);
 
   // Compute and register URI for bench
   const uriMap = getOrCreateUriMap(bench);
@@ -43,24 +47,52 @@ export function withCodSpeed(
     uri += `::${name}`;
     uriMap.set(name, uri);
     taskDataMap.set(name, { fn, fnOpts: opts });
-    // In walltime mode the task is driven by tinybench's own measured loop, so
-    // the root frame must be baked into the function tinybench stores rather
-    // than injected later (the function is an inaccessible private field on the
-    // task from tinybench v6 onwards). The sync wrapper is transparent to the
-    // function's return value, so it preserves tinybench's sync/async handling.
-    const registeredFn =
-      instrumentMode === "walltime" ? wrapWithRootFrameSync(fn) : fn;
-    return rawAdd.bind(bench)(name, registeredFn, opts);
+    const add = rawAdd.bind(bench);
+    if (isolationMode === undefined) {
+      return add(name, fn, opts);
+    }
+    // tinybench calls a function that isn't `async` once when it's added, to
+    // tell whether it returns a promise. A process that doesn't run the task
+    // registers a stub instead, so the user's function isn't called there.
+    if (!runsTaskFn(isolationMode, uri)) {
+      return add(name, notRunHere, opts);
+    }
+    // The task is driven by tinybench's own measured loop, so the root frame
+    // must be baked into the function tinybench stores rather than injected
+    // later (the function is an inaccessible private field on the task from
+    // tinybench v6 onwards). An async wrapper would add an await to every
+    // iteration, so the wrapper stays sync and tinybench is told that an async
+    // function is async instead (honored from tinybench v6 onwards).
+    const fnOpts: (FnOptions & { async?: boolean }) | undefined =
+      fn.constructor.name === "AsyncFunction" ? { ...opts, async: true } : opts;
+    return add(name, wrapWithRootFrameSync(fn), fnOpts);
   };
 
   if (instrumentMode === "analysis") {
     setupCodspeedAnalysisBench(bench, rootCallingFile);
-  } else if (instrumentMode === "walltime") {
-    setupCodspeedWalltimeBench(bench, rootCallingFile, options);
+  } else if (isolationMode !== undefined) {
+    setupCodspeedWalltimeBench(bench, rootCallingFile, isolationMode);
   }
 
   return bench;
 }
+
+/** Only walltime runs are isolated. */
+function getIsolationMode(
+  instrumentMode: InstrumentMode,
+  options: WalltimeOptions,
+): IsolationMode | undefined {
+  switch (instrumentMode) {
+    case "walltime":
+      return walltimeIsolation(options.forks);
+    case "analysis":
+    case "disabled":
+      return undefined;
+  }
+}
+
+/** Registered for tasks this process never runs; `async` so tinybench doesn't call it. */
+async function notRunHere(): Promise<void> {}
 
 /**
  * Dynamically setup the CodSpeed instruments.

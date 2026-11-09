@@ -180,8 +180,11 @@ async function runAnalysisTask(
   fnOpts: TinybenchFnOptions | undefined,
   uri: string,
 ): Promise<void> {
-  if (fn.constructor?.name === "AsyncFunction") {
-    await fnOpts?.beforeAll?.("run");
+  await fnOpts?.beforeAll?.("run");
+  if (
+    fn.constructor?.name === "AsyncFunction" ||
+    (await returnsPromise(fn, fnOpts))
+  ) {
     await optimizeFunction(async () => {
       await fnOpts?.beforeEach?.("run");
       await fn();
@@ -201,7 +204,6 @@ async function runAnalysisTask(
     return;
   }
 
-  fnOpts?.beforeAll?.("run");
   optimizeFunctionSync(() => {
     fnOpts?.beforeEach?.("run");
     fn();
@@ -218,6 +220,23 @@ async function runAnalysisTask(
   })();
   fnOpts?.afterEach?.("run");
   fnOpts?.afterAll?.("run");
+}
+
+/**
+ * Calls `fn` once between its hooks, like tinybench does for functions that
+ * aren't declared `async`, to tell whether it must be awaited.
+ */
+async function returnsPromise(
+  fn: BenchFn,
+  fnOpts: TinybenchFnOptions | undefined,
+): Promise<boolean> {
+  await fnOpts?.beforeEach?.("run");
+  const result = fn();
+  await result;
+  await fnOpts?.afterEach?.("run");
+  return (
+    typeof (result as PromiseLike<unknown> | undefined)?.then === "function"
+  );
 }
 
 async function runWalltime(

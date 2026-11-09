@@ -33,6 +33,10 @@ export const getV8Flags = () => {
           "--predictable-gc-schedule",
           "--expose-gc",
           "--no-concurrent-sweeping",
+          // --predictable keeps posting incremental marking steps as tasks on
+          // the event loop, so async work before the benchmark (e.g. module
+          // loading) shifts the GC count and heap layout it measures in.
+          "--no-incremental-marking-task",
           "--max-old-space-size=4096",
         ],
       );
