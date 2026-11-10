@@ -23,6 +23,13 @@ export const DEFAULT_WALLTIME_FORKS = 3;
 export const ISOLATED_BENCHMARK_ENV = "CODSPEED_ISOLATED_BENCHMARK";
 /** Set on each fork: the file where it writes its round samples. */
 export const FORK_SAMPLES_FILE_ENV = "CODSPEED_FORK_SAMPLES_FILE";
+/**
+ * Set on the forks after the first one by {@link runForks}: the number of
+ * iterations that the first fork measured per round. Every fork of a benchmark
+ * MUST batch the same way, because the samples of all forks are pooled.
+ */
+export const FORK_ITERATIONS_PER_ROUND_ENV =
+  "CODSPEED_FORK_ITERATIONS_PER_ROUND";
 
 /** Walltime settings that every integration exposes next to its own options. */
 export interface WalltimeOptions {
@@ -40,8 +47,16 @@ export type IsolationMode =
   | { kind: "SharedProcess" }
   /** Every benchmark is measured in `forks` fresh processes, one after the other. */
   | { kind: "Forks"; forks: number }
-  /** A fork: measures only `uri` and writes its samples to `samplesFile`. */
-  | { kind: "Fork"; uri: string; samplesFile: string };
+  /**
+   * A fork: measures only `uri` and writes its samples to `samplesFile`. The
+   * first fork picks `iterationsPerRound` itself; the ones after it inherit it.
+   */
+  | {
+      kind: "Fork";
+      uri: string;
+      samplesFile: string;
+      iterationsPerRound?: number;
+    };
 
 /**
  * The isolation of a walltime run, from the environment. `forks` is the
@@ -56,7 +71,16 @@ export function walltimeIsolation(forks?: number): IsolationMode {
         `[CodSpeed] ${ISOLATED_BENCHMARK_ENV} is set without ${FORK_SAMPLES_FILE_ENV}`,
       );
     }
-    return { kind: "Fork", uri, samplesFile };
+    const iterationsPerRound = process.env[FORK_ITERATIONS_PER_ROUND_ENV];
+    return {
+      kind: "Fork",
+      uri,
+      samplesFile,
+      iterationsPerRound:
+        iterationsPerRound === undefined || iterationsPerRound === ""
+          ? undefined
+          : validPositiveInt(iterationsPerRound, FORK_ITERATIONS_PER_ROUND_ENV),
+    };
   }
   const isolation = process.env[PROCESS_ISOLATION_ENV];
   if (isolation === "0" || isolation === "false") {
@@ -77,22 +101,22 @@ export function walltimeIsolation(forks?: number): IsolationMode {
 export function resolveWalltimeForks(option?: number): number {
   const env = process.env[WALLTIME_FORKS_ENV];
   if (env !== undefined && env !== "") {
-    return validForks(env, WALLTIME_FORKS_ENV);
+    return validPositiveInt(env, WALLTIME_FORKS_ENV);
   }
   if (option !== undefined) {
-    return validForks(option, "forks");
+    return validPositiveInt(option, "forks");
   }
   return DEFAULT_WALLTIME_FORKS;
 }
 
-function validForks(raw: string | number, source: string): number {
-  const forks = Number(raw);
-  if (!Number.isInteger(forks) || forks < 1) {
+function validPositiveInt(raw: string | number, source: string): number {
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < 1) {
     throw new Error(
       `[CodSpeed] ${source} must be a positive integer, got \`${raw}\``,
     );
   }
-  return forks;
+  return value;
 }
 
 /** The command of this process, which each fork re-runs. */
@@ -101,10 +125,21 @@ function currentCommand(): string[] {
   return [process.execPath, ...process.execArgv, ...process.argv.slice(1)];
 }
 
+/** The pooled samples of the forks of one benchmark. */
+export interface ForkSamples {
+  /** Round samples (milliseconds), one per measured round. */
+  samples: Float64Array;
+  /** Benchmark iterations one round measured; every fork MUST agree. */
+  iterationsPerRound: number;
+}
+
 /**
  * Runs the benchmark `uri` in `forks` fresh processes, one after the other,
  * and returns the round samples of all of them, in milliseconds. Throws when
  * a fork fails, without running the next one.
+ *
+ * The first fork picks how many iterations one round batches; the ones after
+ * it inherit that count, so the pooled samples mean the same thing.
  *
  * Each fork re-runs this process's command, not fork(): Node can't fork, and a
  * fork would only copy the calling thread. Call it from the process whose
@@ -113,36 +148,45 @@ function currentCommand(): string[] {
 export async function runForks(
   uri: string,
   forks: number,
-): Promise<Float64Array> {
-  const samples: Float64Array[] = [];
+): Promise<ForkSamples> {
+  const chunks: ForkSamples[] = [];
   for (let fork = 0; fork < forks; fork++) {
-    samples.push(await runFork(uri));
+    chunks.push(await runFork(uri, chunks[0]?.iterationsPerRound));
   }
-  return concatSamples(samples);
+  return poolForkSamples(uri, chunks);
 }
 
 /** {@link runForks} for synchronous runs, which block anyway. */
-export function runForksSync(uri: string, forks: number): Float64Array {
-  const samples: Float64Array[] = [];
+export function runForksSync(uri: string, forks: number): ForkSamples {
+  const chunks: ForkSamples[] = [];
   for (let fork = 0; fork < forks; fork++) {
-    samples.push(runForkSync(uri));
+    chunks.push(runForkSync(uri, chunks[0]?.iterationsPerRound));
   }
-  return concatSamples(samples);
+  return poolForkSamples(uri, chunks);
 }
 
 /**
  * Samples stay in typed arrays: a fast benchmark records tens of millions of
  * them per fork, which as JS numbers exceed the V8 heap limit of the parent.
  */
-function concatSamples(chunks: Float64Array[]): Float64Array {
-  const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+function poolForkSamples(uri: string, chunks: ForkSamples[]): ForkSamples {
+  const iterationsPerRound = chunks[0]?.iterationsPerRound ?? 1;
+  let length = 0;
+  for (const chunk of chunks) {
+    if (chunk.iterationsPerRound !== iterationsPerRound) {
+      throw new Error(
+        `[CodSpeed] the forks of ${uri} measured a different number of iterations per round (${iterationsPerRound} and ${chunk.iterationsPerRound})`,
+      );
+    }
+    length += chunk.samples.length;
+  }
   const samples = new Float64Array(length);
   let offset = 0;
   for (const chunk of chunks) {
-    samples.set(chunk, offset);
-    offset += chunk.length;
+    samples.set(chunk.samples, offset);
+    offset += chunk.samples.length;
   }
-  return samples;
+  return { samples, iterationsPerRound };
 }
 
 /** A fresh file per fork: overlapping runForks() calls must not share one. */
@@ -154,12 +198,15 @@ function newSamplesFile(): string {
 }
 
 /** Runs one fork of `uri` and returns the samples it wrote. */
-async function runFork(uri: string): Promise<Float64Array> {
+async function runFork(
+  uri: string,
+  iterationsPerRound?: number,
+): Promise<ForkSamples> {
   const samplesFile = newSamplesFile();
   const [executable, ...args] = currentCommand();
   const child = spawn(executable, args, {
     stdio: "inherit",
-    env: forkEnv(uri, samplesFile),
+    env: forkEnv(uri, samplesFile, iterationsPerRound),
   });
   const { promise, resolve, reject } =
     Promise.withResolvers<[number | null, NodeJS.Signals | null]>();
@@ -169,12 +216,12 @@ async function runFork(uri: string): Promise<Float64Array> {
   return forkSamples(uri, samplesFile, status, signal);
 }
 
-function runForkSync(uri: string): Float64Array {
+function runForkSync(uri: string, iterationsPerRound?: number): ForkSamples {
   const samplesFile = newSamplesFile();
   const [executable, ...args] = currentCommand();
   const result = spawnSync(executable, args, {
     stdio: "inherit",
-    env: forkEnv(uri, samplesFile),
+    env: forkEnv(uri, samplesFile, iterationsPerRound),
   });
   if (result.error !== undefined) {
     throw startError(uri, result.error);
@@ -182,11 +229,16 @@ function runForkSync(uri: string): Float64Array {
   return forkSamples(uri, samplesFile, result.status, result.signal);
 }
 
-function forkEnv(uri: string, samplesFile: string): NodeJS.ProcessEnv {
+function forkEnv(
+  uri: string,
+  samplesFile: string,
+  iterationsPerRound?: number,
+): NodeJS.ProcessEnv {
   return {
     ...process.env,
     [ISOLATED_BENCHMARK_ENV]: uri,
     [FORK_SAMPLES_FILE_ENV]: samplesFile,
+    [FORK_ITERATIONS_PER_ROUND_ENV]: iterationsPerRound?.toString(),
   };
 }
 
@@ -202,7 +254,7 @@ function forkSamples(
   samplesFile: string,
   status: number | null,
   signal: NodeJS.Signals | null,
-): Float64Array {
+): ForkSamples {
   try {
     if (status !== 0) {
       throw new Error(
@@ -210,7 +262,7 @@ function forkSamples(
       );
     }
     try {
-      return deserialize(gunzipSync(readFileSync(samplesFile))) as Float64Array;
+      return deserialize(gunzipSync(readFileSync(samplesFile))) as ForkSamples;
     } catch (error) {
       throw new Error(
         `[CodSpeed] the process for ${uri} did not report its samples: ${(error as Error).message}`,
@@ -221,15 +273,22 @@ function forkSamples(
   }
 }
 
-/** Hands round samples (milliseconds) to the parent as gzip-compressed V8 data. */
+/**
+ * Hands round samples (milliseconds) to the parent as gzip-compressed V8 data,
+ * along with the number of benchmark iterations one round measured.
+ */
 export function writeForkSamples(
   samplesFile: string,
   samples: ArrayLike<number>,
+  iterationsPerRound = 1,
 ) {
   writeFileSync(
     samplesFile,
-    gzipSync(serialize(Float64Array.from(samples)), {
-      level: constants.Z_BEST_SPEED,
-    }),
+    gzipSync(
+      serialize({ samples: Float64Array.from(samples), iterationsPerRound }),
+      {
+        level: constants.Z_BEST_SPEED,
+      },
+    ),
   );
 }

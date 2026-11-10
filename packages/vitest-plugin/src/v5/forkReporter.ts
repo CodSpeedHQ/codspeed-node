@@ -41,7 +41,7 @@ async function measureInForks(
     for (const test of module.children.allTests()) {
       for (const queued of forkedBenchmarks(test.meta())) {
         const forks = resolveWalltimeForks(queued.forks ?? options.forks);
-        const samples = await runForks(queued.uri, forks);
+        const { samples } = await runForks(queued.uri, forks);
         const benchmark = tinybenchTaskToBenchmark(
           { name: queued.name, result: samplesToResult(samples) },
           queued.uri,

@@ -4,6 +4,7 @@ import { Bench, Hook } from "tinybench";
 // setup/teardown hooks. tinybench guarantees `setup`/`teardown` are populated
 // (at least with no-op defaults), so they are non-optional here.
 export interface ResolvedBenchOptions {
+  now: () => number;
   setup: Hook;
   teardown: Hook;
   warmup?: boolean;
