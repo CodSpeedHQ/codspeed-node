@@ -82,6 +82,9 @@ export abstract class BaseBenchRunner {
         return this.bench.tasks;
       }
       this.setupBenchRun();
+      // Promise jobs still queued by module loading would otherwise run
+      // between the awaits of the first measurements
+      await new Promise((resolve) => setImmediate(resolve));
 
       for (const task of tasks) {
         const uri = this.getTaskUri(task);
