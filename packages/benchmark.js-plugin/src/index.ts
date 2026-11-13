@@ -1,4 +1,5 @@
 import {
+  flushTelemetry,
   getCallingFile,
   InstrumentHooks,
   mongoMeasurement,
@@ -9,6 +10,7 @@ import {
   SetupInstrumentsResponse,
   teardownCore,
   tryIntrospect,
+  withRoundMarkers,
   wrapWithRootFrame,
   wrapWithRootFrameSync,
 } from "@codspeed/core";
@@ -186,7 +188,7 @@ async function runBenchmarks({
         await (bench.fn as CallableFunction)();
       };
     } else {
-      benchPayload = bench.fn as CallableFunction;
+      benchPayload = bench.fn as () => unknown;
     }
 
     if (typeof bench.options.setup === "function") {
@@ -197,9 +199,10 @@ async function runBenchmarks({
       await optimizeFunction(benchPayload);
       await mongoMeasurement.start(uri);
       global.gc?.();
+      const measuredPayload = withRoundMarkers(benchPayload);
       await wrapWithRootFrame(async () => {
         InstrumentHooks.startBenchmark();
-        await benchPayload();
+        await measuredPayload();
         InstrumentHooks.stopBenchmark();
         InstrumentHooks.setExecutedBenchmark(process.pid, uri);
       })();
@@ -207,9 +210,10 @@ async function runBenchmarks({
     } else {
       optimizeFunctionSync(benchPayload);
       await mongoMeasurement.start(uri);
+      const measuredPayload = withRoundMarkers(benchPayload);
       wrapWithRootFrameSync(() => {
         InstrumentHooks.startBenchmark();
-        benchPayload();
+        measuredPayload();
         InstrumentHooks.stopBenchmark();
         InstrumentHooks.setExecutedBenchmark(process.pid, uri);
       })();
@@ -223,6 +227,7 @@ async function runBenchmarks({
     console.log(`    ✔ Measured ${uri}`);
     benchmarkCompletedListeners.forEach((listener) => listener());
   }
+  await flushTelemetry();
   teardownCore();
   console.log(`[CodSpeed] Done running ${benches.length} benches.`);
 }

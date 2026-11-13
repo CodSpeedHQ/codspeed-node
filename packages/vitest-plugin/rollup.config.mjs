@@ -23,6 +23,12 @@ export default defineConfig([
     plugins: jsPlugins(pkg.version),
     external: ["@codspeed/core", /^vitest/],
   },
+  {
+    input: "src/telemetrySetup.ts",
+    output: { file: "dist/telemetrySetup.mjs", format: "es" },
+    plugins: jsPlugins(pkg.version),
+    external: ["@codspeed/core", /^vitest/],
+  },
   // Vitest imports these by file path (as `test.runner` or `benchmark.provider`), so
   // each needs its own output; `resolveFile` expects it at the same path as in `src/`.
   {

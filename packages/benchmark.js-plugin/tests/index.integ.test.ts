@@ -13,6 +13,7 @@ jest.mock("@codspeed/core", () => {
   mockCore.getCallingFile = actual.getCallingFile;
   mockCore.wrapWithRootFrame = actual.wrapWithRootFrame;
   mockCore.wrapWithRootFrameSync = actual.wrapWithRootFrameSync;
+  mockCore.withRoundMarkers = actual.withRoundMarkers;
   return mockCore;
 });
 

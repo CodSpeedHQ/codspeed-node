@@ -1,10 +1,12 @@
 import {
+  flushTelemetry,
   InstrumentHooks,
   logDebug,
   mongoMeasurement,
   optimizeFunction,
   setupCore,
   teardownCore,
+  withRoundMarkers,
   wrapWithRootFrame,
 } from "@codspeed/core";
 import { type RunnerTestSuite } from "vitest";
@@ -62,10 +64,11 @@ async function runAnalysisBench(
   await bench.setup(task, "run");
   await callSuiteHook(suite, benchmark, "beforeEach");
   await mongoMeasurement.start(uri);
+  const measuredFn = withRoundMarkers(fn);
   global.gc?.();
   await wrapWithRootFrame(async () => {
     InstrumentHooks.startBenchmark();
-    await fn();
+    await measuredFn();
     InstrumentHooks.stopBenchmark();
     InstrumentHooks.setExecutedBenchmark(process.pid, uri);
   })();
@@ -111,6 +114,8 @@ export class AnalysisRunner extends NodeBenchmarkRunner {
     await runAnalysisBenchmarkSuite(suite, await this.importTinybench());
     logCodSpeed(`running suite ${suite.name} done`);
 
+    // Vitest may kill the worker once its benchmarks are done.
+    await flushTelemetry();
     teardownCore();
   }
 }

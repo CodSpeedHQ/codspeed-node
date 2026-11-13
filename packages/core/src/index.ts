@@ -3,6 +3,7 @@ import { MongoMeasurement } from "./mongoMeasurement";
 import native_core from "./native_core";
 import { warnOnUnsupportedNodeVersion } from "./nodeVersion";
 import { getCodspeedRunnerMode } from "./runnerMode";
+import { setupTelemetry } from "./telemetry";
 
 declare const __VERSION__: string;
 
@@ -11,6 +12,11 @@ const linuxPerf = new native_core.LinuxPerf();
 export const isBound = native_core.isBound;
 
 export const mongoMeasurement = new MongoMeasurement();
+
+// On import, before the benchmarked modules that the plugins load next get their
+// tracers and loggers: those obtained before through another copy of the
+// OpenTelemetry API, such as its ESM build, would never export.
+setupTelemetry();
 
 export const setupCore = () => {
   warnOnUnsupportedNodeVersion();
@@ -63,6 +69,7 @@ export { optimizeFunction, optimizeFunctionSync } from "./optimization";
 export { wrapWithRootFrame, wrapWithRootFrameSync } from "./rootFrame";
 export { getCodspeedRunnerMode, getInstrumentMode } from "./runnerMode";
 export type { InstrumentMode } from "./runnerMode";
+export { flushTelemetry, withRoundMarkers } from "./telemetry";
 export * from "./utils";
 export * from "./walltime";
 export const InstrumentHooks = native_core.InstrumentHooks;

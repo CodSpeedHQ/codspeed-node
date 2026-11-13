@@ -1,4 +1,5 @@
 import {
+  flushTelemetry,
   getGitDir,
   getInstrumentMode,
   InstrumentHooks,
@@ -6,6 +7,7 @@ import {
   optimizeFunctionSync,
   setupCore,
   teardownCore,
+  withRoundMarkers,
   wrapWithRootFrame,
   wrapWithRootFrameSync,
   type Benchmark,
@@ -163,6 +165,8 @@ async function runAnalysis(
     console.log(`[CodSpeed] ${label} ${uri}`);
     results.push(analysisResult(name));
   }
+  // Vitest may kill the worker once its benchmarks are done.
+  await flushTelemetry();
   return results;
 }
 
@@ -184,10 +188,11 @@ async function runAnalysisTask(
     });
 
     await fnOpts?.beforeEach?.("run");
+    const measuredFn = withRoundMarkers(fn);
     global.gc?.();
     await wrapWithRootFrame(async () => {
       InstrumentHooks.startBenchmark();
-      await fn();
+      await measuredFn();
       InstrumentHooks.stopBenchmark();
       InstrumentHooks.setExecutedBenchmark(process.pid, uri);
     })();
@@ -204,10 +209,11 @@ async function runAnalysisTask(
   });
 
   fnOpts?.beforeEach?.("run");
+  const measuredFn = withRoundMarkers(fn);
   global.gc?.();
   wrapWithRootFrameSync(() => {
     InstrumentHooks.startBenchmark();
-    fn();
+    measuredFn();
     InstrumentHooks.stopBenchmark();
     InstrumentHooks.setExecutedBenchmark(process.pid, uri);
   })();

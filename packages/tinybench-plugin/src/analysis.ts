@@ -4,6 +4,7 @@ import {
   mongoMeasurement,
   optimizeFunction,
   optimizeFunctionSync,
+  withRoundMarkers,
   wrapWithRootFrame,
   wrapWithRootFrameSync,
 } from "@codspeed/core";
@@ -41,7 +42,7 @@ class AnalysisBenchRunner extends BaseBenchRunner {
     await mongoMeasurement.start(uri);
 
     global.gc?.();
-    const rootFrame = wrapWithRootFrame(fn);
+    const rootFrame = wrapWithRootFrame(withRoundMarkers(fn));
     InstrumentHooks.startBenchmark();
     try {
       await rootFrame();
@@ -71,7 +72,7 @@ class AnalysisBenchRunner extends BaseBenchRunner {
     fnOpts?.beforeEach?.call(task, "run");
 
     global.gc?.();
-    const rootFrame = wrapWithRootFrameSync(fn);
+    const rootFrame = wrapWithRootFrameSync(withRoundMarkers(fn));
     InstrumentHooks.startBenchmark();
     try {
       rootFrame();

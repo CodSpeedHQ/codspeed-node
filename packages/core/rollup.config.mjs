@@ -14,7 +14,10 @@ export default defineConfig([
         sourcemap: true,
       },
     ],
-    plugins: declarationsPlugin({ compilerOptions: { composite: false } }),
+    plugins: declarationsPlugin({
+      // pnpm links the dependencies of a package next to its real path
+      compilerOptions: { composite: false, preserveSymlinks: false },
+    }),
   },
   {
     input: entrypoint,

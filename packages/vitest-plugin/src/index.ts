@@ -1,4 +1,5 @@
 import {
+  getCodspeedRunnerMode,
   getInstrumentMode,
   getV8Flags,
   InstrumentHooks,
@@ -42,6 +43,9 @@ export default function codspeedPlugin(): Plugin {
         test: {
           pool: "forks",
           globalSetup: [resolveFile("globalSetup")],
+          ...(getCodspeedRunnerMode() === "telemetry" && {
+            setupFiles: [resolveFile("telemetrySetup")],
+          }),
           ...resolveVitestBackend().getBenchmarkTestConfig(
             getV8Flags(),
             resolveFile,
