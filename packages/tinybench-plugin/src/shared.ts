@@ -1,4 +1,9 @@
-import { setupCore, teardownCore, type IsolationMode } from "@codspeed/core";
+import {
+  flushTelemetry,
+  setupCore,
+  teardownCore,
+  type IsolationMode,
+} from "@codspeed/core";
 import { Bench, Task } from "tinybench";
 import { CapturedTaskData, getTaskData } from "./taskData";
 import { getTaskUri } from "./uri";
@@ -87,6 +92,7 @@ export abstract class BaseBenchRunner {
         const uri = this.getTaskUri(task);
         await this.runTaskAsync(task, uri);
       }
+      await flushTelemetry();
 
       return this.finalizeAsyncRun();
     };
