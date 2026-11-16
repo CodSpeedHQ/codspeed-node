@@ -143,39 +143,12 @@ function registerProviders(endpoint: string): Providers {
     require("@opentelemetry/exporter-logs-otlp-proto") as typeof LogExporter;
   const { OTLPTraceExporter } =
     require("@opentelemetry/exporter-trace-otlp-proto") as typeof TraceExporter;
-  const { resourceFromAttributes } =
-    require("@opentelemetry/resources") as typeof Resources;
-  const { BatchLogRecordProcessor, LoggerProvider } =
-    require("@opentelemetry/sdk-logs") as typeof SdkLogs;
-  const { BatchSpanProcessor, TracerProvider } =
-    require("@opentelemetry/sdk-trace") as typeof SdkTrace;
   /* eslint-enable @typescript-eslint/no-require-imports */
 
-  const resource = resourceFromAttributes({ "service.name": serviceName() });
-  const tracer = new TracerProvider({
-    resource,
-    idGenerator: new CryptoIdGenerator(),
-    spanProcessors: [
-      // Before the batch processor, which exports the span as it ends.
-      new MonotonicTimestampSpanProcessor(),
-      new BatchSpanProcessor({
-        exporter: new OTLPTraceExporter({ url: `${endpoint}/v1/traces` }),
-        maxQueueSize: MAX_QUEUE_SIZE,
-        maxExportBatchSize: EXPORT_BATCH_SIZE,
-      }),
-    ],
-  });
-  const logger = new LoggerProvider({
-    resource,
-    processors: [
-      new MonotonicTimeLogRecordProcessor(),
-      new BatchLogRecordProcessor({
-        exporter: new OTLPLogExporter({ url: `${endpoint}/v1/logs` }),
-        maxQueueSize: MAX_QUEUE_SIZE,
-        maxExportBatchSize: EXPORT_BATCH_SIZE,
-      }),
-    ],
-  });
+  const { tracer, logger } = buildProviders(
+    new OTLPTraceExporter({ url: `${endpoint}/v1/traces` }),
+    new OTLPLogExporter({ url: `${endpoint}/v1/logs` }),
+  );
 
   const contextManager = new AsyncLocalStorageContextManager().enable();
   if (!api.context.setGlobalContextManager(contextManager)) {
@@ -196,6 +169,52 @@ function registerProviders(endpoint: string): Providers {
   }
   apiLogs.logs.setGlobalLoggerProvider(logger);
 
+  return { tracer, logger };
+}
+
+/**
+ * Builds the tracer and logger providers that send the spans to `spanExporter`
+ * and the log records to `logExporter`, with their times on the clock of the
+ * benchmark markers. Doesn't register them.
+ */
+export function buildProviders(
+  spanExporter: SdkTrace.SpanExporter,
+  logExporter: SdkLogs.LogRecordExporter,
+): Providers {
+  /* eslint-disable @typescript-eslint/no-require-imports */
+  const { resourceFromAttributes } =
+    require("@opentelemetry/resources") as typeof Resources;
+  const { BatchLogRecordProcessor, LoggerProvider } =
+    require("@opentelemetry/sdk-logs") as typeof SdkLogs;
+  const { BatchSpanProcessor, TracerProvider } =
+    require("@opentelemetry/sdk-trace") as typeof SdkTrace;
+  /* eslint-enable @typescript-eslint/no-require-imports */
+
+  const resource = resourceFromAttributes({ "service.name": serviceName() });
+  const tracer = new TracerProvider({
+    resource,
+    idGenerator: new CryptoIdGenerator(),
+    spanProcessors: [
+      // Before the batch processor, which exports the span as it ends.
+      new MonotonicTimestampSpanProcessor(),
+      new BatchSpanProcessor({
+        exporter: spanExporter,
+        maxQueueSize: MAX_QUEUE_SIZE,
+        maxExportBatchSize: EXPORT_BATCH_SIZE,
+      }),
+    ],
+  });
+  const logger = new LoggerProvider({
+    resource,
+    processors: [
+      new MonotonicTimeLogRecordProcessor(),
+      new BatchLogRecordProcessor({
+        exporter: logExporter,
+        maxQueueSize: MAX_QUEUE_SIZE,
+        maxExportBatchSize: EXPORT_BATCH_SIZE,
+      }),
+    ],
+  });
   return { tracer, logger };
 }
 

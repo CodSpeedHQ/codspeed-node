@@ -1,8 +1,22 @@
+import { context } from "@opentelemetry/api";
+import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
+import { InMemoryLogRecordExporter } from "@opentelemetry/sdk-logs";
+import { InMemorySpanExporter } from "@opentelemetry/sdk-trace";
 import { execFile } from "child_process";
 import http from "http";
 import { AddressInfo } from "net";
 import path from "path";
 import { promisify } from "util";
+import { buildProviders } from "../src/telemetry";
+
+// The addon only loads from the built package. The clock of the markers is
+// monotonic, like this one.
+jest.mock("../src/native_core", () => ({
+  __esModule: true,
+  default: {
+    InstrumentHooks: { currentTimestamp: () => process.hrtime.bigint() },
+  },
+}));
 
 const execFileAsync = promisify(execFile);
 
@@ -112,5 +126,72 @@ describe("telemetry", () => {
       CODSPEED_OTEL_ENDPOINT: "",
     });
     expect(loaded).toBe(false);
+  });
+});
+
+describe("buildProviders", () => {
+  beforeAll(() => {
+    context.setGlobalContextManager(
+      new AsyncLocalStorageContextManager().enable(),
+    );
+  });
+
+  afterAll(() => {
+    context.disable();
+  });
+
+  it("links the spans and logs, with their monotonic times in order", async () => {
+    const spanExporter = new InMemorySpanExporter();
+    const logExporter = new InMemoryLogRecordExporter();
+    const providers = buildProviders(spanExporter, logExporter);
+    const tracer = providers.tracer.getTracer("test");
+    const logger = providers.logger.getLogger("test");
+    const now = () => Number(process.hrtime.bigint());
+
+    const before = now();
+    await tracer.startActiveSpan("parent", async (parent) => {
+      await tracer.startActiveSpan("child", async (child) => {
+        await Promise.resolve();
+        logger.emit({ body: "in child" });
+        child.end();
+      });
+      parent.end();
+    });
+    logger.emit({ body: "outside any span" });
+    const after = now();
+    await providers.tracer.forceFlush();
+    await providers.logger.forceFlush();
+
+    const spans = spanExporter.getFinishedSpans();
+    const parent = spans.find((span) => span.name === "parent");
+    const child = spans.find((span) => span.name === "child");
+    if (parent === undefined || child === undefined) {
+      throw new Error(`expected a parent and a child span, got ${spans}`);
+    }
+    expect(child.spanContext().traceId).toBe(parent.spanContext().traceId);
+    expect(child.parentSpanContext?.spanId).toBe(parent.spanContext().spanId);
+
+    const startOf = (span: typeof parent) =>
+      span.attributes["codspeed.monotonic_start_ns"] as number;
+    const endOf = (span: typeof parent) =>
+      span.attributes["codspeed.monotonic_end_ns"] as number;
+    expect(before).toBeLessThanOrEqual(startOf(parent));
+    expect(startOf(parent)).toBeLessThanOrEqual(startOf(child));
+    expect(startOf(child)).toBeLessThanOrEqual(endOf(child));
+    expect(endOf(child)).toBeLessThanOrEqual(endOf(parent));
+    expect(endOf(parent)).toBeLessThanOrEqual(after);
+
+    const [inChild, outside] = logExporter.getFinishedLogRecords();
+    expect(inChild.body).toBe("in child");
+    expect(inChild.spanContext?.traceId).toBe(child.spanContext().traceId);
+    expect(inChild.spanContext?.spanId).toBe(child.spanContext().spanId);
+    const logTime = inChild.attributes["codspeed.monotonic_time_ns"] as number;
+    expect(startOf(child)).toBeLessThanOrEqual(logTime);
+    expect(logTime).toBeLessThanOrEqual(endOf(child));
+
+    expect(outside.body).toBe("outside any span");
+    expect(outside.spanContext).toBeUndefined();
+    const outsideTime = outside.attributes["codspeed.monotonic_time_ns"];
+    expect(outsideTime).toBeGreaterThanOrEqual(endOf(parent));
   });
 });
