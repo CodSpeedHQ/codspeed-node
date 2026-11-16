@@ -111,11 +111,14 @@ export class AnalysisRunner extends NodeBenchmarkRunner {
     patchRootSuiteWithFullFilePath(suite);
 
     logCodSpeed(`running suite ${suite.name}`);
-    await runAnalysisBenchmarkSuite(suite, await this.importTinybench());
+    try {
+      await runAnalysisBenchmarkSuite(suite, await this.importTinybench());
+    } finally {
+      // Vitest may kill the worker once its benchmarks are done, or failed.
+      await flushTelemetry();
+    }
     logCodSpeed(`running suite ${suite.name} done`);
 
-    // Vitest may kill the worker once its benchmarks are done.
-    await flushTelemetry();
     teardownCore();
   }
 }

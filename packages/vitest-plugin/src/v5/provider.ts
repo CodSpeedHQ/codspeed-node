@@ -163,14 +163,17 @@ async function runAnalysis(
 ): Promise<BenchResult[]> {
   const label = InstrumentHooks.isInstrumented() ? "Measured" : "Checked";
   const results: BenchResult[] = [];
-  for (const { name, fn, fnOpts } of registrations) {
-    const uri = getUri(name);
-    await runAnalysisTask(fn, fnOpts, uri);
-    console.log(`[CodSpeed] ${label} ${uri}`);
-    results.push(analysisResult(name));
+  try {
+    for (const { name, fn, fnOpts } of registrations) {
+      const uri = getUri(name);
+      await runAnalysisTask(fn, fnOpts, uri);
+      console.log(`[CodSpeed] ${label} ${uri}`);
+      results.push(analysisResult(name));
+    }
+  } finally {
+    // Vitest may kill the worker once its benchmarks are done, or failed.
+    await flushTelemetry();
   }
-  // Vitest may kill the worker once its benchmarks are done.
-  await flushTelemetry();
   return results;
 }
 

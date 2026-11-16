@@ -288,10 +288,20 @@ export function withRoundMarkers<T>(fn: () => T): () => T {
       addRound(start);
       throw error;
     }
-    if (result instanceof Promise) {
-      return result.finally(() => addRound(start)) as T;
+    if (isPromiseLike(result)) {
+      // Covers the thenables that aren't native promises, such as database
+      // queries. The caller gets a native promise, which it only awaits.
+      return Promise.resolve(result).finally(() => addRound(start)) as T;
     }
     addRound(start);
     return result;
   };
+}
+
+function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+  return (
+    (typeof value === "object" || typeof value === "function") &&
+    value !== null &&
+    typeof (value as { then?: unknown }).then === "function"
+  );
 }
