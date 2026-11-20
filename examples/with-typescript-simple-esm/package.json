@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "bench-benchmark-js": "node --import tsx benchmark-js.ts",
-    "bench-tinybench": "node --import tsx tinybench.ts"
+    "bench-benchmark-js": "tsx benchmark-js.ts",
+    "bench-tinybench": "tsx tinybench.ts"
   },
   "devDependencies": {
     "@codspeed/benchmark.js-plugin": "workspace:*",

@@ -116,3 +116,8 @@ Running these locally outside the CodSpeed runner is expected to log
 `instrument-hooks: failed to write environment.json` and skip actual measurement
 writes — the point is to verify the plugin's control flow and output per mode,
 not to produce real measurements.
+
+For real measurements and profiles, run under the runner without uploading:
+`CODSPEED_SKIP_UPLOAD=true codspeed run --mode <mode> --profile-folder <dir> -- <command>`.
+In simulation, `--simulation-track-subprocess` splits each benchmark's callgrind
+costs per thread, which exposes work from other threads counted in a benchmark.
