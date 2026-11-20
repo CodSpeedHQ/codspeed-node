@@ -188,4 +188,29 @@ describe("CodSpeedRunner", () => {
       "teardown:run:test bench",
     ]);
   });
+  it("should explain a benchmark function it cannot find", async () => {
+    // What the runner sees when the benches were registered in another
+    // vitest copy than the one this plugin imports.
+    mockedGetBenchFn.mockReturnValue(
+      undefined as unknown as ReturnType<typeof getBenchFn>,
+    );
+
+    const runner = new CodSpeedRunner(fromPartial({}));
+    const suite = fromPartial<RunnerTestSuite>({
+      file: { filepath: __filename },
+      name: "test suite",
+      tasks: [
+        {
+          type: "test",
+          mode: "run",
+          meta: { benchmark: true },
+          name: "test bench",
+        },
+      ],
+    });
+
+    await expect(runner.runSuite(suite)).rejects.toThrow(
+      /no benchmark function found for ".*::test bench"\. The benchmark file and @codspeed\/vitest-plugin most likely resolved different copies of vitest/,
+    );
+  });
 });
