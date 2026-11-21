@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "lib": ["es2023"],
+    "module": "ESNext",
+    "verbatimModuleSyntax": true,
+    "target": "es2022",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "Node"
+  }
+}
