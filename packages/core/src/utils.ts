@@ -30,15 +30,27 @@ export function getGitDir(from: string): string | undefined {
  */
 export function getCallingFile(depth: number): string {
   const stack = getStackTrace();
-  let callingFile = stack[depth + 1].getFileName();
-  const gitDir = getGitDir(callingFile);
+  return getGitRelativePath(stack[depth + 1].getFileName());
+}
+
+/**
+ * Returns `fileName`, a path or a `file://` URL (ES modules), relative to the
+ * root of the git repository that contains it.
+ *
+ * It throws when the file is in no git repository.
+ */
+export function getGitRelativePath(fileName: string): string {
+  // Converts the URL first: as a path, a URL resolves against the current
+  // directory, so the search would find the repository of the current
+  // directory instead of the one of the file.
+  const filePath = fileName.startsWith("file://")
+    ? fileURLToPath(fileName)
+    : fileName;
+  const gitDir = getGitDir(filePath);
   if (gitDir === undefined) {
     throw new Error("Could not find a git repository");
   }
-  if (callingFile.startsWith("file://")) {
-    callingFile = fileURLToPath(callingFile);
-  }
-  return path.relative(gitDir, callingFile);
+  return path.relative(gitDir, filePath);
 }
 
 /**
