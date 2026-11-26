@@ -2,7 +2,8 @@ export type CodSpeedRunnerMode =
   | "disabled"
   | "simulation"
   | "memory"
-  | "walltime";
+  | "walltime"
+  | "telemetry";
 
 export type InstrumentMode = "disabled" | "analysis" | "walltime";
 
@@ -23,6 +24,8 @@ export function getCodspeedRunnerMode(): CodSpeedRunnerMode {
     return "memory";
   } else if (codspeedRunnerMode === "walltime") {
     return "walltime";
+  } else if (codspeedRunnerMode === "telemetry") {
+    return "telemetry";
   }
 
   console.warn(
@@ -33,8 +36,12 @@ export function getCodspeedRunnerMode(): CodSpeedRunnerMode {
 
 export function getInstrumentMode(): InstrumentMode {
   const runnerMode = getCodspeedRunnerMode();
-  // Both "simulation" and "memory" map to "analysis" instrument mode
-  if (runnerMode === "simulation" || runnerMode === "memory") {
+  // These modes run each benchmark once
+  if (
+    runnerMode === "simulation" ||
+    runnerMode === "memory" ||
+    runnerMode === "telemetry"
+  ) {
     return "analysis";
   }
   return runnerMode; // "disabled" or "walltime"

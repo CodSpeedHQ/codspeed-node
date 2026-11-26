@@ -1,4 +1,5 @@
 import {
+  flushTelemetry,
   getGitDir,
   getInstrumentMode,
   InstrumentHooks,
@@ -6,6 +7,7 @@ import {
   setupCore,
   teardownCore,
   walltimeIsolation,
+  withRoundMarkers,
   wrapWithRootFrame,
   wrapWithRootFrameSync,
   writeForkSamples,
@@ -161,11 +163,16 @@ async function runAnalysis(
 ): Promise<BenchResult[]> {
   const label = InstrumentHooks.isInstrumented() ? "Measured" : "Checked";
   const results: BenchResult[] = [];
-  for (const { name, fn, fnOpts } of registrations) {
-    const uri = getUri(name);
-    await runAnalysisTask(fn, fnOpts, uri);
-    console.log(`[CodSpeed] ${label} ${uri}`);
-    results.push(analysisResult(name));
+  try {
+    for (const { name, fn, fnOpts } of registrations) {
+      const uri = getUri(name);
+      await runAnalysisTask(fn, fnOpts, uri);
+      console.log(`[CodSpeed] ${label} ${uri}`);
+      results.push(analysisResult(name));
+    }
+  } finally {
+    // Vitest may kill the worker once its benchmarks are done, or failed.
+    await flushTelemetry();
   }
   return results;
 }
@@ -191,10 +198,11 @@ async function runAnalysisTask(
     });
 
     await fnOpts?.beforeEach?.("run");
+    const measuredFn = withRoundMarkers(fn);
     global.gc?.();
     await wrapWithRootFrame(async () => {
       InstrumentHooks.startBenchmark();
-      await fn();
+      await measuredFn();
       InstrumentHooks.stopBenchmark();
       InstrumentHooks.setExecutedBenchmark(process.pid, uri);
     })();
@@ -212,10 +220,11 @@ async function runAnalysisTask(
   });
 
   await fnOpts?.beforeEach?.("run");
+  const measuredFn = withRoundMarkers(fn);
   global.gc?.();
   wrapWithRootFrameSync(() => {
     InstrumentHooks.startBenchmark();
-    fn();
+    measuredFn();
     InstrumentHooks.stopBenchmark();
     InstrumentHooks.setExecutedBenchmark(process.pid, uri);
   })();

@@ -1,7 +1,7 @@
 import { writeFileSync } from "fs";
 import path from "path";
 
-import { getInstrumentMode } from "./runnerMode";
+import { getCodspeedRunnerMode, getInstrumentMode } from "./runnerMode";
 
 const CUSTOM_INTROSPECTION_EXIT_CODE = 0;
 
@@ -21,6 +21,13 @@ export const getV8Flags = () => {
   const instrumentMode = getInstrumentMode();
 
   const flags = ["--interpreted-frames-native-stack", "--allow-natives-syntax"];
+
+  // The spans and logs keep the timings of the code as it runs in production,
+  // so V8 compiles and collects garbage as it does by default.
+  if (getCodspeedRunnerMode() === "telemetry") {
+    flags.push(...getSeedFlags(nodeVersionMajor));
+    return flags;
+  }
 
   switch (instrumentMode) {
     case "analysis": {
