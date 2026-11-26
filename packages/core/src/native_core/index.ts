@@ -5,6 +5,7 @@ import { LinuxPerf } from "./linux_perf/linux_perf";
 interface NativeCore {
   InstrumentHooks: InstrumentHooks;
   LinuxPerf: typeof LinuxPerf;
+  restart(executable: string, args: string[]): never;
 }
 
 interface NativeCoreWithBindingStatus extends NativeCore {
@@ -26,6 +27,11 @@ try {
   logDebug("Failed to bind native core, instruments will not work.");
   logDebug(e);
   native_core = {
+    restart: () => {
+      throw new Error(
+        `[CodSpeed] Cannot restart Node.js because the native core module is not bound: ${String(e)}`,
+      );
+    },
     LinuxPerf: class LinuxPerf {
       start() {
         return false;

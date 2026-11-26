@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   check:
     strategy:
@@ -121,3 +124,46 @@ jobs:
         env:
           CODSPEED_SKIP_UPLOAD: true
           CODSPEED_DEBUG: true
+
+  # Bazel's rules_js runs node by absolute path, so the runner's `node` wrapper
+  # on PATH never injects the V8 flags and the plugin must restart itself.
+  restart-without-node-wrapper:
+    runs-on: "ubuntu-latest"
+    name: "restart without node wrapper (${{ matrix.mode }})"
+    strategy:
+      matrix:
+        mode: [simulation, walltime, memory]
+      fail-fast: false
+    steps:
+      - uses: "actions/checkout@v4"
+        with:
+          fetch-depth: 0
+          submodules: true
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          cache: pnpm
+          node-version: 24
+      - name: Restore turbo cache
+        uses: ./.github/actions/turbo-cache
+        with:
+          key-suffix: node24
+      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm turbo run build
+      # Resolved before the action prefixes PATH with its wrapper.
+      - run: echo "REAL_NODE=$(command -v node)" >> "$GITHUB_ENV"
+      - uses: CodSpeedHQ/action@main
+        with:
+          mode: ${{ matrix.mode }}
+          working-directory: examples/with-javascript-esm
+          run: |
+            set -o pipefail
+            "$REAL_NODE" tinybench.js 2>&1 | tee tinybench.log
+            "$REAL_NODE" benchmark-js.js 2>&1 | tee benchmark-js.log
+        env:
+          CODSPEED_SKIP_UPLOAD: true
+          CODSPEED_DEBUG: true
+      - name: Check the benchmarks ran with the V8 flags
+        working-directory: examples/with-javascript-esm
+        run: |
+          ! grep -E "missing required flags|failed to restart node" tinybench.log benchmark-js.log
