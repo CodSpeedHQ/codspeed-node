@@ -60,6 +60,14 @@ jobs:
       - uses: ./.github/actions/test-native-abi
         with:
           node-version: "26"
+      # tsx registers its module hooks off-thread before Node 22.22.3 and
+      # 24.11.1, and Node only has `module.registerHooks` from 22.15
+      - uses: ./.github/actions/test-native-abi
+        with:
+          node-version: "22.14.0"
+      - uses: ./.github/actions/test-native-abi
+        with:
+          node-version: "24.10.0"
 
   list-examples:
     runs-on: "ubuntu-latest"
